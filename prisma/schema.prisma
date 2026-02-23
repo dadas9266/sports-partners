@@ -1,0 +1,165 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ========== KULLANICI ==========
+model User {
+  id           String     @id @default(cuid())
+  name         String
+  email        String     @unique
+  passwordHash String
+  phone        String?
+  avatarUrl    String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  listings  Listing[]
+  responses Response[]
+  matches1  Match[]    @relation("MatchUser1")
+  matches2  Match[]    @relation("MatchUser2")
+}
+
+// ========== SPOR ==========
+model Sport {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  icon     String?
+  listings Listing[]
+  venues   Venue[]
+}
+
+// ========== KONUM ==========
+model Country {
+  id     String @id @default(cuid())
+  name   String @unique
+  code   String @unique
+  cities City[]
+}
+
+model City {
+  id        String     @id @default(cuid())
+  name      String
+  countryId String
+  country   Country    @relation(fields: [countryId], references: [id])
+  districts District[]
+
+  @@unique([name, countryId])
+}
+
+model District {
+  id       String    @id @default(cuid())
+  name     String
+  cityId   String
+  city     City      @relation(fields: [cityId], references: [id])
+  venues   Venue[]
+  listings Listing[]
+
+  @@unique([name, cityId])
+}
+
+// ========== MEKAN ==========
+model Venue {
+  id         String    @id @default(cuid())
+  name       String
+  address    String?
+  districtId String
+  district   District  @relation(fields: [districtId], references: [id])
+  sportId    String?
+  sport      Sport?    @relation(fields: [sportId], references: [id])
+  listings   Listing[]
+
+  @@unique([name, districtId])
+}
+
+// ========== İLAN ==========
+enum ListingType {
+  RIVAL
+  PARTNER
+}
+
+enum Level {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum ListingStatus {
+  OPEN
+  CLOSED
+  MATCHED
+}
+
+model Listing {
+  id          String        @id @default(cuid())
+  type        ListingType
+  sportId     String
+  sport       Sport         @relation(fields: [sportId], references: [id])
+  districtId  String
+  district    District      @relation(fields: [districtId], references: [id])
+  venueId     String?
+  venue       Venue?        @relation(fields: [venueId], references: [id])
+  userId      String
+  user        User          @relation(fields: [userId], references: [id])
+  dateTime    DateTime
+  level       Level
+  description String?
+  status      ListingStatus @default(OPEN)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  responses Response[]
+  match     Match?
+
+  // Performans indexleri
+  @@index([status, dateTime])
+  @@index([sportId])
+  @@index([districtId])
+  @@index([userId])
+  @@index([status, sportId, dateTime])
+}
+
+// ========== KARŞILIK ==========
+enum ResponseStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+model Response {
+  id        String         @id @default(cuid())
+  listingId String
+  listing   Listing        @relation(fields: [listingId], references: [id])
+  userId    String
+  user      User           @relation(fields: [userId], references: [id])
+  message   String?
+  status    ResponseStatus @default(PENDING)
+  createdAt DateTime       @default(now())
+
+  match Match?
+
+  @@unique([listingId, userId])
+  @@index([userId])
+  @@index([status])
+}
+
+// ========== EŞLEŞME ==========
+model Match {
+  id         String   @id @default(cuid())
+  listingId  String   @unique
+  listing    Listing  @relation(fields: [listingId], references: [id])
+  responseId String   @unique
+  response   Response @relation(fields: [responseId], references: [id])
+  user1Id    String
+  user1      User     @relation("MatchUser1", fields: [user1Id], references: [id])
+  user2Id    String
+  user2      User     @relation("MatchUser2", fields: [user2Id], references: [id])
+  createdAt  DateTime @default(now())
+
+  @@index([user1Id])
+  @@index([user2Id])
+}

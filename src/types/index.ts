@@ -1,0 +1,236 @@
+// =============================================
+// Merkezi Tip Tanımları
+// =============================================
+
+// --- Enum Types ---
+export type ListingType = "RIVAL" | "PARTNER";
+export type Level = "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
+export type ListingStatus = "OPEN" | "CLOSED" | "MATCHED";
+export type ResponseStatus = "PENDING" | "ACCEPTED" | "REJECTED";
+
+// --- Entity Types ---
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string | null;
+  avatarUrl?: string | null;
+  createdAt: string;
+}
+
+export interface UserPublic {
+  id: string;
+  name: string;
+}
+
+export interface UserContact {
+  id: string;
+  name: string;
+  phone?: string | null;
+  email?: string | null;
+}
+
+export interface Sport {
+  id: string;
+  name: string;
+  icon: string | null;
+}
+
+export interface Country {
+  id: string;
+  name: string;
+  code: string;
+  cities: City[];
+}
+
+export interface City {
+  id: string;
+  name: string;
+  countryId: string;
+  country?: Country;
+  districts: District[];
+}
+
+export interface District {
+  id: string;
+  name: string;
+  cityId: string;
+  city?: City;
+}
+
+export interface Venue {
+  id: string;
+  name: string;
+  address: string | null;
+  districtId: string;
+}
+
+export interface ListingResponse {
+  id: string;
+  listingId: string;
+  userId: string;
+  user: UserPublic;
+  message?: string | null;
+  status: ResponseStatus;
+  createdAt: string;
+}
+
+export interface Match {
+  id: string;
+  listingId: string;
+  responseId: string;
+  user1Id: string;
+  user2Id: string;
+  user1: UserContact;
+  user2: UserContact;
+  createdAt: string;
+  listing?: ListingSummary;
+}
+
+export interface ListingSummary {
+  id: string;
+  type: ListingType;
+  sport: Sport;
+  district: District & { city: City };
+  venue?: Venue | null;
+  user: UserPublic;
+  dateTime: string;
+  level: Level;
+  status: ListingStatus;
+  description?: string | null;
+  _count: { responses: number };
+}
+
+export interface ListingDetail {
+  id: string;
+  type: ListingType;
+  sport: Sport;
+  district: District & { city: City & { country: Country } };
+  venue?: Venue | null;
+  userId: string;
+  user: UserPublic;
+  dateTime: string;
+  level: Level;
+  status: ListingStatus;
+  description?: string | null;
+  responses: ListingResponse[];
+  match?: Match | null;
+  createdAt: string;
+}
+
+// --- API Response Types ---
+export interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+}
+
+export interface PaginatedResponse<T> {
+  success: boolean;
+  data: T[];
+  pagination: {
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+}
+
+// --- Profile Types ---
+export interface ProfileData {
+  user: User;
+  myListings: ListingWithResponses[];
+  myResponses: ResponseWithListing[];
+  myMatches: Match[];
+}
+
+export interface ListingWithResponses {
+  id: string;
+  type: ListingType;
+  sport: Sport;
+  district: District & { city: City };
+  venue?: Venue | null;
+  dateTime: string;
+  level: Level;
+  status: ListingStatus;
+  description?: string | null;
+  responses: ListingResponse[];
+  match?: {
+    user2: UserContact;
+  } | null;
+}
+
+export interface ResponseWithListing {
+  id: string;
+  listingId: string;
+  message?: string | null;
+  status: ResponseStatus;
+  createdAt: string;
+  listing: {
+    sport: Sport;
+    user: UserPublic;
+  };
+}
+
+// --- Form Types ---
+export interface CreateListingForm {
+  type: ListingType | "";
+  sportId: string;
+  countryId: string;
+  cityId: string;
+  districtId: string;
+  venueId: string;
+  dateTime: string;
+  level: Level | "";
+  description: string;
+}
+
+export interface LoginForm {
+  email: string;
+  password: string;
+}
+
+export interface RegisterForm {
+  name: string;
+  email: string;
+  password: string;
+  passwordConfirm: string;
+  phone: string;
+}
+
+export interface ProfileEditForm {
+  name: string;
+  phone: string;
+  currentPassword: string;
+  newPassword: string;
+}
+
+// --- UI Helper Types ---
+export const LEVEL_LABELS: Record<Level, string> = {
+  BEGINNER: "Başlangıç",
+  INTERMEDIATE: "Orta",
+  ADVANCED: "İleri",
+};
+
+export const LEVEL_LABELS_WITH_ICON: Record<Level, string> = {
+  BEGINNER: "🌱 Başlangıç",
+  INTERMEDIATE: "🔥 Orta",
+  ADVANCED: "⚡ İleri",
+};
+
+export const LEVEL_COLORS: Record<Level, string> = {
+  BEGINNER: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
+  INTERMEDIATE: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300",
+  ADVANCED: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
+};
+
+export const STATUS_LABELS: Record<string, { label: string; className: string }> = {
+  OPEN: { label: "Açık", className: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" },
+  CLOSED: { label: "Kapatıldı", className: "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300" },
+  MATCHED: { label: "Eşleşti", className: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300" },
+  PENDING: { label: "Bekliyor", className: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300" },
+  ACCEPTED: { label: "Kabul Edildi", className: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300" },
+  REJECTED: { label: "Reddedildi", className: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300" },
+};
