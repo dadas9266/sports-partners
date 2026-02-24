@@ -8,6 +8,28 @@ import { createLogger } from "@/lib/logger";
 
 const log = createLogger("listings");
 
+// Uyumluluk skoru hesapla (0-100)
+function computeCompatibility(
+  listing: {
+    sportId: string;
+    district: { cityId: string };
+    user: { preferredTime: string | null; preferredStyle: string | null };
+  },
+  viewer: {
+    cityId: string | null;
+    sportIds: string[];
+    preferredTime: string | null;
+    preferredStyle: string | null;
+  }
+): number {
+  let score = 0;
+  if (viewer.cityId && viewer.cityId === listing.district.cityId) score += 30;
+  if (viewer.sportIds.includes(listing.sportId)) score += 35;
+  if (viewer.preferredTime && viewer.preferredTime === listing.user.preferredTime) score += 20;
+  if (viewer.preferredStyle && viewer.preferredStyle === listing.user.preferredStyle) score += 15;
+  return score;
+}
+
 // İlan listele (filtreleme + pagination ile)
 export async function GET(request: Request) {
   try {
@@ -22,11 +44,14 @@ export async function GET(request: Request) {
       );
     }
 
-    const { sportId, districtId, cityId, level, type, upcoming, page, pageSize } = parsed.data;
+    const { sportId, districtId, cityId, level, type, upcoming, quickOnly, page, pageSize } = parsed.data;
+    const now = new Date();
 
     const where: Prisma.ListingWhereInput = {
       status: "OPEN",
-      dateTime: { gte: new Date() },
+      dateTime: { gte: now },
+      // Süresi dolmuş hızlı ilanları gizle
+      OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
     };
 
     if (sportId) where.sportId = sportId;
@@ -37,7 +62,10 @@ export async function GET(request: Request) {
     if (upcoming === "true") {
       const weekLater = new Date();
       weekLater.setDate(weekLater.getDate() + 7);
-      where.dateTime = { gte: new Date(), lte: weekLater };
+      where.dateTime = { gte: now, lte: weekLater };
+    }
+    if (quickOnly === "true") {
+      where.isQuick = true;
     }
 
     const [total, listings] = await Promise.all([
@@ -48,20 +76,59 @@ export async function GET(request: Request) {
           sport: true,
           district: { include: { city: { include: { country: true } } } },
           venue: true,
-          user: { select: { id: true, name: true } },
+          user: {
+            select: {
+              id: true,
+              name: true,
+              preferredTime: true,
+              preferredStyle: true,
+            },
+          },
           _count: { select: { responses: true } },
         },
-        orderBy: { dateTime: "asc" },
+        orderBy: [{ isQuick: "desc" }, { dateTime: "asc" }],
         skip: (page - 1) * pageSize,
         take: pageSize,
       }),
     ]);
 
+    // Uyumluluk skoru — sadece giriş yapan kullanıcılar için
+    const userId = await getCurrentUserId();
+    let viewer: { cityId: string | null; sportIds: string[]; preferredTime: string | null; preferredStyle: string | null } | null = null;
+
+    if (userId) {
+      const profile = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          cityId: true,
+          preferredTime: true,
+          preferredStyle: true,
+          sports: { select: { id: true } },
+        },
+      });
+      if (profile) {
+        viewer = {
+          cityId: profile.cityId,
+          sportIds: profile.sports.map((s) => s.id),
+          preferredTime: profile.preferredTime,
+          preferredStyle: profile.preferredStyle,
+        };
+      }
+    }
+
+    const listingsWithScore = listings.map((l) => ({
+      ...l,
+      compatibilityScore: viewer ? computeCompatibility(
+        { sportId: l.sportId, district: { cityId: l.district.cityId }, user: l.user },
+        viewer
+      ) : undefined,
+    }));
+
     const totalPages = Math.ceil(total / pageSize);
 
     return NextResponse.json({
       success: true,
-      data: listings,
+      data: listingsWithScore,
       pagination: {
         total,
         page,
@@ -104,6 +171,19 @@ export async function POST(request: Request) {
       );
     }
 
+    // Banned kullanıcı ilan oluşturamaz
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isBanned: true },
+    });
+
+    if (user?.isBanned) {
+      return NextResponse.json(
+        { success: false, error: "Hesabınız geçici olarak kısıtlandı. İlan oluşturamazsınız." },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
     const parsed = createListingSchema.safeParse(body);
 
@@ -112,6 +192,16 @@ export async function POST(request: Request) {
         { success: false, error: parsed.error.issues[0].message },
         { status: 400 }
       );
+    }
+
+    // Hızlı ilan ise expiresAt hesapla (şu andan 2 saat sonra)
+    let expiresAt: Date | null = null;
+    if (parsed.data.isQuick) {
+      if (parsed.data.expiresAt) {
+        expiresAt = new Date(parsed.data.expiresAt);
+      } else {
+        expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000);
+      }
     }
 
     const listing = await prisma.listing.create({
@@ -125,6 +215,9 @@ export async function POST(request: Request) {
         level: parsed.data.level,
         description: parsed.data.description || null,
         maxParticipants: parsed.data.maxParticipants ?? 2,
+        allowedGender: parsed.data.allowedGender ?? "ANY",
+        isQuick: parsed.data.isQuick ?? false,
+        expiresAt,
       },
       include: {
         sport: true,
@@ -133,7 +226,7 @@ export async function POST(request: Request) {
       },
     });
 
-    log.info("İlan oluşturuldu", { listingId: listing.id, userId });
+    log.info("İlan oluşturuldu", { listingId: listing.id, userId, isQuick: listing.isQuick });
 
     return NextResponse.json(
       { success: true, data: listing },
@@ -147,3 +240,4 @@ export async function POST(request: Request) {
     );
   }
 }
+

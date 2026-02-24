@@ -26,6 +26,7 @@ export const registerSchema = z.object({
       (val) => !val || /^(\+90|0)?[0-9]{10}$/.test(val.replace(/\s/g, "")),
       "Geçerli bir telefon numarası giriniz (ör: 05551234567)"
     ),
+  gender: z.enum(["MALE", "FEMALE", "OTHER", "PREFER_NOT_TO_SAY"]).optional(),
 });
 
 export const loginSchema = z.object({
@@ -54,6 +55,16 @@ export const createListingSchema = z.object({
   }),
   description: z.string().max(1000, "Açıklama en fazla 1000 karakter olabilir").optional(),
   maxParticipants: z.number().int().min(2).max(20).optional().default(2),
+  allowedGender: z.enum(["ANY", "FEMALE_ONLY", "MALE_ONLY"]).optional().default("ANY"),
+  isQuick: z.boolean().optional().default(false),
+  expiresAt: z
+    .string()
+    .optional()
+    .nullable()
+    .refine(
+      (val) => !val || !isNaN(new Date(val).getTime()),
+      "Geçerli bir bitiş zamanı giriniz"
+    ),
 });
 
 export const updateListingSchema = z.object({
@@ -90,6 +101,7 @@ export const listingFilterSchema = z.object({
   level: z.enum(["BEGINNER", "INTERMEDIATE", "ADVANCED"]).optional(),
   type: z.enum(["RIVAL", "PARTNER"]).optional(),
   upcoming: z.string().optional(),
+  quickOnly: z.string().optional(),  // "true" for hızlı ilan filter
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(50).default(12),
 });
@@ -115,6 +127,9 @@ export const updateProfileSchema = z
     cityId: z.string().optional().nullable(),
     sportIds: z.array(z.string()).max(5, "En fazla 5 spor seçebilirsiniz").optional(),
     avatarUrl: z.string().url("Geçerli bir URL giriniz").optional().nullable(),
+    gender: z.enum(["MALE", "FEMALE", "OTHER", "PREFER_NOT_TO_SAY"]).optional().nullable(),
+    preferredTime: z.enum(["morning", "evening", "anytime"]).optional().nullable(),
+    preferredStyle: z.enum(["competitive", "casual", "both"]).optional().nullable(),
     currentPassword: z.string().optional(),
     newPassword: passwordSchema.optional(),
   })

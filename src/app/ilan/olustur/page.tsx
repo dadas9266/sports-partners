@@ -28,6 +28,9 @@ export default function CreateListingPage() {
     level: "",
     description: "",
     maxParticipants: 2,
+    allowedGender: "ANY",
+    isQuick: false,
+    expiresAt: "",
   });
 
   const { venues } = useVenues(form.districtId);
@@ -56,6 +59,9 @@ export default function CreateListingPage() {
         level: form.level as string,
         description: form.description || undefined,
         maxParticipants: form.maxParticipants,
+        allowedGender: form.allowedGender,
+        isQuick: form.isQuick,
+        expiresAt: form.isQuick && form.expiresAt ? form.expiresAt : undefined,
       });
       toast.success("İlan başarıyla oluşturuldu!");
       if (data.data) router.push(`/ilan/${data.data.id}`);
@@ -302,6 +308,60 @@ export default function CreateListingPage() {
           </div>
         )}
 
+        {/* Cinsiyet Kısıtı */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Katılımcı Cinsiyeti
+          </label>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { value: "ANY", label: "🌐 Herkese Açık" },
+              { value: "FEMALE_ONLY", label: "👩 Yalnızca Kadınlar" },
+              { value: "MALE_ONLY", label: "👨 Yalnızca Erkekler" },
+            ].map((g) => (
+              <button
+                key={g.value}
+                type="button"
+                onClick={() => setForm({ ...form, allowedGender: g.value as typeof form.allowedGender })}
+                className={`p-2 rounded-lg border-2 text-sm text-center transition ${
+                  form.allowedGender === g.value
+                    ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300"
+                    : "border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-300"
+                }`}
+              >
+                {g.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Hızlı İlan Modu */}
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium text-amber-800 dark:text-amber-200">⚡ Hızlı İlan (Hadi Gel!)</p>
+              <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">
+                İlan 2 saat içinde otomatik kapanır. Acil partner arayanlar için idealdir.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setForm({ ...form, isQuick: !form.isQuick })}
+              className={`relative w-12 h-6 rounded-full transition-colors ${
+                form.isQuick ? "bg-amber-500" : "bg-gray-300 dark:bg-gray-600"
+              }`}
+              role="switch"
+              aria-checked={form.isQuick}
+            >
+              <span
+                className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+                  form.isQuick ? "translate-x-7" : "translate-x-1"
+                }`}
+              />
+            </button>
+          </div>
+        </div>
+
         <Button
           type="submit"
           size="lg"
@@ -309,7 +369,7 @@ export default function CreateListingPage() {
           disabled={!form.type || !form.level}
           className="w-full text-lg"
         >
-          İlanı Yayınla
+          {form.isQuick ? "⚡ Hızlı İlan Yayınla" : "İlanı Yayınla"}
         </Button>
       </form>
     </div>

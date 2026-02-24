@@ -19,6 +19,7 @@ export default function RegisterPage() {
     password: "",
     passwordConfirm: "",
     phone: "",
+    gender: "",
   });
 
   useEffect(() => {
@@ -54,6 +55,7 @@ export default function RegisterPage() {
         email: form.email,
         password: form.password,
         phone: form.phone || undefined,
+        gender: form.gender || undefined,
       });
       toast.success("Kayıt başarılı! Giriş yapabilirsiniz.");
       router.push("/auth/giris");
@@ -163,6 +165,23 @@ export default function RegisterPage() {
               placeholder="05551234567"
               autoComplete="tel"
             />
+          </div>
+          <div>
+            <label htmlFor="gender" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Cinsiyet <span className="text-gray-400">(opsiyonel)</span>
+            </label>
+            <select
+              id="gender"
+              value={form.gender}
+              onChange={(e) => setForm({ ...form, gender: e.target.value as typeof form.gender })}
+              className={inputClass}
+            >
+              <option value="">Belirtmek İstemiyorum</option>
+              <option value="MALE">Erkek</option>
+              <option value="FEMALE">Kadın</option>
+              <option value="OTHER">Diğer</option>
+              <option value="PREFER_NOT_TO_SAY">Belirtmek İstemiyorum</option>
+            </select>
           </div>
           <Button type="submit" loading={loading} className="w-full">
             Kayıt Ol

@@ -10,6 +10,10 @@ interface UserStats {
   totalMatches: number;
   avgRating: number;
   ratingCount: number;
+  noShowCount?: number;
+  hasBio?: boolean;
+  hasCity?: boolean;
+  hasSports?: boolean;
 }
 
 export function computeBadges(stats: UserStats): Badge[] {
@@ -70,6 +74,37 @@ export function computeBadges(stats: UserStats): Badge[] {
       icon: "🌟",
       description: "5/5 tam puan",
       color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+    });
+  }
+
+  // Güvenilirlik rozetleri (Sprint 1)
+  if (stats.hasBio && stats.hasCity && stats.hasSports && stats.totalMatches >= 1) {
+    badges.push({
+      id: "verified_profile",
+      label: "Doğrulanmış Profil",
+      icon: "✅",
+      description: "Profil bilgilerini tamamladı ve en az 1 eşleşme yaptı",
+      color: "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400",
+    });
+  }
+  if (stats.totalMatches >= 10 && stats.ratingCount >= 5 && stats.avgRating >= 4.0) {
+    badges.push({
+      id: "trusted_partner",
+      label: "Güvenilir Sporcu",
+      icon: "🛡️",
+      description: "10+ eşleşme ve 4.0+ ortalama puan",
+      color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400",
+    });
+  }
+
+  // Uyarı rozeti — negatif (Sprint 1)
+  if ((stats.noShowCount ?? 0) >= 1) {
+    badges.push({
+      id: "no_show_warning",
+      label: "Gelmedi Uyarısı",
+      icon: "⚠️",
+      description: `${stats.noShowCount} kez belirtilen etkinliklere gelmedi`,
+      color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
     });
   }
 

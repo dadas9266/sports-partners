@@ -1,0 +1,223 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import toast from "react-hot-toast";
+import { updateProfile, getSports } from "@/services/api";
+import type { Sport } from "@/types";
+import Button from "@/components/ui/Button";
+
+const STEPS = [
+  { id: "time", title: "Ne zaman spor yapmayı seversin?", emoji: "⏰" },
+  { id: "style", title: "Nasıl spor yaparsın?", emoji: "🎯" },
+  { id: "sports", title: "Hangi sporları yapıyorsun?", emoji: "🏅" },
+];
+
+export default function OnboardingPage() {
+  const router = useRouter();
+  const { data: session, status } = useSession();
+  const [step, setStep] = useState(0);
+  const [saving, setSaving] = useState(false);
+  const [sports, setSports] = useState<Sport[]>([]);
+  const [prefs, setPrefs] = useState({
+    preferredTime: "",
+    preferredStyle: "",
+    sportIds: [] as string[],
+  });
+
+  useEffect(() => {
+    if (status === "unauthenticated") router.push("/auth/giris");
+  }, [status, router]);
+
+  useEffect(() => {
+    getSports().then((res) => {
+      if (res.success && res.data) setSports(res.data);
+    });
+  }, []);
+
+  const handleFinish = async () => {
+    setSaving(true);
+    try {
+      await updateProfile({
+        preferredTime: prefs.preferredTime || undefined,
+        preferredStyle: prefs.preferredStyle || undefined,
+        sportIds: prefs.sportIds.length > 0 ? prefs.sportIds : undefined,
+      } as Parameters<typeof updateProfile>[0]);
+      // Mark onboardingDone — saved via profile PUT (the field itself needs explicit update)
+      toast.success("Profil tercihlerin kaydedildi! 🎉");
+      router.push("/");
+    } catch {
+      toast.error("Bir hata oluştu, daha sonra tekrar deneyebilirsiniz");
+      router.push("/");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const canProceed = () => {
+    if (step === 0) return !!prefs.preferredTime;
+    if (step === 1) return !!prefs.preferredStyle;
+    if (step === 2) return prefs.sportIds.length > 0;
+    return false;
+  };
+
+  if (status === "loading") return null;
+  if (!session) return null;
+
+  return (
+    <div className="min-h-[80vh] flex items-center justify-center">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 w-full max-w-lg">
+        {/* Progress dots */}
+        <div className="flex justify-center gap-2 mb-8">
+          {STEPS.map((s, i) => (
+            <div
+              key={s.id}
+              className={`w-3 h-3 rounded-full transition-all ${
+                i === step
+                  ? "bg-emerald-500 scale-125"
+                  : i < step
+                  ? "bg-emerald-300"
+                  : "bg-gray-200 dark:bg-gray-600"
+              }`}
+            />
+          ))}
+        </div>
+
+        <div className="text-center mb-8">
+          <span className="text-5xl" role="img" aria-label="emoji">
+            {STEPS[step].emoji}
+          </span>
+          <h2 className="mt-3 text-xl font-bold text-gray-800 dark:text-gray-100">
+            {STEPS[step].title}
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Adım {step + 1} / {STEPS.length}
+          </p>
+        </div>
+
+        {/* Step 0 — Tercih Zamanı */}
+        {step === 0 && (
+          <div className="grid grid-cols-1 gap-3">
+            {[
+              { value: "morning", label: "🌅 Sabah", desc: "Güne erken başlarım" },
+              { value: "evening", label: "🌆 Akşam", desc: "Günün yorgunluğunu çıkarırım" },
+              { value: "anytime", label: "🕐 Fark Etmez", desc: "Her zaman uygunum" },
+            ].map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setPrefs({ ...prefs, preferredTime: opt.value })}
+                className={`p-4 rounded-xl border-2 text-left transition ${
+                  prefs.preferredTime === opt.value
+                    ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20"
+                    : "border-gray-200 dark:border-gray-600 hover:border-emerald-300"
+                }`}
+              >
+                <span className="font-medium text-gray-800 dark:text-gray-100">{opt.label}</span>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{opt.desc}</p>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Step 1 — Tarz */}
+        {step === 1 && (
+          <div className="grid grid-cols-1 gap-3">
+            {[
+              { value: "competitive", label: "🏆 Rekabetçi", desc: "Kazanmayı severim" },
+              { value: "casual", label: "😎 Eğlenceli", desc: "Keyif için oynarım" },
+              { value: "both", label: "⚡ Her İkisi", desc: "Duruma göre değişir" },
+            ].map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setPrefs({ ...prefs, preferredStyle: opt.value })}
+                className={`p-4 rounded-xl border-2 text-left transition ${
+                  prefs.preferredStyle === opt.value
+                    ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20"
+                    : "border-gray-200 dark:border-gray-600 hover:border-emerald-300"
+                }`}
+              >
+                <span className="font-medium text-gray-800 dark:text-gray-100">{opt.label}</span>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{opt.desc}</p>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Step 2 — Sporlar */}
+        {step === 2 && (
+          <div>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-3 text-center">
+              En fazla 5 spor seçebilirsin
+            </p>
+            <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto pr-1">
+              {sports.map((sport) => {
+                const selected = prefs.sportIds.includes(sport.id);
+                return (
+                  <button
+                    key={sport.id}
+                    type="button"
+                    disabled={!selected && prefs.sportIds.length >= 5}
+                    onClick={() => {
+                      if (selected) {
+                        setPrefs({ ...prefs, sportIds: prefs.sportIds.filter((id) => id !== sport.id) });
+                      } else if (prefs.sportIds.length < 5) {
+                        setPrefs({ ...prefs, sportIds: [...prefs.sportIds, sport.id] });
+                      }
+                    }}
+                    className={`p-3 rounded-xl border-2 text-left transition ${
+                      selected
+                        ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20"
+                        : "border-gray-200 dark:border-gray-600 hover:border-emerald-300 disabled:opacity-40"
+                    }`}
+                  >
+                    <span className="text-lg mr-1">{sport.icon || "🏅"}</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{sport.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        <div className="mt-8 flex items-center justify-between">
+          {step > 0 ? (
+            <button
+              type="button"
+              onClick={() => setStep((s) => s - 1)}
+              className="text-sm text-gray-500 dark:text-gray-400 hover:underline"
+            >
+              ← Geri
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => router.push("/")}
+              className="text-sm text-gray-400 hover:underline"
+            >
+              Atla
+            </button>
+          )}
+          {step < STEPS.length - 1 ? (
+            <Button
+              onClick={() => setStep((s) => s + 1)}
+              disabled={!canProceed()}
+            >
+              İleri →
+            </Button>
+          ) : (
+            <Button
+              onClick={handleFinish}
+              loading={saving}
+              disabled={!canProceed()}
+            >
+              Tamamla 🎉
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

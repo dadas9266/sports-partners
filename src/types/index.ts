@@ -5,8 +5,10 @@
 // --- Enum Types ---
 export type ListingType = "RIVAL" | "PARTNER";
 export type Level = "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
-export type ListingStatus = "OPEN" | "CLOSED" | "MATCHED";
+export type ListingStatus = "OPEN" | "CLOSED" | "MATCHED" | "EXPIRED";
 export type ResponseStatus = "PENDING" | "ACCEPTED" | "REJECTED";
+export type Gender = "MALE" | "FEMALE" | "OTHER" | "PREFER_NOT_TO_SAY";
+export type AllowedGender = "ANY" | "FEMALE_ONLY" | "MALE_ONLY";
 
 // --- Entity Types ---
 export interface User {
@@ -15,6 +17,13 @@ export interface User {
   email: string;
   phone?: string | null;
   avatarUrl?: string | null;
+  gender?: Gender | null;
+  noShowCount?: number;
+  warnCount?: number;
+  isBanned?: boolean;
+  preferredTime?: string | null;
+  preferredStyle?: string | null;
+  onboardingDone?: boolean;
   createdAt: string;
 }
 
@@ -99,10 +108,15 @@ export interface ListingSummary {
   status: ListingStatus;
   description?: string | null;
   maxParticipants: number;
+  allowedGender: AllowedGender;
+  isQuick: boolean;
+  expiresAt?: string | null;
   _count: { responses: number };
   // Feed extras
   isFromFollowing?: boolean;
   isGroup?: boolean;
+  // Uyumluluk skoru (0-100)
+  compatibilityScore?: number;
 }
 
 export interface ListingDetail {
@@ -117,6 +131,10 @@ export interface ListingDetail {
   level: Level;
   status: ListingStatus;
   description?: string | null;
+  maxParticipants: number;
+  allowedGender: AllowedGender;
+  isQuick: boolean;
+  expiresAt?: string | null;
   responses: ListingResponse[];
   match?: Match | null;
   createdAt: string;
@@ -199,6 +217,9 @@ export interface CreateListingForm {
   level: Level | "";
   description: string;
   maxParticipants: number;
+  allowedGender: AllowedGender;
+  isQuick: boolean;
+  expiresAt: string;
 }
 
 export interface LoginForm {
@@ -212,6 +233,7 @@ export interface RegisterForm {
   password: string;
   passwordConfirm: string;
   phone: string;
+  gender: Gender | "";
 }
 
 export interface ProfileEditForm {
@@ -232,7 +254,8 @@ export type NotificationType =
   | "NEW_MATCH"
   | "NEW_RATING"
   | "NEW_FOLLOWER"
-  | "NEW_MESSAGE";
+  | "NEW_MESSAGE"
+  | "NO_SHOW_WARNING";
 
 export interface Notification {
   id: string;
@@ -353,6 +376,19 @@ export const LEVEL_COLORS: Record<Level, string> = {
   BEGINNER: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
   INTERMEDIATE: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300",
   ADVANCED: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
+};
+
+export const GENDER_LABELS: Record<Gender, string> = {
+  MALE: "Erkek",
+  FEMALE: "Kadın",
+  OTHER: "Diğer",
+  PREFER_NOT_TO_SAY: "Belirtmek İstemiyorum",
+};
+
+export const ALLOWED_GENDER_LABELS: Record<AllowedGender, string> = {
+  ANY: "Herkese Açık",
+  FEMALE_ONLY: "Yalnızca Kadınlar",
+  MALE_ONLY: "Yalnızca Erkekler",
 };
 
 export const STATUS_LABELS: Record<string, { label: string; className: string }> = {

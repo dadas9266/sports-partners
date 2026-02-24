@@ -8,33 +8,50 @@ datasource db {
 }
 
 // ========== KULLANICI ==========
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
 model User {
   id           String    @id @default(cuid())
   name         String
   email        String    @unique
-  passwordHash String?   // Google OAuth kullananlar için opsiyonel
+  passwordHash String?
   phone        String?
   avatarUrl    String?
-  bio          String?   // Kısa tanıtım yazısı
+  bio          String?
   cityId       String?
   city         City?     @relation(fields: [cityId], references: [id])
+  gender       Gender?                          // Cinsiyet (opsiyonel)
+  noShowCount  Int       @default(0)            // Gelmedi sayacı
+  warnCount    Int       @default(0)            // Uyarı sayacı
+  isBanned     Boolean   @default(false)        // Geçici kısıtlama
+  // Onboarding tercihleri
+  preferredTime  String?                        // "morning" | "evening" | "anytime"
+  preferredStyle String?                        // "competitive" | "casual" | "both"
+  onboardingDone Boolean @default(false)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  listings        Listing[]
-  responses       Response[]
-  matches1        Match[]         @relation("MatchUser1")
-  matches2        Match[]         @relation("MatchUser2")
-  sports          Sport[]         @relation("UserSports")
-  ratingsGiven    Rating[]        @relation("RatingGiver")
-  ratingsReceived Rating[]        @relation("RatingReceiver")
-  notifications   Notification[]
-  favorites       Favorite[]
-  resetTokens     PasswordResetToken[]
-  followers       Follow[]        @relation("FollowTarget")
-  following       Follow[]        @relation("FollowSource")
-  messagesSent    Message[]       @relation("MessageSender")
-  messagesReceived Message[]      @relation("MessageReceiver")
+  listings          Listing[]
+  responses         Response[]
+  matches1          Match[]         @relation("MatchUser1")
+  matches2          Match[]         @relation("MatchUser2")
+  sports            Sport[]         @relation("UserSports")
+  ratingsGiven      Rating[]        @relation("RatingGiver")
+  ratingsReceived   Rating[]        @relation("RatingReceiver")
+  notifications     Notification[]
+  favorites         Favorite[]
+  resetTokens       PasswordResetToken[]
+  followers         Follow[]        @relation("FollowTarget")
+  following         Follow[]        @relation("FollowSource")
+  messagesSent      Message[]       @relation("MessageSender")
+  messagesReceived  Message[]       @relation("MessageReceiver")
+  noShowsReported   NoShowReport[]  @relation("NoShowReporter")
+  noShowsReceived   NoShowReport[]  @relation("NoShowReceived")
 }
 
 // ========== SPOR ==========
@@ -107,37 +124,50 @@ enum ListingStatus {
   OPEN
   CLOSED
   MATCHED
+  EXPIRED
+}
+
+enum AllowedGender {
+  ANY
+  FEMALE_ONLY
+  MALE_ONLY
 }
 
 model Listing {
-  id             String        @id @default(cuid())
-  type           ListingType
-  sportId        String
-  sport          Sport         @relation(fields: [sportId], references: [id])
-  districtId     String
-  district       District      @relation(fields: [districtId], references: [id])
-  venueId        String?
-  venue          Venue?        @relation(fields: [venueId], references: [id])
-  userId         String
-  user           User          @relation(fields: [userId], references: [id])
-  dateTime       DateTime
-  level          Level
-  description    String?
-  status         ListingStatus @default(OPEN)
-  maxParticipants Int          @default(2) // 2 = 1v1, 3+ = grup etkinlik
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  id              String        @id @default(cuid())
+  type            ListingType
+  sportId         String
+  sport           Sport         @relation(fields: [sportId], references: [id])
+  districtId      String
+  district        District      @relation(fields: [districtId], references: [id])
+  venueId         String?
+  venue           Venue?        @relation(fields: [venueId], references: [id])
+  userId          String
+  user            User          @relation(fields: [userId], references: [id])
+  dateTime        DateTime
+  level           Level
+  description     String?
+  status          ListingStatus @default(OPEN)
+  maxParticipants Int           @default(2)       // 2=1v1, 3+=grup
+  allowedGender   AllowedGender @default(ANY)     // Cinsiyet kısıtı
+  isQuick         Boolean       @default(false)   // "Hadi Gel" hızlı ilan
+  expiresAt       DateTime?                       // Hızlı ilan bitiş zamanı
+  isRecurring     Boolean       @default(false)   // Tekrarlayan etkinlik
+  recurringDays   String?                         // "MON,WED,FRI" formatında
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 
-  responses Response[]
-  match     Match?
-  favorites Favorite[]
+  responses   Response[]
+  match       Match?
+  favorites   Favorite[]
+  noShows     NoShowReport[]
 
-  // Performans indexleri
   @@index([status, dateTime])
   @@index([sportId])
   @@index([districtId])
   @@index([userId])
   @@index([status, sportId, dateTime])
+  @@index([expiresAt])
 }
 
 // ========== KARŞILIK ==========
@@ -177,8 +207,9 @@ model Match {
   user2      User     @relation("MatchUser2", fields: [user2Id], references: [id])
   createdAt  DateTime @default(now())
 
-  ratings Rating[]
-  messages Message[]
+  ratings      Rating[]
+  messages     Message[]
+  noShowReports NoShowReport[]
 
   @@index([user1Id])
   @@index([user2Id])
@@ -210,6 +241,7 @@ enum NotificationType {
   NEW_RATING
   NEW_FOLLOWER
   NEW_MESSAGE
+  NO_SHOW_WARNING
 }
 
 model Notification {
@@ -266,6 +298,24 @@ model Follow {
   @@unique([followerId, followingId])
   @@index([followerId])
   @@index([followingId])
+}
+
+// ========== NO-SHOW RAPORU ==========
+model NoShowReport {
+  id         String   @id @default(cuid())
+  matchId    String
+  match      Match    @relation(fields: [matchId], references: [id])
+  reporterId String
+  reporter   User     @relation("NoShowReporter", fields: [reporterId], references: [id])
+  reportedId String
+  reported   User     @relation("NoShowReceived", fields: [reportedId], references: [id])
+  listingId  String
+  listing    Listing  @relation(fields: [listingId], references: [id])
+  createdAt  DateTime @default(now())
+
+  @@unique([matchId, reporterId])
+  @@index([reportedId])
+  @@index([matchId])
 }
 
 // ========== MESAJLAŞMA ==========

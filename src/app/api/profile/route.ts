@@ -25,6 +25,13 @@ export async function GET() {
         select: {
           id: true, name: true, email: true, phone: true, createdAt: true,
           bio: true, avatarUrl: true,
+          gender: true,
+          noShowCount: true,
+          warnCount: true,
+          isBanned: true,
+          preferredTime: true,
+          preferredStyle: true,
+          onboardingDone: true,
           city: { select: { id: true, name: true, country: { select: { name: true } } } },
           sports: { select: { id: true, name: true, icon: true } },
           ratingsReceived: { select: { score: true } },
@@ -140,6 +147,9 @@ export async function PUT(request: Request) {
     if ("bio" in parsed.data && parsed.data.bio !== undefined) updateData.bio = parsed.data.bio;
     if ("cityId" in parsed.data && parsed.data.cityId !== undefined) updateData.cityId = parsed.data.cityId || null;
     if ("avatarUrl" in parsed.data && parsed.data.avatarUrl !== undefined) updateData.avatarUrl = parsed.data.avatarUrl;
+    if ("gender" in parsed.data && parsed.data.gender !== undefined) updateData.gender = parsed.data.gender;
+    if ("preferredTime" in parsed.data && parsed.data.preferredTime !== undefined) updateData.preferredTime = parsed.data.preferredTime;
+    if ("preferredStyle" in parsed.data && parsed.data.preferredStyle !== undefined) updateData.preferredStyle = parsed.data.preferredStyle;
 
     // Favori sporlar güncelleme
     const sportIds = "sportIds" in parsed.data ? (parsed.data as { sportIds?: string[] }).sportIds : undefined;

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { tr } from "date-fns/locale";
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
@@ -30,6 +30,10 @@ export default function ListingCard({
   const dateStr = format(new Date(listing.dateTime), "d MMM yyyy, HH:mm", {
     locale: tr,
   });
+
+  const timeLeft = listing.expiresAt
+    ? formatDistanceToNow(new Date(listing.expiresAt), { locale: tr, addSuffix: false })
+    : null;
 
   const handleFavorite = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -81,6 +85,38 @@ export default function ListingCard({
       >
         {favorited ? "❤️" : "🤍"}
       </button>
+
+      {/* Üst etiketler */}
+      <div className="flex flex-wrap gap-1 mb-2">
+        {listing.isQuick && (
+          <span className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-full font-semibold">
+            ⚡ Hızlı {timeLeft ? `· ${timeLeft} kaldı` : "İlan"}
+          </span>
+        )}
+        {listing.allowedGender === "FEMALE_ONLY" && (
+          <span className="text-xs bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300 px-2 py-0.5 rounded-full font-semibold">
+            👩 Yalnızca Kadınlar
+          </span>
+        )}
+        {listing.allowedGender === "MALE_ONLY" && (
+          <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full font-semibold">
+            👨 Yalnızca Erkekler
+          </span>
+        )}
+        {typeof listing.compatibilityScore === "number" && listing.compatibilityScore > 0 && (
+          <span
+            className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
+              listing.compatibilityScore >= 70
+                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                : listing.compatibilityScore >= 40
+                ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300"
+                : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400"
+            }`}
+          >
+            🎯 %{listing.compatibilityScore} uyumlu
+          </span>
+        )}
+      </div>
 
       <div className="flex items-start justify-between mb-3 pr-8">
         <div className="flex items-center gap-2">
@@ -159,3 +195,4 @@ export default function ListingCard({
     </article>
   );
 }
+

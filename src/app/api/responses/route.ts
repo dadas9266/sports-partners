@@ -59,11 +59,47 @@ export async function POST(request: Request) {
       );
     }
 
+    // Hızlı ilan süresi dolmuş mu?
+    if (listing.expiresAt && listing.expiresAt < new Date()) {
+      return NextResponse.json(
+        { success: false, error: "Bu hızlı ilan süresi dolmuş" },
+        { status: 400 }
+      );
+    }
+
     if (listing.userId === userId) {
       return NextResponse.json(
         { success: false, error: "Kendi ilanınıza karşılık veremezsiniz" },
         { status: 400 }
       );
+    }
+
+    // İlan banned kullanıcı engeli + cinsiyet kısıtı kontrolü
+    const applicant = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isBanned: true, gender: true },
+    });
+
+    if (applicant?.isBanned) {
+      return NextResponse.json(
+        { success: false, error: "Hesabınız geçici olarak kısıtlandı" },
+        { status: 403 }
+      );
+    }
+
+    if (listing.allowedGender !== "ANY") {
+      if (listing.allowedGender === "FEMALE_ONLY" && applicant?.gender !== "FEMALE") {
+        return NextResponse.json(
+          { success: false, error: "Bu ilan yalnızca kadınlara açıktır" },
+          { status: 403 }
+        );
+      }
+      if (listing.allowedGender === "MALE_ONLY" && applicant?.gender !== "MALE") {
+        return NextResponse.json(
+          { success: false, error: "Bu ilan yalnızca erkeklere açıktır" },
+          { status: 403 }
+        );
+      }
     }
 
     // Aynı kullanıcının aynı ilana ikinci karşılığı engelle

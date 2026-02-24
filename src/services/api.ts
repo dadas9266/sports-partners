@@ -66,6 +66,9 @@ export async function createListing(data: {
   level: string;
   description?: string;
   maxParticipants?: number;
+  allowedGender?: string;
+  isQuick?: boolean;
+  expiresAt?: string;
 }): Promise<ApiResponse<ListingDetail>> {
   return fetchAPI("/api/listings", {
     method: "POST",
@@ -155,6 +158,7 @@ export async function registerUser(data: {
   email: string;
   password: string;
   phone?: string;
+  gender?: string;
 }): Promise<ApiResponse<{ id: string; name: string; email: string }>> {
   return fetchAPI("/api/auth/register", {
     method: "POST",
@@ -257,7 +261,14 @@ export async function sendMessage(
   });
 }
 
-// ========== ÖNERİLER ==========
+// ========== RECOMMENDATIONS ==========
 export async function getRecommendations(limit = 6): Promise<ApiResponse<ListingSummary[]> & { reason: string }> {
   return fetchAPI(`/api/recommendations?limit=${limit}`);
+}
+
+// ========== NO-SHOW ==========
+export async function reportNoShow(matchId: string): Promise<ApiResponse<{ noShowCount: number }>> {
+  return fetchAPI(`/api/matches/${matchId}/no-show`, {
+    method: "POST",
+  });
 }

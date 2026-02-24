@@ -8,8 +8,8 @@ import { format } from "date-fns";
 import { tr } from "date-fns/locale";
 import toast from "react-hot-toast";
 import type { ListingDetail, ListingResponse } from "@/types";
-import { LEVEL_LABELS_WITH_ICON, STATUS_LABELS } from "@/types";
-import { getListingDetail, sendResponse, handleResponse as handleResponseApi, closeListing, deleteListing } from "@/services/api";
+import { LEVEL_LABELS_WITH_ICON, STATUS_LABELS, ALLOWED_GENDER_LABELS } from "@/types";
+import { getListingDetail, sendResponse, handleResponse as handleResponseApi, closeListing, deleteListing, reportNoShow } from "@/services/api";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import Modal from "@/components/ui/Modal";
@@ -32,6 +32,7 @@ export default function ListingDetailPage({
   const [deleting, setDeleting] = useState(false);
   const [closing, setClosing] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [noShowSending, setNoShowSending] = useState(false);
 
   const currentUserId = session?.user?.id;
 
@@ -110,6 +111,19 @@ export default function ListingDetailPage({
     }
   };
 
+  const handleNoShow = async (matchId: string) => {
+    if (!confirm("Bu kişi etkinliğe gelmedi mi? Bu bildirim geri alınamaz.")) return;
+    setNoShowSending(true);
+    try {
+      await reportNoShow(matchId);
+      toast.success("Gelmedi bildirimi gönderildi");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Bildirim gönderilemedi");
+    } finally {
+      setNoShowSending(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center py-16" aria-label="Yükleniyor">
@@ -131,6 +145,10 @@ export default function ListingDetailPage({
   const hasResponded = listing.responses?.some((r: ListingResponse) => r.userId === currentUserId);
   const isMatched = listing.status === "MATCHED";
   const isClosed = listing.status === "CLOSED";
+  const acceptedCount = listing.responses?.filter((r: ListingResponse) => r.status === "ACCEPTED").length ?? 0;
+  const capacityFill = listing.maxParticipants > 2 ? Math.min((acceptedCount / (listing.maxParticipants - 1)) * 100, 100) : 0;
+  const isMatchParticipant = listing.match && (currentUserId === listing.match.user1Id || currentUserId === listing.match.user2Id);
+  const matchInPast = listing.match && new Date(listing.dateTime) < new Date();
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -204,8 +222,36 @@ export default function ListingDetailPage({
               <span role="img" aria-label="mesaj">💬</span>
               <span>{listing.responses?.length || 0} karşılık</span>
             </div>
+            {listing.allowedGender && listing.allowedGender !== "ANY" && (
+              <div className="flex items-center gap-2">
+                <span role="img" aria-label="cinsiyet kısıtı">🚦</span>
+                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                  listing.allowedGender === "FEMALE_ONLY"
+                    ? "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300"
+                    : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                }`}>
+                  {ALLOWED_GENDER_LABELS[listing.allowedGender]}
+                </span>
+              </div>
+            )}
           </div>
         </div>
+
+        {/* Kadro progress bar — sadece grup ilanlarında */}
+        {listing.maxParticipants > 2 && (
+          <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+            <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-2">
+              <span>👥 Kadro Doluluk</span>
+              <span className="font-semibold">{acceptedCount + 1} / {listing.maxParticipants} kişi</span>
+            </div>
+            <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2.5">
+              <div
+                className="bg-emerald-500 rounded-full h-2.5 transition-all"
+                style={{ width: `${capacityFill}%` }}
+              />
+            </div>
+          </div>
+        )}
 
         {listing.description && (
           <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
@@ -251,6 +297,19 @@ export default function ListingDetailPage({
               )}
             </div>
           </div>
+          {/* No-show butonu — maç geçmişteyse katılımcılara göster */}
+          {isMatchParticipant && matchInPast && listing.match && (
+            <div className="mt-4 border-t border-green-200 dark:border-green-700 pt-4">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Etkinlik gerçekleşti mi?</p>
+              <button
+                onClick={() => handleNoShow(listing.match!.id)}
+                disabled={noShowSending}
+                className="text-sm text-red-600 dark:text-red-400 hover:underline disabled:opacity-50"
+              >
+                {noShowSending ? "Gönderiliyor..." : "⚠️ Karşım gelmedi (bildir)"}
+              </button>
+            </div>
+          )}
         </div>
       )}
 
