@@ -7,7 +7,7 @@ export type ListingType = "RIVAL" | "PARTNER";
 export type Level = "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
 export type ListingStatus = "OPEN" | "CLOSED" | "MATCHED" | "EXPIRED";
 export type ResponseStatus = "PENDING" | "ACCEPTED" | "REJECTED";
-export type Gender = "MALE" | "FEMALE" | "OTHER" | "PREFER_NOT_TO_SAY";
+export type Gender = "MALE" | "FEMALE" | "PREFER_NOT_TO_SAY";
 export type AllowedGender = "ANY" | "FEMALE_ONLY" | "MALE_ONLY";
 
 // --- Entity Types ---
@@ -30,6 +30,9 @@ export interface User {
 export interface UserPublic {
   id: string;
   name: string;
+  avatarUrl?: string | null;
+  gender?: Gender | null;
+  birthDate?: string | null;
 }
 
 export interface UserContact {
@@ -236,6 +239,9 @@ export interface RegisterForm {
   passwordConfirm: string;
   phone: string;
   gender: Gender | "";
+  cityId: string;
+  districtId: string;
+  birthDate: string;
 }
 
 export interface ProfileEditForm {
@@ -243,6 +249,9 @@ export interface ProfileEditForm {
   phone: string;
   bio: string;
   cityId: string;
+  districtId: string;
+  gender: string;
+  birthDate: string;
   sportIds: string[];
   currentPassword: string;
   newPassword: string;
@@ -345,6 +354,8 @@ export interface PublicProfile {
   totalMatches: number;
   activeListings: ListingSummary[];
   isOwnProfile: boolean;
+  birthDate?: string | null;
+  gender?: Gender | null;
 }
 
 // --- Search Types ---
@@ -383,7 +394,6 @@ export const LEVEL_COLORS: Record<Level, string> = {
 export const GENDER_LABELS: Record<Gender, string> = {
   MALE: "Erkek",
   FEMALE: "Kadın",
-  OTHER: "Diğer",
   PREFER_NOT_TO_SAY: "Belirtmek İstemiyorum",
 };
 

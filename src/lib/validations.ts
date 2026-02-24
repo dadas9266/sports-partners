@@ -26,7 +26,10 @@ export const registerSchema = z.object({
       (val) => !val || /^(\+90|0)?[0-9]{10}$/.test(val.replace(/\s/g, "")),
       "Geçerli bir telefon numarası giriniz (ör: 05551234567)"
     ),
-  gender: z.enum(["MALE", "FEMALE", "OTHER", "PREFER_NOT_TO_SAY"]).optional(),
+  gender: z.enum(["MALE", "FEMALE", "PREFER_NOT_TO_SAY"], { message: "Lütfen cinsiyet seçiniz" }),
+  birthDate: z.string().min(1, "Doğum tarihi gereklidir"),
+  cityId: z.string().min(1, "Lütfen şehir seçiniz"),
+  districtId: z.string().min(1, "Lütfen ilçe seçiniz"),
 });
 
 export const loginSchema = z.object({
@@ -127,9 +130,11 @@ export const updateProfileSchema = z
       ),
     bio: z.string().max(300, "Bio en fazla 300 karakter olabilir").optional().nullable(),
     cityId: z.string().optional().nullable(),
+    districtId: z.string().optional().nullable(),
     sportIds: z.array(z.string()).max(5, "En fazla 5 spor seçebilirsiniz").optional(),
     avatarUrl: z.string().url("Geçerli bir URL giriniz").optional().nullable(),
-    gender: z.enum(["MALE", "FEMALE", "OTHER", "PREFER_NOT_TO_SAY"]).optional().nullable(),
+    gender: z.enum(["MALE", "FEMALE", "PREFER_NOT_TO_SAY"]).optional().nullable(),
+    birthDate: z.string().optional().nullable(),
     preferredTime: z.enum(["morning", "evening", "anytime"]).optional().nullable(),
     preferredStyle: z.enum(["competitive", "casual", "both"]).optional().nullable(),
     onboardingDone: z.boolean().optional(),

@@ -15,7 +15,7 @@ export async function GET(
 
     const currentUserId = await getCurrentUserId();
 
-    const user = await prisma.user.findUnique({
+    const user = (await prisma.user.findUnique({
       where: { id },
       select: {
         id: true,
@@ -23,6 +23,10 @@ export async function GET(
         avatarUrl: true,
         bio: true,
         createdAt: true,
+        // @ts-ignore
+        birthDate: true,
+        // @ts-ignore
+        gender: true,
         city: { select: { name: true, country: { select: { name: true } } } },
         sports: { select: { id: true, name: true, icon: true } },
         _count: {
@@ -37,8 +41,8 @@ export async function GET(
           select: { score: true },
         },
         listings: {
-          where: { status: "OPEN", dateTime: { gte: new Date() } },
-          orderBy: { dateTime: "asc" },
+          where: { status: "OPEN" as any, dateTime: { gte: new Date() } },
+          orderBy: { dateTime: "asc" as any },
           take: 6,
           select: {
             id: true,
@@ -52,19 +56,26 @@ export async function GET(
             _count: { select: { responses: true } },
           },
         },
-      },
-    });
+      } as any,
+    })) as any;
 
     if (!user) return notFound("Kullanıcı bulunamadı");
 
     // Ortalama puan hesapla
+    const ratings = user.ratingsReceived || [];
     const avgRating =
-      user.ratingsReceived.length > 0
-        ? user.ratingsReceived.reduce((s, r) => s + r.score, 0) /
-          user.ratingsReceived.length
+      ratings.length > 0
+        ? ratings.reduce((s: number, r: { score: number }) => s + r.score, 0) /
+          ratings.length
         : null;
 
-    const totalMatches = user._count.matches1 + user._count.matches2;
+    const count = user._count || {
+      listings: 0,
+      matches1: 0,
+      matches2: 0,
+      ratingsReceived: 0,
+    };
+    const totalMatches = (count.matches1 || 0) + (count.matches2 || 0);
 
     // Kendi profilinde ekstra bilgiler
     const isOwnProfile = currentUserId === id;
@@ -79,13 +90,15 @@ export async function GET(
         avatarUrl: user.avatarUrl,
         bio: user.bio,
         createdAt: user.createdAt,
+        birthDate: user.birthDate,
+        gender: user.gender,
         city: user.city,
         sports: user.sports,
         avgRating: avgRating ? Math.round(avgRating * 10) / 10 : null,
-        ratingCount: user._count.ratingsReceived,
-        totalListings: user._count.listings,
+        ratingCount: count.ratingsReceived || 0,
+        totalListings: count.listings || 0,
         totalMatches,
-        activeListings: user.listings,
+        activeListings: user.listings || [],
         isOwnProfile,
       },
     });

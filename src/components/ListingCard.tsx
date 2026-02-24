@@ -2,14 +2,20 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { format, formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow, differenceInYears } from "date-fns";
 import { tr } from "date-fns/locale";
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
 import type { ListingSummary } from "@/types";
-import { LEVEL_LABELS, LEVEL_COLORS } from "@/types";
+import { LEVEL_LABELS, LEVEL_COLORS, GENDER_LABELS } from "@/types";
 import { toggleFavorite } from "@/services/api";
 import Badge from "@/components/ui/Badge";
+
+const GENDER_ICONS: Record<string, string> = {
+  MALE: "♂️",
+  FEMALE: "♀️",
+  PREFER_NOT_TO_SAY: "👤",
+};
 
 type ListingCardProps = {
   listing: ListingSummary;
@@ -160,14 +166,43 @@ export default function ListingCard({
           <span role="img" aria-label="tarih">📅</span>
           <time dateTime={listing.dateTime}>{dateStr}</time>
         </div>
-        <div className="flex items-center gap-1">
-          <span role="img" aria-label="kullanıcı">👤</span>
-          <button
-            onClick={handleUserClick}
-            className="hover:text-emerald-600 dark:hover:text-emerald-400 hover:underline transition font-medium"
-          >
-            {listing.user.name}
-          </button>
+        <div className="flex items-center justify-between pt-1">
+          <div className="flex items-center gap-2">
+            <div 
+              onClick={handleUserClick}
+              className="w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden border border-gray-200 dark:border-gray-600 flex-shrink-0 cursor-pointer"
+            >
+              {listing.user.avatarUrl ? (
+                <img 
+                  src={listing.user.avatarUrl} 
+                  alt={listing.user.name} 
+                  className="w-full h-full object-cover" 
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+              ) : (
+                <span className="text-[10px] font-bold text-gray-500">{listing.user.name.charAt(0).toUpperCase()}</span>
+              )}
+            </div>
+            <button
+              onClick={handleUserClick}
+              className="hover:text-emerald-600 dark:hover:text-emerald-400 hover:underline transition font-medium truncate max-w-[120px]"
+            >
+              {listing.user.name}
+            </button>
+            <div className="flex items-center gap-1.5 text-xs">
+              {listing.user.gender && (
+                <span title={GENDER_LABELS[listing.user.gender]} className="opacity-70">
+                  {GENDER_ICONS[listing.user.gender]}
+                </span>
+              )}
+              {(() => {
+                const age = listing.user.birthDate ? differenceInYears(new Date(), new Date(listing.user.birthDate)) : null;
+                return age ? <span className="text-gray-400 dark:text-gray-500 font-bold">{age}</span> : null;
+              })()}
+            </div>
+          </div>
         </div>
       </div>
 

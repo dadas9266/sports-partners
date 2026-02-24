@@ -216,7 +216,9 @@ export default function ListingDetailPage({
             </div>
             <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
               <span role="img" aria-label="kullanıcı">👤</span>
-              <span>{listing.user?.name}</span>
+              <Link href={`/profil/${listing.userId}`} className="hover:text-emerald-600 dark:hover:text-emerald-400 transition font-medium">
+                {listing.user?.name}
+              </Link>
             </div>
             <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
               <span role="img" aria-label="mesaj">💬</span>
@@ -269,7 +271,9 @@ export default function ListingDetailPage({
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 bg-white dark:bg-gray-800 rounded-lg p-4">
               <p className="text-sm text-gray-500 dark:text-gray-400">İlan Sahibi</p>
-              <p className="font-semibold text-gray-800 dark:text-gray-100">{listing.match.user1?.name}</p>
+              <Link href={`/profil/${listing.match.user1Id}`} className="font-semibold text-gray-800 dark:text-gray-100 hover:text-emerald-600 transition">
+                {listing.match.user1?.name}
+              </Link>
               {(isOwner || currentUserId === listing.match.user2Id) && (
                 <>
                   {listing.match.user1?.phone && (
@@ -284,7 +288,9 @@ export default function ListingDetailPage({
             <div className="flex items-center justify-center text-2xl" aria-hidden="true">🤝</div>
             <div className="flex-1 bg-white dark:bg-gray-800 rounded-lg p-4">
               <p className="text-sm text-gray-500 dark:text-gray-400">Eşleşen Kişi</p>
-              <p className="font-semibold text-gray-800 dark:text-gray-100">{listing.match.user2?.name}</p>
+              <Link href={`/profil/${listing.match.user2Id}`} className="font-semibold text-gray-800 dark:text-gray-100 hover:text-emerald-600 transition">
+                {listing.match.user2?.name}
+              </Link>
               {(isOwner || currentUserId === listing.match.user2Id) && (
                 <>
                   {listing.match.user2?.phone && (
@@ -361,9 +367,9 @@ export default function ListingDetailPage({
               <div key={resp.id} className="border border-gray-100 dark:border-gray-700 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-2">
                   <div>
-                    <span className="font-medium text-gray-800 dark:text-gray-100">
+                    <Link href={`/profil/${resp.userId}`} className="font-medium text-gray-800 dark:text-gray-100 hover:text-emerald-600 transition">
                       {resp.user?.name}
-                    </span>
+                    </Link>
                     <span className="ml-2 text-xs text-gray-400">
                       {format(new Date(resp.createdAt), "d MMM HH:mm", { locale: tr })}
                     </span>

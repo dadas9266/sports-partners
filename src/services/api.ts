@@ -146,6 +146,7 @@ export async function updateProfile(data: {
   sportIds?: string[];
   avatarUrl?: string | null;
   gender?: string | null;
+  birthDate?: string | null;
   preferredTime?: string | null;
   preferredStyle?: string | null;
   onboardingDone?: boolean;
@@ -165,6 +166,9 @@ export async function registerUser(data: {
   password: string;
   phone?: string;
   gender?: string;
+  cityId: string;
+  districtId: string;
+  birthDate: string;
 }): Promise<ApiResponse<{ id: string; name: string; email: string }>> {
   return fetchAPI("/api/auth/register", {
     method: "POST",

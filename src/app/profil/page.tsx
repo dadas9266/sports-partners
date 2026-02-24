@@ -3,14 +3,19 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { format, isAfter, startOfToday } from "date-fns";
+import { format, isAfter, startOfToday, differenceInYears } from "date-fns";
 import { tr } from "date-fns/locale";
 import toast from "react-hot-toast";
 import { useProfile } from "@/hooks/useProfile";
 import { useLocations, useSports } from "@/hooks/useLocations";
 import { deleteListing, updateProfile } from "@/services/api";
 import type { ListingWithResponses, ResponseWithListing, Match, ProfileEditForm } from "@/types";
-import { STATUS_LABELS } from "@/types";
+import { STATUS_LABELS, GENDER_LABELS } from "@/types";
+
+const GENDER_ICONS: Record<string, string> = {
+  MALE: "♂️",
+  FEMALE: "♀️",
+};
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import Modal from "@/components/ui/Modal";
@@ -19,7 +24,14 @@ export default function ProfilePage() {
   const { data, loading, error, status, session, refresh, setData } = useProfile();
   const { locations } = useLocations();
   const { sports } = useSports();
-  const allCities = locations.flatMap((c) => c.cities ?? []);
+  const allCities = locations.flatMap((c) => c.cities ?? []).sort((a, b) => {
+    // Türkiye şehirlerini en üste al (code="TR")
+    const isATurkey = locations.find(l => l.cities?.some(city => city.id === a.id))?.code === "TR";
+    const isBTurkey = locations.find(l => l.cities?.some(city => city.id === b.id))?.code === "TR";
+    if (isATurkey && !isBTurkey) return -1;
+    if (!isATurkey && isBTurkey) return 1;
+    return a.name.localeCompare(b.name);
+  });
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"listings" | "responses" | "matches" | "calendar" | "templates">("listings");
   const [deleteModal, setDeleteModal] = useState<string | null>(null);
@@ -29,7 +41,7 @@ export default function ProfilePage() {
   const [editMode, setEditMode] = useState(false);
   const [editForm, setEditForm] = useState<ProfileEditForm>({
     name: "", phone: "", currentPassword: "", newPassword: "",
-    bio: "", cityId: "", sportIds: [],
+    bio: "", cityId: "", districtId: "", gender: "", birthDate: "", sportIds: [],
   });
   const [saving, setSaving] = useState(false);
 
@@ -90,7 +102,13 @@ export default function ProfilePage() {
   };
 
   const handleEditProfile = () => {
-    const profileUser = data.user as typeof data.user & { bio?: string | null; cityId?: string | null };
+    const profileUser = data.user as typeof data.user & { 
+      bio?: string | null; 
+      cityId?: string | null; 
+      districtId?: string | null;
+      gender?: string | null; 
+      birthDate?: string | null;
+    };
     const sports = (data as typeof data & { sports?: Array<{ id: string }> }).sports ?? [];
     setEditForm({
       name: data.user.name,
@@ -99,6 +117,9 @@ export default function ProfilePage() {
       newPassword: "",
       bio: profileUser.bio ?? "",
       cityId: profileUser.cityId ?? "",
+      districtId: profileUser.districtId ?? "",
+      gender: profileUser.gender ?? "",
+      birthDate: profileUser.birthDate ? format(new Date(profileUser.birthDate), "yyyy-MM-dd") : "",
       sportIds: sports.map((s) => s.id),
     });
     setEditMode(true);
@@ -138,13 +159,26 @@ export default function ProfilePage() {
 
     setSaving(true);
     try {
-      const profileUser = data.user as typeof data.user & { bio?: string | null; cityId?: string | null };
+      const profileUser = data.user as typeof data.user & { 
+        bio?: string | null; 
+        cityId?: string | null;
+        districtId?: string | null;
+        gender?: string | null;
+        birthDate?: string | null;
+      };
       const currentSports = (data as typeof data & { sports?: Array<{ id: string }> }).sports ?? [];
       const payload: Record<string, unknown> = {};
+      
       if (editForm.name !== data.user.name) payload.name = editForm.name;
       if (editForm.phone !== (data.user.phone || "")) payload.phone = editForm.phone || null;
       if (editForm.bio !== (profileUser.bio ?? "")) payload.bio = editForm.bio || null;
       if (editForm.cityId !== (profileUser.cityId ?? "")) payload.cityId = editForm.cityId || null;
+      if (editForm.districtId !== (profileUser.districtId ?? "")) payload.districtId = editForm.districtId || null;
+      if (editForm.gender !== (profileUser.gender ?? "")) payload.gender = editForm.gender || null;
+      
+      const currentBirthDateStr = profileUser.birthDate ? format(new Date(profileUser.birthDate), "yyyy-MM-dd") : "";
+      if (editForm.birthDate !== currentBirthDateStr) payload.birthDate = editForm.birthDate || null;
+
       const sortFn = (a: string, b: string) => a.localeCompare(b);
       const currentSportIds = currentSports.map((s) => s.id);
       if (JSON.stringify([...(editForm.sportIds ?? [])].sort(sortFn)) !== JSON.stringify([...currentSportIds].sort(sortFn))) {
@@ -187,16 +221,59 @@ export default function ProfilePage() {
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 mb-6">
         {!editMode ? (
           <>
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center text-2xl">
-                {data.user?.name?.charAt(0)?.toUpperCase() || "?"}
+            <div className="flex items-center gap-6">
+              <div className="w-20 h-20 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center text-3xl overflow-hidden border-2 border-emerald-500/20">
+                {data.user?.avatarUrl ? (
+                  <img src={data.user.avatarUrl} alt={data.user.name} className="w-full h-full object-cover" />
+                ) : (
+                  data.user?.name?.charAt(0)?.toUpperCase() || "?"
+                )}
               </div>
               <div className="flex-1">
-                <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{data.user?.name}</h1>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{data.user?.name}</h1>
+                  <div className="flex items-center gap-1.5 text-sm">
+                    {(() => {
+                      const u = data.user as any;
+                      return (
+                        <>
+                          {u.gender && (
+                            <span title={GENDER_LABELS[u.gender as keyof typeof GENDER_LABELS]}>
+                              {GENDER_ICONS[u.gender] || "👤"}
+                            </span>
+                          )}
+                          {u.birthDate && (
+                            <span className="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded text-xs font-bold text-gray-600 dark:text-gray-400">
+                              {differenceInYears(new Date(), new Date(u.birthDate))} Yaş
+                            </span>
+                          )}
+                        </>
+                      )
+                    })()}
+                  </div>
+                </div>
                 <p className="text-gray-500 dark:text-gray-400">{data.user?.email}</p>
-                {data.user?.phone && (
-                  <p className="text-gray-500 dark:text-gray-400 text-sm">📞 {data.user.phone}</p>
-                )}
+                <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
+                  {data.user?.phone && (
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">📞 {data.user.phone}</p>
+                  )}
+                  {(data.user as any).city && (
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">
+                      📍 {(data.user as any).city.name}, {(data.user as any).district?.name || ""}
+                    </p>
+                  )}
+                </div>
+                {/* Sosyal İstatistikler */}
+                <div className="flex gap-4 mt-2">
+                  <div className="text-sm">
+                    <span className="font-bold text-gray-800 dark:text-gray-100">{(data.user as any)._count?.followers || 0}</span>
+                    <span className="text-gray-500 dark:text-gray-400 ml-1">Takipçi</span>
+                  </div>
+                  <div className="text-sm">
+                    <span className="font-bold text-gray-800 dark:text-gray-100">{(data.user as any)._count?.following || 0}</span>
+                    <span className="text-gray-500 dark:text-gray-400 ml-1">Takip Edilen</span>
+                  </div>
+                </div>
               </div>
               <Button variant="secondary" size="sm" onClick={handleEditProfile}>
                 Düzenle
@@ -228,17 +305,73 @@ export default function ProfilePage() {
               <p className="text-xs text-gray-400 mt-1">{editForm.bio?.length ?? 0}/300</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Şehir</label>
-              <select
-                value={editForm.cityId}
-                onChange={(e) => setEditForm({ ...editForm, cityId: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-emerald-500 outline-none"
-              >
-                <option value="">Şehir seçin...</option>
-                {allCities.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Konum</label>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <select
+                  value={locations.find(l => l.cities?.some(c => c.id === editForm.cityId))?.id || ""}
+                  onChange={(e) => {
+                    const country = locations.find(l => l.id === e.target.value);
+                    if (country?.cities?.[0]) {
+                      setEditForm({ ...editForm, cityId: country.cities[0].id, districtId: "" });
+                    }
+                  }}
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-emerald-500 outline-none"
+                >
+                  <option value="">Ülke Seçin...</option>
+                  {locations.sort((a,b) => a.code === "TR" ? -1 : b.code === "TR" ? 1 : a.name.localeCompare(b.name)).map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+                <select
+                  value={editForm.cityId}
+                  onChange={(e) => setEditForm({ ...editForm, cityId: e.target.value, districtId: "" })}
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-emerald-500 outline-none"
+                >
+                  <option value="">Şehir Seçin...</option>
+                  {locations.flatMap(l => l.cities || []).filter(c => {
+                    const country = locations.find(loc => loc.cities?.some(city => city.id === c.id));
+                    const selectedCountry = locations.find(loc => loc.cities?.some(city => city.id === editForm.cityId));
+                    return !selectedCountry || (country?.id === selectedCountry.id);
+                  }).sort((a,b) => a.name.localeCompare(b.name)).map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+                <select
+                  value={editForm.districtId}
+                  onChange={(e) => setEditForm({ ...editForm, districtId: e.target.value })}
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-emerald-500 outline-none"
+                  disabled={!editForm.cityId}
+                >
+                  <option value="">İlçe Seçin...</option>
+                  {locations.flatMap(l => l.cities || []).find(c => c.id === editForm.cityId)?.districts?.sort((a,b) => a.name.localeCompare(b.name)).map((d) => (
+                    <option key={d.id} value={d.id}>{d.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cinsiyet</label>
+                <select
+                  value={editForm.gender}
+                  onChange={(e) => setEditForm({ ...editForm, gender: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-emerald-500 outline-none"
+                >
+                  <option value="">Belirtilmemiş</option>
+                  <option value="MALE">Erkek</option>
+                  <option value="FEMALE">Kadın</option>
+                  <option value="PREFER_NOT_TO_SAY">Belirtmek İstemiyorum</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Doğum Tarihi</label>
+                <input
+                  type="date"
+                  value={editForm.birthDate}
+                  onChange={(e) => setEditForm({ ...editForm, birthDate: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-emerald-500 outline-none"
+                />
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sporlarım (max 5)</label>
@@ -402,7 +535,9 @@ export default function ProfilePage() {
                     {listing.responses.map((resp) => (
                       <div key={resp.id} className="flex items-center justify-between py-2 border-b border-gray-50 dark:border-gray-700 last:border-0">
                         <div>
-                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{resp.user?.name}</span>
+                          <Link href={`/profil/${resp.userId}`} className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-emerald-600 transition">
+                            {resp.user?.name}
+                          </Link>
                           {resp.message && (
                             <span className="text-sm text-gray-400 ml-2">- {resp.message.slice(0, 50)}</span>
                           )}
@@ -429,7 +564,7 @@ export default function ProfilePage() {
                 {listing.match && (
                   <div className="mt-3 bg-green-50 dark:bg-green-900/20 rounded-lg p-3">
                     <p className="text-sm text-green-700 dark:text-green-300">
-                      ✅ Eşleşme: {listing.match.user2?.name}
+                      ✅ Eşleşme: <Link href={`/profil/${listing.match.user2.id}`} className="font-semibold hover:underline">{listing.match.user2?.name}</Link>
                       {listing.match.user2?.phone && (
                         <span> · 📞 {listing.match.user2.phone}</span>
                       )}
@@ -460,7 +595,9 @@ export default function ProfilePage() {
                     <span className="font-semibold text-gray-800 dark:text-gray-100">
                       {resp.listing?.sport?.icon} {resp.listing?.sport?.name}
                     </span>
-                    <span className="text-sm text-gray-400 ml-2">({resp.listing?.user?.name})</span>
+                    <span className="text-sm text-gray-400 ml-2">
+                      (<Link href={`/profil/${resp.listing?.user.id}`} className="hover:underline">{resp.listing?.user?.name}</Link>)
+                    </span>
                   </Link>
                   <Badge variant={
                     resp.status === "PENDING" ? "yellow" :
@@ -501,7 +638,7 @@ export default function ProfilePage() {
                         {match.listing?.sport?.icon} {match.listing?.sport?.name}
                       </Link>
                       <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        Partner: {partner?.name}
+                        Partner: <Link href={`/profil/${partner?.id}`} className="font-semibold hover:text-emerald-600 transition">{partner?.name}</Link>
                       </p>
                     </div>
                     <div className="text-right text-sm text-gray-500 dark:text-gray-400">
@@ -569,7 +706,9 @@ export default function ProfilePage() {
                           <Link href={`/ilan/${match.listingId}`} className="font-semibold text-gray-800 dark:text-gray-100 hover:text-emerald-600 transition">
                             {match.listing?.sport?.icon} {match.listing?.sport?.name}
                           </Link>
-                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">👤 {partner?.name}</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                            👤 <Link href={`/profil/${partner?.id}`} className="hover:text-emerald-600 transition">{partner?.name}</Link>
+                          </p>
                           {match.listing?.venue && (
                             <p className="text-sm text-gray-400 dark:text-gray-500">🏟️ {match.listing.venue.name}</p>
                           )}

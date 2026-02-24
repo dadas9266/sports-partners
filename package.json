@@ -12,6 +12,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "seed": "npx tsx prisma/seed.ts",
+    "bot-factory": "npx tsx prisma/bot-factory.ts",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate deploy",
     "db:studio": "prisma studio"

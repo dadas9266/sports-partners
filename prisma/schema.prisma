@@ -3,15 +3,15 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // ========== KULLANICI ==========
 enum Gender {
   MALE
   FEMALE
-  OTHER
   PREFER_NOT_TO_SAY
 }
 
@@ -25,7 +25,10 @@ model User {
   bio          String?
   cityId       String?
   city         City?     @relation(fields: [cityId], references: [id])
-  gender       Gender?                          // Cinsiyet (opsiyonel)
+  districtId   String?
+  district     District? @relation(fields: [districtId], references: [id])
+  gender       Gender?                          // Cinsiyet
+  birthDate    DateTime?                        // Doğum Tarihi
   noShowCount  Int       @default(0)            // Gelmedi sayacı
   warnCount    Int       @default(0)            // Uyarı sayacı
   isBanned     Boolean   @default(false)        // Geçici kısıtlama
@@ -90,6 +93,7 @@ model District {
   city     City      @relation(fields: [cityId], references: [id])
   venues   Venue[]
   listings Listing[]
+  users    User[]
 
   @@unique([name, cityId])
 }

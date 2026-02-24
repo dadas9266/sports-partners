@@ -31,7 +31,8 @@ export async function GET(req: NextRequest) {
             select: { name: true, city: { select: { name: true } } },
           },
           venue: { select: { name: true } },
-          user: { select: { id: true, name: true, avatarUrl: true } },
+          // @ts-ignore
+          user: { select: { id: true, name: true, avatarUrl: true, gender: true, birthDate: true } },
           _count: { select: { responses: true } },
         },
       });
@@ -78,10 +79,11 @@ export async function GET(req: NextRequest) {
         status: "OPEN",
         dateTime: { gte: new Date() },
         userId: { not: userId },
-        OR: [
-          ...(sportIds.length > 0 ? [{ sportId: { in: sportIds } }] : []),
-          ...(me.cityId ? [{ district: { cityId: me.cityId } }] : []),
-        ],
+        // KESİN ŞEHİR FİLTRESİ: Farklı şehirdeki ilanları önerme
+        ...(me.cityId ? { district: { cityId: me.cityId } } : {}),
+        
+        // Tercih edilen sporlar varsa onlara öncelik ver (OR hala kullanılabilir ama city dışında)
+        OR: sportIds.length > 0 ? [{ sportId: { in: sportIds } }] : undefined,
         ...(levels.length > 0 ? { level: { in: levels as ("BEGINNER" | "INTERMEDIATE" | "ADVANCED")[] } } : {}),
       },
       orderBy: [{ dateTime: "asc" }],
@@ -99,7 +101,8 @@ export async function GET(req: NextRequest) {
           select: { name: true, city: { select: { name: true } } },
         },
         venue: { select: { name: true } },
-        user: { select: { id: true, name: true, avatarUrl: true } },
+        // @ts-ignore
+        user: { select: { id: true, name: true, avatarUrl: true, gender: true, birthDate: true } },
         _count: { select: { responses: true } },
       },
     });
@@ -108,7 +111,7 @@ export async function GET(req: NextRequest) {
     const sportSet = new Set(sportIds);
     const levelSet = new Set(levels);
 
-    const scored = suggestions.map((l) => {
+    const scored = suggestions.map((l: any) => {
       let score = 0;
       if (sportSet.has(l.sport.id)) score += 2;
       if (levelSet.has(l.level)) score += 1;

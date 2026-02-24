@@ -22,19 +22,28 @@ export async function GET() {
     const [user, myListings, myResponses, myMatches, myFavorites, unreadNotifications] = await Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
+        // @ts-ignore
         select: {
           id: true, name: true, email: true, phone: true, createdAt: true,
           bio: true, avatarUrl: true,
           gender: true,
+          birthDate: true,
           noShowCount: true,
           warnCount: true,
           isBanned: true,
           preferredTime: true,
           preferredStyle: true,
           onboardingDone: true,
-          city: { select: { id: true, name: true, country: { select: { name: true } } } },
+          city: { select: { id: true, name: true, country: { select: { id: true, name: true } } } },
+          district: { select: { id: true, name: true } },
           sports: { select: { id: true, name: true, icon: true } },
           ratingsReceived: { select: { score: true } },
+          _count: {
+            select: {
+              followers: true,
+              following: true,
+            }
+          }
         },
       }),
       prisma.listing.findMany({
@@ -95,7 +104,14 @@ export async function GET() {
       prisma.notification.count({ where: { userId, read: false } }),
     ]);
 
-    const avgRating = user && user.ratingsReceived.length > 0
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Kullanıcı bulunamadı" },
+        { status: 404 }
+      );
+    }
+
+    const avgRating = user.ratingsReceived.length > 0
       ? Math.round((user.ratingsReceived.reduce((s, r) => s + r.score, 0) / user.ratingsReceived.length) * 10) / 10
       : null;
 
@@ -146,8 +162,12 @@ export async function PUT(request: Request) {
     if (parsed.data.phone !== undefined) updateData.phone = parsed.data.phone;
     if ("bio" in parsed.data && parsed.data.bio !== undefined) updateData.bio = parsed.data.bio;
     if ("cityId" in parsed.data && parsed.data.cityId !== undefined) updateData.cityId = parsed.data.cityId || null;
+    if ("districtId" in parsed.data && parsed.data.districtId !== undefined) updateData.districtId = parsed.data.districtId || null;
     if ("avatarUrl" in parsed.data && parsed.data.avatarUrl !== undefined) updateData.avatarUrl = parsed.data.avatarUrl;
     if ("gender" in parsed.data && parsed.data.gender !== undefined) updateData.gender = parsed.data.gender;
+    if ("birthDate" in parsed.data && parsed.data.birthDate !== undefined) {
+      updateData.birthDate = parsed.data.birthDate ? new Date(parsed.data.birthDate) : null;
+    }
     if ("preferredTime" in parsed.data && parsed.data.preferredTime !== undefined) updateData.preferredTime = parsed.data.preferredTime;
     if ("preferredStyle" in parsed.data && parsed.data.preferredStyle !== undefined) updateData.preferredStyle = parsed.data.preferredStyle;
     if ("onboardingDone" in parsed.data && parsed.data.onboardingDone !== undefined) updateData.onboardingDone = parsed.data.onboardingDone;

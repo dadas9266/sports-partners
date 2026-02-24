@@ -7,37 +7,85 @@ async function main() {
   console.log("🌱 Seed işlemi başlatılıyor...");
 
   // Sporlar
-  const sporlar = await Promise.all([
-    prisma.sport.create({ data: { name: "Futbol", icon: "⚽" } }),
-    prisma.sport.create({ data: { name: "Basketbol", icon: "🏀" } }),
-    prisma.sport.create({ data: { name: "Tenis", icon: "🎾" } }),
-    prisma.sport.create({ data: { name: "Voleybol", icon: "🏐" } }),
-    prisma.sport.create({ data: { name: "Badminton", icon: "🏸" } }),
-    prisma.sport.create({ data: { name: "Masa Tenisi", icon: "🏓" } }),
-    prisma.sport.create({ data: { name: "Yüzme", icon: "🏊" } }),
-    prisma.sport.create({ data: { name: "Koşu", icon: "🏃" } }),
-  ]);
-  console.log(`✅ ${sporlar.length} spor dalı oluşturuldu`);
+  const sporlarListesi = [
+    { name: "Futbol", icon: "⚽" },
+    { name: "Basketbol", icon: "🏀" },
+    { name: "Tenis", icon: "🎾" },
+    { name: "Voleybol", icon: "🏐" },
+    { name: "Masa Tenisi", icon: "🏓" },
+    { name: "Yüzme", icon: "🏊" },
+    { name: "Koşu", icon: "🏃" },
+    { name: "Yürüyüş", icon: "🚶" },
+    { name: "Bisiklet", icon: "🚲" },
+    { name: "Kaykay / Paten", icon: "🛹" },
+    { name: "Squash", icon: "🎾" },
+    { name: "Pickleball", icon: "🎾" },
+    { name: "Padel", icon: "🎾" },
+    { name: "Balık Tutma", icon: "🎣" },
+    { name: "Hiking (Doğa Yürüyüşü)", icon: "🥾" },
+    { name: "Bilardo", icon: "🎱" },
+    { name: "Dart", icon: "🎯" },
+    { name: "Yoga / Pilates", icon: "🧘" },
+    { name: "Fitness", icon: "💪" },
+  ];
+
+  const sporlar = [];
+  for (const s of sporlarListesi) {
+    const created = await prisma.sport.upsert({
+      where: { name: s.name },
+      update: { icon: s.icon },
+      create: s,
+    });
+    sporlar.push(created);
+  }
+  console.log(`✅ ${sporlar.length} spor/aktivite dalı hazır`);
 
   // Ülke
-  const turkiye = await prisma.country.create({
-    data: { name: "Türkiye", code: "TR" },
+  const turkiye = await prisma.country.upsert({
+    where: { code: "TR" },
+    update: {},
+    create: { name: "Türkiye", code: "TR" },
   });
 
   // Şehirler
-  const istanbul = await prisma.city.create({
-    data: { name: "İstanbul", countryId: turkiye.id },
+  const manisa = await prisma.city.upsert({
+    where: { name_countryId: { name: "Manisa", countryId: turkiye.id } },
+    update: {},
+    create: { name: "Manisa", countryId: turkiye.id },
   });
-  const ankara = await prisma.city.create({
-    data: { name: "Ankara", countryId: turkiye.id },
+  const istanbul = await prisma.city.upsert({
+    where: { name_countryId: { name: "İstanbul", countryId: turkiye.id } },
+    update: {},
+    create: { name: "İstanbul", countryId: turkiye.id },
   });
-  const izmir = await prisma.city.create({
-    data: { name: "İzmir", countryId: turkiye.id },
+  const ankara = await prisma.city.upsert({
+    where: { name_countryId: { name: "Ankara", countryId: turkiye.id } },
+    update: {},
+    create: { name: "Ankara", countryId: turkiye.id },
+  });
+  const izmir = await prisma.city.upsert({
+    where: { name_countryId: { name: "İzmir", countryId: turkiye.id } },
+    update: {},
+    create: { name: "İzmir", countryId: turkiye.id },
+  });
+
+  // İlçeler - Manisa
+  await prisma.district.upsert({
+    where: { name_cityId: { name: "Yunusemre", cityId: manisa.id } },
+    update: {},
+    create: { name: "Yunusemre", cityId: manisa.id },
+  });
+  await prisma.district.upsert({
+    where: { name_cityId: { name: "Şehzadeler", cityId: manisa.id } },
+    update: {},
+    create: { name: "Şehzadeler", cityId: manisa.id },
   });
 
   // İlçeler - İstanbul
-  const kadikoy = await prisma.district.create({
-    data: { name: "Kadıköy", cityId: istanbul.id },
+  const kadikoy = await prisma.district.upsert({
+    where: { name_cityId: { name: "Kadıköy", cityId: istanbul.id } },
+    update: {},
+    create: { name: "Kadıköy", cityId: istanbul.id },
   });
   const besiktas = await prisma.district.create({
     data: { name: "Beşiktaş", cityId: istanbul.id },

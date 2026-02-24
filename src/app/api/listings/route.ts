@@ -34,6 +34,7 @@ function computeCompatibility(
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
+    const userId = await getCurrentUserId();
     const rawParams = Object.fromEntries(searchParams.entries());
     const parsed = listingFilterSchema.safeParse(rawParams);
 
@@ -44,7 +45,20 @@ export async function GET(request: Request) {
       );
     }
 
-    const { sportId, districtId, cityId, level, type, upcoming, quickOnly, page, pageSize } = parsed.data;
+    let { sportId, districtId, cityId, level, type, upcoming, quickOnly, page, pageSize } = parsed.data;
+
+    // OTOMATİK ŞEHİR FİLTRELEMESİ (Sadece "Sana Uygun" veya genel aramalar için)
+    // Eğer kullanıcı giriş yapmışsa ve manuell bir şehir/ilçe seçmemişse, kendi şehrini baz al.
+    if (userId && !cityId && !districtId) {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { cityId: true }
+      });
+      if (user?.cityId) {
+        cityId = user.cityId;
+      }
+    }
+
     const now = new Date();
 
     const where: Prisma.ListingWhereInput = {
@@ -76,10 +90,14 @@ export async function GET(request: Request) {
           sport: true,
           district: { include: { city: { include: { country: true } } } },
           venue: true,
+          // @ts-ignore
           user: {
             select: {
               id: true,
               name: true,
+              avatarUrl: true,
+              gender: true,
+              birthDate: true,
               preferredTime: true,
               preferredStyle: true,
             },
@@ -93,7 +111,6 @@ export async function GET(request: Request) {
     ]);
 
     // Uyumluluk skoru — sadece giriş yapan kullanıcılar için
-    const userId = await getCurrentUserId();
     let viewer: { cityId: string | null; sportIds: string[]; preferredTime: string | null; preferredStyle: string | null } | null = null;
 
     if (userId) {
@@ -116,7 +133,7 @@ export async function GET(request: Request) {
       }
     }
 
-    const listingsWithScore = listings.map((l) => ({
+    const listingsWithScore = listings.map((l: any) => ({
       ...l,
       compatibilityScore: viewer ? computeCompatibility(
         { sportId: l.sportId, district: { cityId: l.district.cityId }, user: l.user },

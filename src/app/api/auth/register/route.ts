@@ -30,7 +30,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { name, email, password, phone, gender } = parsed.data;
+    const { name, email, password, phone, gender, birthDate, cityId, districtId } = parsed.data;
 
     // E-posta kontrolü
     const existing = await prisma.user.findUnique({ where: { email } });
@@ -43,7 +43,16 @@ export async function POST(request: Request) {
 
     const passwordHash = await bcrypt.hash(password, 12);
     const user = await prisma.user.create({
-      data: { name, email, passwordHash, phone, gender: gender ?? null },
+      data: {
+        name,
+        email,
+        passwordHash,
+        phone,
+        cityId,
+        districtId,
+        gender: gender as any,
+        birthDate: birthDate ? new Date(birthDate) : null,
+      } as any,
     });
 
     log.info("Yeni kullanıcı kaydedildi", { userId: user.id, email });
