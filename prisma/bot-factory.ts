@@ -141,9 +141,15 @@ async function main() {
 
       // Bu ilana başka botlar karşılık versin
       const responderCount = Math.floor(Math.random() * 3); // 0-2 karşılık
-      for (let j = 0; j < responderCount; j++) {
-        const responder = cityBots.filter(b => b.id !== owner.id)[Math.floor(Math.random() * (cityBots.length - 1))];
-        if (responder) {
+      const usedResponderIds = new Set<string>([owner.id]);
+      const availableResponders = cityBots.filter(b => b.id !== owner.id);
+      
+      for (let j = 0; j < responderCount && j < availableResponders.length; j++) {
+        const unusedResponders = availableResponders.filter(b => !usedResponderIds.has(b.id));
+        if (unusedResponders.length === 0) break;
+        const responder = unusedResponders[Math.floor(Math.random() * unusedResponders.length)];
+        usedResponderIds.add(responder.id);
+        try {
           await prisma.response.create({
             data: {
               listingId: listing.id,
@@ -152,6 +158,8 @@ async function main() {
               status: "PENDING"
             }
           });
+        } catch {
+          // Duplicate response, skip
         }
       }
     }
