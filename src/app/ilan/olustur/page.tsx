@@ -27,6 +27,7 @@ export default function CreateListingPage() {
     dateTime: "",
     level: "",
     description: "",
+    maxParticipants: 2,
   });
 
   const { venues } = useVenues(form.districtId);
@@ -54,6 +55,7 @@ export default function CreateListingPage() {
         dateTime: form.dateTime,
         level: form.level as string,
         description: form.description || undefined,
+        maxParticipants: form.maxParticipants,
       });
       toast.success("İlan başarıyla oluşturuldu!");
       if (data.data) router.push(`/ilan/${data.data.id}`);
@@ -269,6 +271,36 @@ export default function CreateListingPage() {
             placeholder="İlanınız hakkında detay ekleyin (max 1000 karakter)..."
           />
         </div>
+
+        {/* Katılımcı Sayısı (sadece Partner için) */}
+        {form.type === "PARTNER" && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Maksimum Katılımcı Sayısı
+              {form.maxParticipants > 2 && (
+                <span className="ml-2 text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded-full">
+                  👥 Grup İlanı
+                </span>
+              )}
+            </label>
+            <div className="flex items-center gap-4">
+              <input
+                type="range"
+                min={2}
+                max={20}
+                value={form.maxParticipants}
+                onChange={(e) => setForm({ ...form, maxParticipants: Number(e.target.value) })}
+                className="flex-1 accent-emerald-500"
+              />
+              <span className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 font-semibold px-3 py-1 rounded-lg text-sm min-w-[60px] text-center">
+                {form.maxParticipants} kişi
+              </span>
+            </div>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+              {form.maxParticipants === 2 ? "Standart 1v1 partner" : `${form.maxParticipants} kişilik grup aktivitesi`}
+            </p>
+          </div>
+        )}
 
         <Button
           type="submit"

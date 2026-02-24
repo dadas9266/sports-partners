@@ -2,13 +2,71 @@
 
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { getNotifications, markNotificationsRead } from "@/services/api";
+import type { Notification } from "@/types";
 
 export default function Navbar() {
   const { data: session } = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadMessages, setUnreadMessages] = useState(0);
   const navRef = useRef<HTMLElement>(null);
+  const notifRef = useRef<HTMLDivElement>(null);
+  const sseRef = useRef<EventSource | null>(null);
+
+  const fetchNotifications = useCallback(async () => {
+    if (!session) return;
+    try {
+      const data = await getNotifications();
+      setNotifications(data.data ?? []);
+      setUnreadCount(data.unreadCount ?? 0);
+    } catch {
+      // sessiz hata
+    }
+  }, [session]);
+
+  // SSE — gerçek zamanlı bildirimler + mesaj sayısı
+  useEffect(() => {
+    if (!session) return;
+    const sse = new EventSource("/api/notifications/stream");
+    sseRef.current = sse;
+
+    sse.addEventListener("notifications", (e) => {
+      try {
+        const payload = JSON.parse(e.data) as { count: number };
+        if (payload.count > 0) {
+          setUnreadCount((prev) => prev + payload.count);
+          fetchNotifications();
+        }
+      } catch { /* ignore */ }
+    });
+
+    sse.addEventListener("heartbeat", (e) => {
+      try {
+        const payload = JSON.parse(e.data) as { unreadMessages: number };
+        setUnreadMessages(payload.unreadMessages ?? 0);
+      } catch { /* ignore */ }
+    });
+
+    sse.onerror = () => {
+      sse.close();
+    };
+
+    return () => {
+      sse.close();
+      sseRef.current = null;
+    };
+  }, [session, fetchNotifications]);
+
+  useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 60_000);
+    return () => clearInterval(interval);
+  }, [fetchNotifications]);
 
   useEffect(() => {
     const stored = localStorage.getItem("theme");
@@ -20,15 +78,25 @@ export default function Navbar() {
 
   // Close mobile menu on outside click
   useEffect(() => {
-    if (!menuOpen) return;
+    if (!menuOpen && !notifOpen) return;
     const handleClick = (e: MouseEvent) => {
       if (navRef.current && !navRef.current.contains(e.target as Node)) {
         setMenuOpen(false);
+        setNotifOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
-  }, [menuOpen]);
+  }, [menuOpen, notifOpen]);
+
+  const handleOpenNotif = async () => {
+    setNotifOpen((v) => !v);
+    if (!notifOpen && unreadCount > 0) {
+      await markNotificationsRead();
+      setUnreadCount(0);
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    }
+  };
 
   const toggleDarkMode = () => {
     const next = !darkMode;
@@ -60,6 +128,12 @@ export default function Navbar() {
             <Link href="/" className={linkClass}>
               İlanlar
             </Link>
+            <Link href="/harita" className={linkClass}>
+              🗺️ Harita
+            </Link>
+            <Link href="/liderlik" className={linkClass}>
+              🏅 Liderlik
+            </Link>
             {session ? (
               <>
                 <Link
@@ -71,6 +145,56 @@ export default function Navbar() {
                 <Link href="/profil" className={linkClass}>
                   Profilim
                 </Link>
+                {/* Mesajlar */}
+                <Link href="/mesajlar" className={`relative ${linkClass}`} aria-label="Mesajlar">
+                  💬
+                  {unreadMessages > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                      {unreadMessages > 9 ? "9+" : unreadMessages}
+                    </span>
+                  )}
+                </Link>
+                {/* Bildirim Bell */}
+                <div className="relative" ref={notifRef}>
+                  <button
+                    onClick={handleOpenNotif}
+                    className={`relative ${linkClass}`}
+                    aria-label="Bildirimler"
+                  >
+                    🔔
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                        {unreadCount > 9 ? "9+" : unreadCount}
+                      </span>
+                    )}
+                  </button>
+                  {/* Dropdown */}
+                  {notifOpen && (
+                    <div className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 z-50 overflow-hidden">
+                      <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                        <span className="font-semibold text-gray-800 dark:text-gray-100">Bildirimler</span>
+                        <button onClick={() => setNotifOpen(false)} className="text-gray-400 hover:text-gray-600 text-lg">×</button>
+                      </div>
+                      <div className="max-h-72 overflow-y-auto">
+                        {notifications.length === 0 ? (
+                          <p className="text-center text-gray-400 dark:text-gray-500 py-6 text-sm">Bildirim yok</p>
+                        ) : (
+                          notifications.slice(0, 10).map((n) => (
+                            <a
+                              key={n.id}
+                              href={n.link ?? "#"}
+                              className={`block px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition border-b border-gray-50 dark:border-gray-700 last:border-0 ${!n.read ? "bg-emerald-50 dark:bg-emerald-900/10" : ""}`}
+                              onClick={() => setNotifOpen(false)}
+                            >
+                              <p className="text-sm font-medium text-gray-800 dark:text-gray-100">{n.title}</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{n.body}</p>
+                            </a>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
                 <button
                   onClick={() => signOut()}
                   className={linkClass}
@@ -144,6 +268,12 @@ export default function Navbar() {
             <Link href="/" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">
               İlanlar
             </Link>
+            <Link href="/harita" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">
+              🗺️ Harita
+            </Link>
+            <Link href="/liderlik" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">
+              🏅 Liderlik Tablosu
+            </Link>
             {session ? (
               <>
                 <Link
@@ -157,6 +287,27 @@ export default function Navbar() {
                 <Link href="/profil" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">
                   Profilim
                 </Link>
+                <Link href="/mesajlar" className="flex items-center gap-2 hover:bg-emerald-700 dark:hover:bg-emerald-800 px-3 py-2 rounded transition" onClick={() => setMenuOpen(false)} role="menuitem">
+                  <span>💬 Mesajlar</span>
+                  {unreadMessages > 0 && (
+                    <span className="bg-blue-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                      {unreadMessages > 9 ? "9+" : unreadMessages}
+                    </span>
+                  )}
+                </Link>
+                <button
+                  onClick={() => { setMenuOpen(false); handleOpenNotif(); }}
+                  className="flex items-center gap-2 w-full text-left hover:bg-emerald-700 dark:hover:bg-emerald-800 px-3 py-2 rounded transition"
+                  role="menuitem"
+                  aria-label="Bildirimler"
+                >
+                  <span>🔔 Bildirimler</span>
+                  {unreadCount > 0 && (
+                    <span className="bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
+                </button>
                 <button
                   onClick={() => { setMenuOpen(false); signOut(); }}
                   className="block w-full text-left hover:bg-emerald-700 px-3 py-2 rounded transition"

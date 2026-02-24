@@ -153,6 +153,9 @@ export default function ListingDetailPage({
           <div className="flex items-center gap-2">
             {isOwner && listing.status === "OPEN" && (
               <>
+                <Link href={`/ilan/${id}/duzenle`}>
+                  <Button variant="secondary" size="sm">Düzenle</Button>
+                </Link>
                 <Button variant="secondary" size="sm" onClick={() => setCloseModal(true)}>
                   Kapat
                 </Button>

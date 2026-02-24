@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserId, isValidId, notFound } from "@/lib/api-utils";
 import { createLogger } from "@/lib/logger";
+import { createNotification, NOTIF } from "@/lib/notifications";
 
 const log = createLogger("responses:action");
 
@@ -64,6 +65,11 @@ export async function PATCH(
         where: { id },
         data: { status: "REJECTED" },
       });
+      // Karşılık verenin bildirimı
+      await createNotification({
+        userId: response.userId,
+        ...NOTIF.rejected(response.listingId),
+      });
       log.info("Karşılık reddedildi", { responseId: id, userId });
       return NextResponse.json({ success: true, data: updated });
     }
@@ -114,6 +120,18 @@ export async function PATCH(
     });
 
     log.info("Karşılık kabul edildi, eşleşme oluşturuldu", { responseId: id, matchId: result.match.id });
+
+    // Her iki kullanıcıya bildirim gönder
+    await Promise.all([
+      createNotification({
+        userId: response.userId,
+        ...NOTIF.accepted(response.listingId),
+      }),
+      createNotification({
+        userId: response.listing.userId,
+        ...NOTIF.newMatch(response.listingId),
+      }),
+    ]);
 
     return NextResponse.json({ success: true, data: result });
   } catch (error) {

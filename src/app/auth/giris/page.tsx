@@ -86,7 +86,12 @@ export default function LoginPage() {
             Giriş Yap
           </Button>
         </form>
-        <p className="text-center text-gray-600 dark:text-gray-400 mt-4 text-sm">
+        <div className="mt-3 text-center">
+          <Link href="/auth/sifre-sifirla" className="text-sm text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:underline">
+            Şifremi unuttum
+          </Link>
+        </div>
+        <p className="text-center text-gray-600 dark:text-gray-400 mt-3 text-sm">
           Hesabınız yok mu?{" "}
           <Link href="/auth/kayit" className="text-emerald-600 dark:text-emerald-400 font-semibold hover:underline">
             Kayıt Ol

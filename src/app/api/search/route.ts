@@ -1,0 +1,80 @@
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("search");
+
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const q = searchParams.get("q")?.trim();
+
+    if (!q || q.length < 2) {
+      return NextResponse.json({ success: false, error: "En az 2 karakter girin" }, { status: 400 });
+    }
+
+    const term = q.toLowerCase();
+
+    const [listings, users, sports] = await Promise.all([
+      // İlanlar: spor adı, ilçe/şehir adı, mekan adı, açıklama
+      prisma.listing.findMany({
+        where: {
+          status: "OPEN",
+          dateTime: { gte: new Date() },
+          OR: [
+            { sport: { name: { contains: term, mode: "insensitive" } } },
+            { district: { name: { contains: term, mode: "insensitive" } } },
+            { district: { city: { name: { contains: term, mode: "insensitive" } } } },
+            { venue: { name: { contains: term, mode: "insensitive" } } },
+            { description: { contains: term, mode: "insensitive" } },
+          ],
+        },
+        include: {
+          sport: true,
+          district: { include: { city: { include: { country: true } } } },
+          venue: true,
+          user: { select: { id: true, name: true } },
+          _count: { select: { responses: true } },
+        },
+        orderBy: { dateTime: "asc" },
+        take: 10,
+      }),
+
+      // Kullanıcılar: isim, bio
+      prisma.user.findMany({
+        where: {
+          OR: [
+            { name: { contains: term, mode: "insensitive" } },
+            { bio: { contains: term, mode: "insensitive" } },
+          ],
+        },
+        select: {
+          id: true,
+          name: true,
+          avatarUrl: true,
+          bio: true,
+          city: { select: { name: true } },
+          sports: { select: { name: true, icon: true } },
+        },
+        take: 5,
+      }),
+
+      // Sporlar
+      prisma.sport.findMany({
+        where: { name: { contains: term, mode: "insensitive" } },
+        select: { id: true, name: true, icon: true },
+        take: 5,
+      }),
+    ]);
+
+    log.info("Arama yapıldı", { q, results: listings.length + users.length });
+
+    return NextResponse.json({
+      success: true,
+      data: { listings, users, sports },
+    });
+  } catch (error) {
+    log.error("Arama hatası", error);
+    return NextResponse.json({ success: false, error: "Arama yapılamadı" }, { status: 500 });
+  }
+}

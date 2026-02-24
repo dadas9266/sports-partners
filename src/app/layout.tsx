@@ -19,6 +19,12 @@ export const metadata: Metadata = {
   description:
     "Spor yapmak için partner veya rakip bul! Futbol, basketbol, tenis ve daha fazlası.",
   keywords: ["spor", "partner", "rakip", "futbol", "basketbol", "tenis", "spor partneri bul"],
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "SporPartner",
+  },
   openGraph: {
     title: "SporPartner - Spor Partneri & Rakip Bul",
     description: "Spor yapmak için partner veya rakip bul!",
@@ -35,6 +41,8 @@ export default function RootLayout({
   return (
     <html lang="tr" suppressHydrationWarning>
       <head>
+        <meta name="theme-color" content="#059669" />
+        <link rel="apple-touch-icon" href="/icons/icon.svg" />
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var d=document.documentElement;var t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches)){d.classList.add('dark')}else{d.classList.remove('dark')}}catch(e){}})()`

@@ -53,6 +53,7 @@ export const createListingSchema = z.object({
     message: "Seviye seçiniz",
   }),
   description: z.string().max(1000, "Açıklama en fazla 1000 karakter olabilir").optional(),
+  maxParticipants: z.number().int().min(2).max(20).optional().default(2),
 });
 
 export const updateListingSchema = z.object({
@@ -110,6 +111,10 @@ export const updateProfileSchema = z
         (val) => !val || /^(\+90|0)?[0-9]{10}$/.test(val.replace(/\s/g, "")),
         "Geçerli bir telefon numarası giriniz"
       ),
+    bio: z.string().max(300, "Bio en fazla 300 karakter olabilir").optional().nullable(),
+    cityId: z.string().optional().nullable(),
+    sportIds: z.array(z.string()).max(5, "En fazla 5 spor seçebilirsiniz").optional(),
+    avatarUrl: z.string().url("Geçerli bir URL giriniz").optional().nullable(),
     currentPassword: z.string().optional(),
     newPassword: passwordSchema.optional(),
   })

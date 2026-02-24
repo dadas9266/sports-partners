@@ -9,19 +9,32 @@ datasource db {
 
 // ========== KULLANICI ==========
 model User {
-  id           String     @id @default(cuid())
+  id           String    @id @default(cuid())
   name         String
-  email        String     @unique
-  passwordHash String
+  email        String    @unique
+  passwordHash String?   // Google OAuth kullananlar için opsiyonel
   phone        String?
   avatarUrl    String?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  bio          String?   // Kısa tanıtım yazısı
+  cityId       String?
+  city         City?     @relation(fields: [cityId], references: [id])
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  listings  Listing[]
-  responses Response[]
-  matches1  Match[]    @relation("MatchUser1")
-  matches2  Match[]    @relation("MatchUser2")
+  listings        Listing[]
+  responses       Response[]
+  matches1        Match[]         @relation("MatchUser1")
+  matches2        Match[]         @relation("MatchUser2")
+  sports          Sport[]         @relation("UserSports")
+  ratingsGiven    Rating[]        @relation("RatingGiver")
+  ratingsReceived Rating[]        @relation("RatingReceiver")
+  notifications   Notification[]
+  favorites       Favorite[]
+  resetTokens     PasswordResetToken[]
+  followers       Follow[]        @relation("FollowTarget")
+  following       Follow[]        @relation("FollowSource")
+  messagesSent    Message[]       @relation("MessageSender")
+  messagesReceived Message[]      @relation("MessageReceiver")
 }
 
 // ========== SPOR ==========
@@ -31,6 +44,7 @@ model Sport {
   icon     String?
   listings Listing[]
   venues   Venue[]
+  users    User[]    @relation("UserSports")
 }
 
 // ========== KONUM ==========
@@ -47,6 +61,7 @@ model City {
   countryId String
   country   Country    @relation(fields: [countryId], references: [id])
   districts District[]
+  users     User[]
 
   @@unique([name, countryId])
 }
@@ -95,25 +110,27 @@ enum ListingStatus {
 }
 
 model Listing {
-  id          String        @id @default(cuid())
-  type        ListingType
-  sportId     String
-  sport       Sport         @relation(fields: [sportId], references: [id])
-  districtId  String
-  district    District      @relation(fields: [districtId], references: [id])
-  venueId     String?
-  venue       Venue?        @relation(fields: [venueId], references: [id])
-  userId      String
-  user        User          @relation(fields: [userId], references: [id])
-  dateTime    DateTime
-  level       Level
-  description String?
-  status      ListingStatus @default(OPEN)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id             String        @id @default(cuid())
+  type           ListingType
+  sportId        String
+  sport          Sport         @relation(fields: [sportId], references: [id])
+  districtId     String
+  district       District      @relation(fields: [districtId], references: [id])
+  venueId        String?
+  venue          Venue?        @relation(fields: [venueId], references: [id])
+  userId         String
+  user           User          @relation(fields: [userId], references: [id])
+  dateTime       DateTime
+  level          Level
+  description    String?
+  status         ListingStatus @default(OPEN)
+  maxParticipants Int          @default(2) // 2 = 1v1, 3+ = grup etkinlik
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
   responses Response[]
   match     Match?
+  favorites Favorite[]
 
   // Performans indexleri
   @@index([status, dateTime])
@@ -160,6 +177,111 @@ model Match {
   user2      User     @relation("MatchUser2", fields: [user2Id], references: [id])
   createdAt  DateTime @default(now())
 
+  ratings Rating[]
+  messages Message[]
+
   @@index([user1Id])
   @@index([user2Id])
+}
+
+// ========== DEĞERLENDİRME ==========
+model Rating {
+  id          String   @id @default(cuid())
+  matchId     String
+  match       Match    @relation(fields: [matchId], references: [id])
+  ratedById   String
+  ratedBy     User     @relation("RatingGiver", fields: [ratedById], references: [id])
+  ratedUserId String
+  ratedUser   User     @relation("RatingReceiver", fields: [ratedUserId], references: [id])
+  score       Int      // 1-5
+  comment     String?
+  createdAt   DateTime @default(now())
+
+  @@unique([matchId, ratedById])
+  @@index([ratedUserId])
+}
+
+// ========== BİLDİRİM ==========
+enum NotificationType {
+  NEW_RESPONSE
+  RESPONSE_ACCEPTED
+  RESPONSE_REJECTED
+  NEW_MATCH
+  NEW_RATING
+  NEW_FOLLOWER
+  NEW_MESSAGE
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id])
+  type      NotificationType
+  title     String
+  body      String
+  link      String?
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@index([userId, read])
+  @@index([userId, createdAt])
+}
+
+// ========== FAVORİLER ==========
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([userId, listingId])
+  @@index([userId])
+}
+
+// ========== ŞİFRE SIFIRLAMA ==========
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  email     String
+  user      User     @relation(fields: [email], references: [email])
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([token])
+  @@index([email])
+}
+
+// ========== TAKİP ==========
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String   // takip eden
+  follower    User     @relation("FollowSource", fields: [followerId], references: [id])
+  followingId String   // takip edilen
+  following   User     @relation("FollowTarget", fields: [followingId], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+}
+
+// ========== MESAJLAŞMA ==========
+model Message {
+  id         String   @id @default(cuid())
+  senderId   String
+  sender     User     @relation("MessageSender", fields: [senderId], references: [id])
+  receiverId String
+  receiver   User     @relation("MessageReceiver", fields: [receiverId], references: [id])
+  matchId    String   // Sadece eşleşmiş kullanıcılar mesajlaşabilir
+  match      Match    @relation(fields: [matchId], references: [id])
+  content    String
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@index([matchId])
+  @@index([senderId])
+  @@index([receiverId, read])
 }

@@ -98,7 +98,11 @@ export interface ListingSummary {
   level: Level;
   status: ListingStatus;
   description?: string | null;
+  maxParticipants: number;
   _count: { responses: number };
+  // Feed extras
+  isFromFollowing?: boolean;
+  isGroup?: boolean;
 }
 
 export interface ListingDetail {
@@ -140,10 +144,19 @@ export interface PaginatedResponse<T> {
 
 // --- Profile Types ---
 export interface ProfileData {
-  user: User;
+  user: User & {
+    bio?: string | null;
+    avatarUrl?: string | null;
+    city?: { id: string; name: string; country?: { name: string } } | null;
+    sports: Sport[];
+    avgRating?: number | null;
+    ratingCount?: number;
+  };
   myListings: ListingWithResponses[];
   myResponses: ResponseWithListing[];
   myMatches: Match[];
+  myFavorites: ListingSummary[];
+  unreadNotifications: number;
 }
 
 export interface ListingWithResponses {
@@ -185,6 +198,7 @@ export interface CreateListingForm {
   dateTime: string;
   level: Level | "";
   description: string;
+  maxParticipants: number;
 }
 
 export interface LoginForm {
@@ -203,8 +217,123 @@ export interface RegisterForm {
 export interface ProfileEditForm {
   name: string;
   phone: string;
+  bio: string;
+  cityId: string;
+  sportIds: string[];
   currentPassword: string;
   newPassword: string;
+}
+
+// --- Notification Types ---
+export type NotificationType =
+  | "NEW_RESPONSE"
+  | "RESPONSE_ACCEPTED"
+  | "RESPONSE_REJECTED"
+  | "NEW_MATCH"
+  | "NEW_RATING"
+  | "NEW_FOLLOWER"
+  | "NEW_MESSAGE";
+
+export interface Notification {
+  id: string;
+  userId: string;
+  type: NotificationType;
+  title: string;
+  body: string;
+  link?: string | null;
+  read: boolean;
+  createdAt: string;
+}
+
+// --- Social Types ---
+export interface Follow {
+  id: string;
+  followerId: string;
+  followingId: string;
+  createdAt: string;
+}
+
+export interface Message {
+  id: string;
+  matchId: string;
+  senderId: string;
+  receiverId: string;
+  content: string;
+  read: boolean;
+  createdAt: string;
+  sender: UserPublic & { avatarUrl?: string | null };
+}
+
+export interface Conversation {
+  matchId: string;
+  partner: UserPublic & { avatarUrl?: string | null };
+  listing: { id: string; sport: Sport; dateTime: string };
+  lastMessage: { content: string; createdAt: string; isMine: boolean } | null;
+  hasUnread: boolean;
+}
+
+// --- Gamification Types ---
+export interface Badge {
+  id: string;
+  label: string;
+  icon: string;
+  description: string;
+  color: string;
+}
+
+export interface LeaderboardEntry {
+  id: string;
+  name: string;
+  avatarUrl?: string | null;
+  city?: { name: string } | null;
+  sports: Sport[];
+  avgRating: number;
+  ratingCount: number;
+  totalMatches: number;
+  badges: Badge[];
+}
+
+// --- Rating Types ---
+export interface Rating {
+  id: string;
+  matchId: string;
+  ratedById: string;
+  ratedBy: { id: string; name: string; avatarUrl?: string | null };
+  ratedUserId: string;
+  score: number;
+  comment?: string | null;
+  createdAt: string;
+}
+
+// --- Public Profile Types ---
+export interface PublicProfile {
+  id: string;
+  name: string;
+  avatarUrl?: string | null;
+  bio?: string | null;
+  createdAt: string;
+  city?: { name: string; country?: { name: string } } | null;
+  sports: Sport[];
+  avgRating?: number | null;
+  ratingCount: number;
+  totalListings: number;
+  totalMatches: number;
+  activeListings: ListingSummary[];
+  isOwnProfile: boolean;
+}
+
+// --- Search Types ---
+export interface SearchResults {
+  listings: ListingSummary[];
+  users: {
+    id: string;
+    name: string;
+    avatarUrl?: string | null;
+    bio?: string | null;
+    city?: { name: string } | null;
+    sports: { name: string; icon: string | null }[];
+  }[];
+  sports: Sport[];
 }
 
 // --- UI Helper Types ---

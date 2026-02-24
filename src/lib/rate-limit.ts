@@ -1,4 +1,10 @@
-// In-memory rate limiter (production'da Redis ile değiştirilmeli)
+/**
+ * Rate Limiter
+ * ⚠️  Şu an in-memory Map kullanıyor.
+ *    Vercel/serverless ortamda her instance ayrı çalışır!
+ *    Production'a geçmeden önce Upstash Redis ile değiştirilmeli:
+ *    https://upstash.com  (UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN)
+ */
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 
 interface RateLimitConfig {

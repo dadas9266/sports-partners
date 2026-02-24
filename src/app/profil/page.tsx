@@ -7,6 +7,7 @@ import { format } from "date-fns";
 import { tr } from "date-fns/locale";
 import toast from "react-hot-toast";
 import { useProfile } from "@/hooks/useProfile";
+import { useLocations, useSports } from "@/hooks/useLocations";
 import { deleteListing, updateProfile } from "@/services/api";
 import type { ListingWithResponses, ResponseWithListing, Match, ProfileEditForm } from "@/types";
 import { STATUS_LABELS } from "@/types";
@@ -16,6 +17,9 @@ import Modal from "@/components/ui/Modal";
 
 export default function ProfilePage() {
   const { data, loading, error, status, session, refresh, setData } = useProfile();
+  const { locations } = useLocations();
+  const { sports } = useSports();
+  const allCities = locations.flatMap((c) => c.cities ?? []);
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"listings" | "responses" | "matches">("listings");
   const [deleteModal, setDeleteModal] = useState<string | null>(null);
@@ -25,6 +29,7 @@ export default function ProfilePage() {
   const [editMode, setEditMode] = useState(false);
   const [editForm, setEditForm] = useState<ProfileEditForm>({
     name: "", phone: "", currentPassword: "", newPassword: "",
+    bio: "", cityId: "", sportIds: [],
   });
   const [saving, setSaving] = useState(false);
 
@@ -85,11 +90,16 @@ export default function ProfilePage() {
   };
 
   const handleEditProfile = () => {
+    const profileUser = data.user as typeof data.user & { bio?: string | null; cityId?: string | null };
+    const sports = (data as typeof data & { sports?: Array<{ id: string }> }).sports ?? [];
     setEditForm({
       name: data.user.name,
       phone: data.user.phone || "",
       currentPassword: "",
       newPassword: "",
+      bio: profileUser.bio ?? "",
+      cityId: profileUser.cityId ?? "",
+      sportIds: sports.map((s) => s.id),
     });
     setEditMode(true);
   };
@@ -128,9 +138,18 @@ export default function ProfilePage() {
 
     setSaving(true);
     try {
-      const payload: Record<string, string | null> = {};
+      const profileUser = data.user as typeof data.user & { bio?: string | null; cityId?: string | null };
+      const currentSports = (data as typeof data & { sports?: Array<{ id: string }> }).sports ?? [];
+      const payload: Record<string, unknown> = {};
       if (editForm.name !== data.user.name) payload.name = editForm.name;
       if (editForm.phone !== (data.user.phone || "")) payload.phone = editForm.phone || null;
+      if (editForm.bio !== (profileUser.bio ?? "")) payload.bio = editForm.bio || null;
+      if (editForm.cityId !== (profileUser.cityId ?? "")) payload.cityId = editForm.cityId || null;
+      const sortFn = (a: string, b: string) => a.localeCompare(b);
+      const currentSportIds = currentSports.map((s) => s.id);
+      if (JSON.stringify([...(editForm.sportIds ?? [])].sort(sortFn)) !== JSON.stringify([...currentSportIds].sort(sortFn))) {
+        payload.sportIds = editForm.sportIds ?? [];
+      }
       if (editForm.newPassword) {
         payload.currentPassword = editForm.currentPassword;
         payload.newPassword = editForm.newPassword;
@@ -183,6 +202,62 @@ export default function ProfilePage() {
                 onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-emerald-500 outline-none"
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Hakkımda</label>
+              <textarea
+                value={editForm.bio}
+                onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
+                maxLength={300}
+                rows={3}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-emerald-500 outline-none resize-none"
+                placeholder="Kendinizden bahsedin..."
+              />
+              <p className="text-xs text-gray-400 mt-1">{editForm.bio?.length ?? 0}/300</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Şehir</label>
+              <select
+                value={editForm.cityId}
+                onChange={(e) => setEditForm({ ...editForm, cityId: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-emerald-500 outline-none"
+              >
+                <option value="">Şehir seçin...</option>
+                {allCities.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sporlarım (max 5)</label>
+              <div className="flex flex-wrap gap-2">
+                {sports.map((s) => {
+                  const selected = editForm.sportIds?.includes(s.id);
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => {
+                        const cur = editForm.sportIds ?? [];
+                        if (selected) {
+                          setEditForm({ ...editForm, sportIds: cur.filter((id) => id !== s.id) });
+                        } else if (cur.length < 5) {
+                          setEditForm({ ...editForm, sportIds: [...cur, s.id] });
+                        } else {
+                          toast.error("En fazla 5 spor seçebilirsiniz");
+                        }
+                      }}
+                      className={`px-3 py-1.5 rounded-full text-sm font-medium transition border ${
+                        selected
+                          ? "bg-emerald-600 border-emerald-600 text-white"
+                          : "border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-emerald-400"
+                      }`}
+                    >
+                      {s.icon} {s.name}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Telefon</label>

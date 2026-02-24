@@ -124,6 +124,7 @@ export async function POST(request: Request) {
         dateTime: new Date(parsed.data.dateTime),
         level: parsed.data.level,
         description: parsed.data.description || null,
+        maxParticipants: parsed.data.maxParticipants ?? 2,
       },
       include: {
         sport: true,

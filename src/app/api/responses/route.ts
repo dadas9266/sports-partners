@@ -4,6 +4,7 @@ import { getCurrentUserId } from "@/lib/api-utils";
 import { createResponseSchema } from "@/lib/validations";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { createLogger } from "@/lib/logger";
+import { createNotification, NOTIF } from "@/lib/notifications";
 
 const log = createLogger("responses");
 
@@ -82,6 +83,12 @@ export async function POST(request: Request) {
       include: {
         user: { select: { id: true, name: true } },
       },
+    });
+
+    // İlan sahibine bildirim gönder
+    await createNotification({
+      userId: listing.userId,
+      ...NOTIF.newResponse(listingId, response.user.name),
     });
 
     log.info("Karşılık gönderildi", { responseId: response.id, listingId, userId });
