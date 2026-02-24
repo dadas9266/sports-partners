@@ -43,6 +43,7 @@ export default function OnboardingPage() {
         preferredTime: prefs.preferredTime || undefined,
         preferredStyle: prefs.preferredStyle || undefined,
         sportIds: prefs.sportIds.length > 0 ? prefs.sportIds : undefined,
+        onboardingDone: true,
       } as Parameters<typeof updateProfile>[0]);
       // Mark onboardingDone — saved via profile PUT (the field itself needs explicit update)
       toast.success("Profil tercihlerin kaydedildi! 🎉");

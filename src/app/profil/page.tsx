@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { format } from "date-fns";
+import { format, isAfter, startOfToday } from "date-fns";
 import { tr } from "date-fns/locale";
 import toast from "react-hot-toast";
 import { useProfile } from "@/hooks/useProfile";
@@ -21,7 +21,7 @@ export default function ProfilePage() {
   const { sports } = useSports();
   const allCities = locations.flatMap((c) => c.cities ?? []);
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"listings" | "responses" | "matches">("listings");
+  const [activeTab, setActiveTab] = useState<"listings" | "responses" | "matches" | "calendar" | "templates">("listings");
   const [deleteModal, setDeleteModal] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -171,6 +171,18 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-4xl mx-auto">
+      {/* Onboarding banner */}
+      {data.user && !(data.user as typeof data.user & { onboardingDone?: boolean }).onboardingDone && (
+        <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 rounded-xl p-4 mb-4 flex items-center justify-between">
+          <div>
+            <p className="font-semibold text-emerald-800 dark:text-emerald-200">👋 Profilini tamamla!</p>
+            <p className="text-sm text-emerald-600 dark:text-emerald-400">Tercihlerini ayarlayarak daha iyi eşleşmeler bul.</p>
+          </div>
+          <Link href="/onboarding" className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
+            Hemen Tamamla
+          </Link>
+        </div>
+      )}
       {/* Profil başlığı */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 mb-6">
         {!editMode ? (
@@ -311,11 +323,13 @@ export default function ProfilePage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-200 dark:border-gray-700 mb-4" role="tablist">
+      <div className="flex flex-wrap border-b border-gray-200 dark:border-gray-700 mb-4" role="tablist">
         {[
           { key: "listings", label: "İlanlarım" },
           { key: "responses", label: "Gönderdiğim Karşılıklar" },
           { key: "matches", label: "Eşleşmeler" },
+          { key: "calendar", label: "📅 Takvim" },
+          { key: "templates", label: "🔁 Şablonlar" },
         ].map((tab) => (
           <button
             key={tab.key}
@@ -504,6 +518,136 @@ export default function ProfilePage() {
               );
             })
           )}
+        </div>
+      )}
+
+      {/* Takvim */}
+      {activeTab === "calendar" && (
+        <div className="space-y-6" role="tabpanel">
+          {(() => {
+            const today = startOfToday();
+            const upcoming = (data.myMatches ?? []).filter((m: Match) => {
+              const dt = (m.listing as typeof m.listing & { dateTime?: string })?.dateTime;
+              return dt && isAfter(new Date(dt), today);
+            });
+            if (upcoming.length === 0) {
+              return (
+                <div className="text-center py-12 text-gray-400 dark:text-gray-500">
+                  <p className="text-5xl mb-3">📅</p>
+                  <p className="text-lg">Yaklaşan etkinlik yok</p>
+                  <p className="text-sm mt-1">Bir ilana katıldığında burada görünecek.</p>
+                </div>
+              );
+            }
+            const sorted = [...upcoming].sort((a, b) => {
+              const da = (a.listing as typeof a.listing & { dateTime?: string })?.dateTime ?? "";
+              const db = (b.listing as typeof b.listing & { dateTime?: string })?.dateTime ?? "";
+              return da < db ? -1 : 1;
+            });
+            // Group by date string
+            const groups: Record<string, typeof sorted> = {};
+            sorted.forEach((m) => {
+              const dt = (m.listing as typeof m.listing & { dateTime?: string })?.dateTime;
+              const key = dt ? format(new Date(dt), "yyyy-MM-dd") : "?";
+              if (!groups[key]) groups[key] = [];
+              groups[key].push(m);
+            });
+            return Object.entries(groups).map(([dateKey, items]) => (
+              <div key={dateKey}>
+                <h3 className="text-sm font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider mb-2">
+                  {dateKey !== "?"
+                    ? format(new Date(dateKey), "d MMMM yyyy EEEE", { locale: tr })
+                    : "Tarih bilinmiyor"}
+                </h3>
+                <div className="space-y-2">
+                  {items.map((match: Match) => {
+                    const partner = match.user1Id === session?.user?.id ? match.user2 : match.user1;
+                    const dt = (match.listing as typeof match.listing & { dateTime?: string })?.dateTime;
+                    return (
+                      <div key={match.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between">
+                        <div>
+                          <Link href={`/ilan/${match.listingId}`} className="font-semibold text-gray-800 dark:text-gray-100 hover:text-emerald-600 transition">
+                            {match.listing?.sport?.icon} {match.listing?.sport?.name}
+                          </Link>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">👤 {partner?.name}</p>
+                          {match.listing?.venue && (
+                            <p className="text-sm text-gray-400 dark:text-gray-500">🏟️ {match.listing.venue.name}</p>
+                          )}
+                        </div>
+                        <div className="text-right text-sm text-emerald-600 dark:text-emerald-400 font-medium">
+                          {dt ? format(new Date(dt), "HH:mm") : ""}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ));
+          })()}
+        </div>
+      )}
+
+      {/* Şablonlar (Tekrarlayan İlanlar) */}
+      {activeTab === "templates" && (
+        <div className="space-y-4" role="tabpanel">
+          {(() => {
+            const templates = (data.myListings ?? []).filter(
+              (l: ListingWithResponses) => (l as ListingWithResponses & { isRecurring?: boolean }).isRecurring
+            );
+            if (templates.length === 0) {
+              return (
+                <div className="text-center py-12 text-gray-400 dark:text-gray-500">
+                  <p className="text-5xl mb-3">🔁</p>
+                  <p className="text-lg">Henüz tekrarlayan şablon yok</p>
+                  <p className="text-sm mt-1">İlan oluştururken &ldquo;Tekrarlayan Etkinlik&rdquo; seçeneğini işaretle.</p>
+                  <Link href="/ilan/olustur" className="inline-block mt-4 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-5 py-2 rounded-lg transition">
+                    + Şablon Oluştur
+                  </Link>
+                </div>
+              );
+            }
+            const DAY_LABELS: Record<string, string> = {
+              MON: "Pzt", TUE: "Sal", WED: "Çar", THU: "Per", FRI: "Cum", SAT: "Cmt", SUN: "Paz",
+            };
+            return templates.map((listing: ListingWithResponses) => {
+              const ext = listing as ListingWithResponses & { isRecurring?: boolean; recurringDays?: string };
+              const days = (ext.recurringDays ?? "").split(",").filter(Boolean);
+              return (
+                <div key={listing.id} className="bg-white dark:bg-gray-800 rounded-xl border border-emerald-200 dark:border-emerald-800 p-5">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <Link href={`/ilan/${listing.id}`} className="font-semibold text-gray-800 dark:text-gray-100 hover:text-emerald-600 transition">
+                        🔁 {listing.sport?.icon} {listing.sport?.name}
+                      </Link>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        📍 {listing.district?.city?.name ?? ""}
+                        {listing.venue ? ` · ${listing.venue.name}` : ""}
+                      </p>
+                    </div>
+                    <span className="text-xs bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full font-medium">
+                      Tekrarlayan
+                    </span>
+                  </div>
+                  {days.length > 0 && (
+                    <div className="flex gap-1 mt-3 flex-wrap">
+                      {["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"].map((d) => (
+                        <span
+                          key={d}
+                          className={`text-xs px-2 py-1 rounded-full font-medium ${
+                            days.includes(d)
+                              ? "bg-emerald-500 text-white"
+                              : "bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500"
+                          }`}
+                        >
+                          {DAY_LABELS[d]}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            });
+          })()}
         </div>
       )}
 

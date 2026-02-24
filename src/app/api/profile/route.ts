@@ -150,6 +150,7 @@ export async function PUT(request: Request) {
     if ("gender" in parsed.data && parsed.data.gender !== undefined) updateData.gender = parsed.data.gender;
     if ("preferredTime" in parsed.data && parsed.data.preferredTime !== undefined) updateData.preferredTime = parsed.data.preferredTime;
     if ("preferredStyle" in parsed.data && parsed.data.preferredStyle !== undefined) updateData.preferredStyle = parsed.data.preferredStyle;
+    if ("onboardingDone" in parsed.data && parsed.data.onboardingDone !== undefined) updateData.onboardingDone = parsed.data.onboardingDone;
 
     // Favori sporlar güncelleme
     const sportIds = "sportIds" in parsed.data ? (parsed.data as { sportIds?: string[] }).sportIds : undefined;

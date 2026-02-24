@@ -31,6 +31,8 @@ export default function CreateListingPage() {
     allowedGender: "ANY",
     isQuick: false,
     expiresAt: "",
+    isRecurring: false,
+    recurringDays: [],
   });
 
   const { venues } = useVenues(form.districtId);
@@ -62,6 +64,8 @@ export default function CreateListingPage() {
         allowedGender: form.allowedGender,
         isQuick: form.isQuick,
         expiresAt: form.isQuick && form.expiresAt ? form.expiresAt : undefined,
+        isRecurring: form.isRecurring,
+        recurringDays: form.recurringDays,
       });
       toast.success("İlan başarıyla oluşturuldu!");
       if (data.data) router.push(`/ilan/${data.data.id}`);
@@ -362,6 +366,70 @@ export default function CreateListingPage() {
           </div>
         </div>
 
+        {/* Tekrarlayan Etkinlik */}
+        {!form.isQuick && (
+          <div className="bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800 rounded-xl p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="font-medium text-violet-800 dark:text-violet-200">🔁 Tekrarlayan Etkinlik</p>
+                <p className="text-xs text-violet-600 dark:text-violet-400 mt-0.5">
+                  Her hafta belirli günlerde tekrarlayan etkinlikler için.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, isRecurring: !form.isRecurring, recurringDays: [] })}
+                className={`relative w-12 h-6 rounded-full transition-colors ${
+                  form.isRecurring ? "bg-violet-500" : "bg-gray-300 dark:bg-gray-600"
+                }`}
+                role="switch"
+                aria-checked={form.isRecurring}
+              >
+                <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${form.isRecurring ? "translate-x-7" : "translate-x-1"}`} />
+              </button>
+            </div>
+            {form.isRecurring && (
+              <div>
+                <p className="text-xs font-medium text-violet-700 dark:text-violet-300 mb-2">Hangi günlerde tekrarlansın?</p>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { value: "MON", label: "Pzt" },
+                    { value: "TUE", label: "Sal" },
+                    { value: "WED", label: "Çar" },
+                    { value: "THU", label: "Per" },
+                    { value: "FRI", label: "Cum" },
+                    { value: "SAT", label: "Cmt" },
+                    { value: "SUN", label: "Paz" },
+                  ].map((day) => {
+                    const selected = form.recurringDays.includes(day.value);
+                    return (
+                      <button
+                        key={day.value}
+                        type="button"
+                        onClick={() =>
+                          setForm({
+                            ...form,
+                            recurringDays: selected
+                              ? form.recurringDays.filter((d) => d !== day.value)
+                              : [...form.recurringDays, day.value],
+                          })
+                        }
+                        className={`w-12 h-10 rounded-lg text-sm font-medium transition border-2 ${
+                          selected
+                            ? "border-violet-500 bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300"
+                            : "border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400"
+                        }`}
+                      >
+                        {day.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         <Button
           type="submit"
           size="lg"
@@ -369,7 +437,7 @@ export default function CreateListingPage() {
           disabled={!form.type || !form.level}
           className="w-full text-lg"
         >
-          {form.isQuick ? "⚡ Hızlı İlan Yayınla" : "İlanı Yayınla"}
+          {form.isQuick ? "⚡ Hızlı İlan Yayınla" : form.isRecurring ? "🔁 Tekrarlayan İlan Yayınla" : "İlanı Yayınla"}
         </Button>
       </form>
     </div>

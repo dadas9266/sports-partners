@@ -65,6 +65,8 @@ export const createListingSchema = z.object({
       (val) => !val || !isNaN(new Date(val).getTime()),
       "Geçerli bir bitiş zamanı giriniz"
     ),
+  isRecurring: z.boolean().optional().default(false),
+  recurringDays: z.array(z.enum(["MON","TUE","WED","THU","FRI","SAT","SUN"])).optional().default([]),
 });
 
 export const updateListingSchema = z.object({
@@ -130,6 +132,7 @@ export const updateProfileSchema = z
     gender: z.enum(["MALE", "FEMALE", "OTHER", "PREFER_NOT_TO_SAY"]).optional().nullable(),
     preferredTime: z.enum(["morning", "evening", "anytime"]).optional().nullable(),
     preferredStyle: z.enum(["competitive", "casual", "both"]).optional().nullable(),
+    onboardingDone: z.boolean().optional(),
     currentPassword: z.string().optional(),
     newPassword: passwordSchema.optional(),
   })

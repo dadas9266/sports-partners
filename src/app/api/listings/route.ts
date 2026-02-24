@@ -218,6 +218,10 @@ export async function POST(request: Request) {
         allowedGender: parsed.data.allowedGender ?? "ANY",
         isQuick: parsed.data.isQuick ?? false,
         expiresAt,
+        isRecurring: parsed.data.isRecurring ?? false,
+        recurringDays: parsed.data.recurringDays?.length
+          ? parsed.data.recurringDays.join(",")
+          : null,
       },
       include: {
         sport: true,

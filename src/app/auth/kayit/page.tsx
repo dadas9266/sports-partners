@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { registerUser } from "@/services/api";
@@ -57,8 +57,19 @@ export default function RegisterPage() {
         phone: form.phone || undefined,
         gender: form.gender || undefined,
       });
-      toast.success("Kayıt başarılı! Giriş yapabilirsiniz.");
-      router.push("/auth/giris");
+      // Auto sign-in and redirect to onboarding
+      const res = await signIn("credentials", {
+        email: form.email,
+        password: form.password,
+        redirect: false,
+      });
+      if (res?.error) {
+        toast.success("Kayıt başarılı! Giriş yapabilirsiniz.");
+        router.push("/auth/giris");
+      } else {
+        toast.success("Hoş geldin! Önce birkaç tercihini ayarlıyalım.");
+        router.push("/onboarding");
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Bir hata oluştu");
     } finally {

@@ -220,6 +220,8 @@ export interface CreateListingForm {
   allowedGender: AllowedGender;
   isQuick: boolean;
   expiresAt: string;
+  isRecurring: boolean;
+  recurringDays: string[];  // ["MON","WED","FRI"]
 }
 
 export interface LoginForm {

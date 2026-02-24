@@ -69,6 +69,8 @@ export async function createListing(data: {
   allowedGender?: string;
   isQuick?: boolean;
   expiresAt?: string;
+  isRecurring?: boolean;
+  recurringDays?: string[];
 }): Promise<ApiResponse<ListingDetail>> {
   return fetchAPI("/api/listings", {
     method: "POST",
@@ -143,6 +145,10 @@ export async function updateProfile(data: {
   cityId?: string | null;
   sportIds?: string[];
   avatarUrl?: string | null;
+  gender?: string | null;
+  preferredTime?: string | null;
+  preferredStyle?: string | null;
+  onboardingDone?: boolean;
   currentPassword?: string;
   newPassword?: string;
 }): Promise<ApiResponse<unknown>> {
