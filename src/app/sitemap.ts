@@ -27,19 +27,27 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   // Aktif ilanlar
-  const listings = await prisma.listing.findMany({
-    where: { status: "OPEN" },
-    select: { id: true, updatedAt: true },
-    orderBy: { updatedAt: "desc" },
-    take: 1000,
-  });
+  let listingPages: MetadataRoute.Sitemap = [];
+  try {
+    const listings = await prisma.listing.findMany({
+      where: { status: "OPEN" as any },
+      select: { id: true, updatedAt: true },
+      orderBy: { updatedAt: "desc" as any },
+      take: 1000,
+    });
 
-  const listingPages: MetadataRoute.Sitemap = listings.map((listing) => ({
-    url: `${baseUrl}/ilan/${listing.id}`,
-    lastModified: listing.updatedAt,
-    changeFrequency: "weekly" as const,
-    priority: 0.8,
-  }));
+    listingPages = listings.map((listing: any) => ({
+      url: `${baseUrl}/ilan/${listing.id}`,
+      lastModified: listing.updatedAt,
+      changeFrequency: "weekly" as const,
+      priority: 0.8,
+    }));
+  } catch (error) {
+    console.error("Sitemap generation error (Listing):", error);
+    // Build sırasında veritabanı hazır değilse sessizce devam et
+  }
+
+  return [...staticPages, ...listingPages];
 
   return [...staticPages, ...listingPages];
 }
