@@ -62,7 +62,7 @@ export default function CreateListingPage() {
     let cancelled = false;
     setSmartVenuesLoading(true);
     setSmartVenues([]);
-    fetch(`/api/places?sport=${encodeURIComponent(selectedSport.name)}&district=${encodeURIComponent(selectedDistrict.name)}`)
+    fetch(`/api/places?sport=${encodeURIComponent(selectedSport.name)}&district=${encodeURIComponent(selectedDistrict.name)}&districtId=${encodeURIComponent(form.districtId)}`)
       .then((r) => r.json())
       .then((json) => { if (!cancelled && Array.isArray(json.venues)) setSmartVenues(json.venues); })
       .catch(() => {})
