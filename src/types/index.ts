@@ -3,7 +3,7 @@
 // =============================================
 
 // --- Enum Types ---
-export type ListingType = "RIVAL" | "PARTNER";
+export type ListingType = "RIVAL" | "PARTNER" | "TRAINER" | "EQUIPMENT";
 export type Level = "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
 export type ListingStatus = "OPEN" | "CLOSED" | "MATCHED" | "EXPIRED";
 export type ResponseStatus = "PENDING" | "ACCEPTED" | "REJECTED";
