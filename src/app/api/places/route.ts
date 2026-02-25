@@ -8,125 +8,95 @@ const db = prisma as any;
 const log = createLogger("api:places");
 
 // ---------------------------------------------------------------------------
-// Spor dalı → OSM Overpass tag sorguları
-// Overpass, yer ADIYLA değil OSM ETİKETLERİYLE arama yapar:
-// leisure=fitness_centre tüm fitness merkezlerini bulur, "fitness" isimli yerleri değil
+// Spor dalı → Nominatim arama terimi (Türkçe, geniş kapsam)
+// Not: "spor salonu" gibi genel terimler Türkiye'de daha iyi sonuç verir
 // ---------------------------------------------------------------------------
-const SPORT_TO_OVERPASS: Record<string, string[]> = {
-  futbol:        ["node[sport=soccer]", "way[sport=soccer]", "node[leisure=pitch][sport=soccer]", "way[leisure=pitch][sport=soccer]"],
-  basketbol:     ["node[sport=basketball]", "way[sport=basketball]", "node[leisure=pitch][sport=basketball]", "way[leisure=pitch][sport=basketball]"],
-  tenis:         ["node[sport=tennis]", "way[sport=tennis]", "node[leisure=tennis]", "way[leisure=tennis]"],
-  voleybol:      ["node[sport=volleyball]", "way[sport=volleyball]"],
-  yüzme:         ["node[leisure=swimming_pool]", "way[leisure=swimming_pool]", "node[sport=swimming]", "way[sport=swimming]"],
-  boks:          ["node[sport=boxing]", "way[sport=boxing]"],
-  fitness:       ["node[leisure=fitness_centre]", "way[leisure=fitness_centre]", "node[leisure=sports_centre]", "way[leisure=sports_centre]"],
-  "masa tenisi": ["node[sport=table_tennis]", "way[sport=table_tennis]"],
-  "buz pateni":  ["node[leisure=ice_rink]", "way[leisure=ice_rink]"],
-  golf:          ["node[leisure=golf_course]", "way[leisure=golf_course]"],
-  bowling:       ["node[amenity=bowling_alley]", "way[amenity=bowling_alley]"],
-  bisiklet:      ["node[leisure=track][sport=cycling]", "way[leisure=track][sport=cycling]", "node[amenity=bicycle_rental]"],
-  kayak:         ["node[sport=skiing]", "way[sport=skiing]"],
-  sörf:          ["node[sport=surfing]", "way[sport=surfing]"],
-  okçuluk:       ["node[sport=archery]", "way[sport=archery]"],
-  koşu:          ["node[leisure=track]", "way[leisure=track]"],
-  default:       ["node[leisure=sports_centre]", "way[leisure=sports_centre]", "node[leisure=fitness_centre]", "way[leisure=fitness_centre]"],
+const SPORT_TO_QUERY: Record<string, string[]> = {
+  futbol:        ["halı saha", "futbol sahası"],
+  basketbol:     ["basketbol sahası", "spor salonu"],
+  tenis:         ["tenis kortu", "tenis kulübü"],
+  voleybol:      ["voleybol sahası", "spor salonu"],
+  yüzme:         ["yüzme havuzu", "aquapark"],
+  boks:          ["boks salonu", "dövüş spor salonu"],
+  fitness:       ["spor salonu", "fitness", "gym"],
+  "masa tenisi": ["masa tenisi", "spor salonu"],
+  "buz pateni":  ["buz pateni pisti", "buz salonu"],
+  golf:          ["golf sahası"],
+  bowling:       ["bowling salonu"],
+  bisiklet:      ["bisiklet", "bisiklet parkı"],
+  kayak:         ["kayak merkezi"],
+  sörf:          ["sörf", "su sporları"],
+  okçuluk:       ["okçuluk", "atıcılık"],
+  koşu:          ["atletizm", "koşu parkuru", "spor salonu"],
+  default:       ["spor salonu", "spor tesisi"],
 };
 
-function getOverpassTags(sportName: string): string[] {
+function getSportQueries(sportName: string): string[] {
   const lower = sportName.toLowerCase();
-  for (const key of Object.keys(SPORT_TO_OVERPASS)) {
-    if (lower.includes(key)) return SPORT_TO_OVERPASS[key];
+  for (const key of Object.keys(SPORT_TO_QUERY)) {
+    if (lower.includes(key)) return SPORT_TO_QUERY[key];
   }
-  return SPORT_TO_OVERPASS.default;
+  return SPORT_TO_QUERY.default;
 }
 
-// ---------------------------------------------------------------------------
-// Adım 1: Nominatim ile "İlçe, Şehir, Türkiye" → merkez koordinatı
-// ---------------------------------------------------------------------------
-async function geocodeDistrict(district: string, city: string): Promise<{ lat: number; lng: number } | null> {
-  const q = city ? `${district}, ${city}, Türkiye` : `${district}, Türkiye`;
-  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1&countrycodes=tr`;
-
-  try {
-    const res = await fetch(url, {
-      headers: { "User-Agent": "SportsPartnerApp/1.0 (sportspartner@example.com)" },
-      next: { revalidate: 0 },
-    });
-    if (!res.ok) return null;
-    const data: Array<{ lat: string; lon: string }> = await res.json();
-    if (!data.length) return null;
-    return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
-  } catch {
-    return null;
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Adım 2: Overpass API — verilen koordinat çevresinde OSM tag'larına göre ara
-// ---------------------------------------------------------------------------
-interface OverpassElement {
-  type: string;
-  id: number;
-  lat?: number;
-  lon?: number;
-  center?: { lat: number; lon: number };
-  tags?: Record<string, string>;
-}
-
-async function searchOverpass(lat: number, lng: number, tags: string[], radius = 5000): Promise<OverpassElement[]> {
-  const around = `(around:${radius},${lat},${lng})`;
-  const parts = tags.map((t) => `${t}${around};`).join("\n  ");
-  const query = `[out:json][timeout:15];\n(\n  ${parts}\n);\nout center 20;`;
-
-  const res = await fetch("https://overpass-api.de/api/interpreter", {
-    method: "POST",
-    body: query,
-    headers: {
-      "Content-Type": "text/plain",
-      "User-Agent": "SportsPartnerApp/1.0 (sportspartner@example.com)",
-    },
-    next: { revalidate: 0 },
-  });
-
-  if (!res.ok) throw new Error(`Overpass hata: ${res.status}`);
-  const data = await res.json();
-  return (data.elements ?? []) as OverpassElement[];
-}
-
-function elementToVenue(el: OverpassElement) {
-  const lat = el.lat ?? el.center?.lat ?? 0;
-  const lng = el.lon ?? el.center?.lon ?? 0;
-  const tags = el.tags ?? {};
-
-  const name =
-    tags["name:tr"] ||
-    tags.name ||
-    tags.operator ||
-    (tags.leisure ? tags.leisure.replace(/_/g, " ") + " tesisi" : "Spor Tesisi");
-
-  const street = [tags["addr:street"], tags["addr:housenumber"]].filter(Boolean).join(" ");
-  const vicinity = [
-    street,
-    tags["addr:quarter"] || tags["addr:suburb"] || tags["addr:district"],
-    tags["addr:city"],
-  ]
-    .filter(Boolean)
-    .join(", ");
-
-  return {
-    place_id: `osm-${el.type}-${el.id}`,
-    name,
-    vicinity: vicinity || null,
-    lat,
-    lng,
-    rating: null,
-    source: "openstreetmap",
+interface NominatimResult {
+  place_id: number;
+  display_name: string;
+  lat: string;
+  lon: string;
+  address?: {
+    road?: string;
+    quarter?: string;
+    suburb?: string;
+    district?: string;
+    city?: string;
+    town?: string;
+    province?: string;
   };
+}
+
+// Nominatim ile şehir bazlı arama — birden fazla terim dener, en iyi sonucu alır
+async function searchNominatimInCity(
+  queries: string[],
+  city: string,
+): Promise<NominatimResult[]> {
+  const allResults: NominatimResult[] = [];
+  const seen = new Set<number>();
+
+  for (const q of queries) {
+    const searchQ = city ? `${q} ${city}` : `${q} Türkiye`;
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQ)}&format=json&limit=15&countrycodes=tr&addressdetails=1`;
+    try {
+      const res = await fetch(url, {
+        headers: { "User-Agent": "SportsPartnerApp/1.0 (sportspartner@example.com)" },
+        next: { revalidate: 0 },
+      });
+      if (!res.ok) continue;
+      const data: NominatimResult[] = await res.json();
+
+      for (const item of data) {
+        if (seen.has(item.place_id)) continue;
+        // Şehir filtresi: yalnızca doğru şehirdeki sonuçlar
+        if (city) {
+          const addr = item.address ?? {};
+          const itemCity = (addr.city || addr.town || addr.province || "").toLowerCase();
+          const cityLower = city.toLowerCase();
+          if (itemCity && !itemCity.includes(cityLower) && !cityLower.includes(itemCity)) continue;
+        }
+        seen.add(item.place_id);
+        allResults.push(item);
+      }
+    } catch {
+      continue;
+    }
+    if (allResults.length >= 12) break;
+  }
+
+  return allResults.slice(0, 15);
 }
 
 // ---------------------------------------------------------------------------
 // GET /api/places?sport=Fitness&district=Şehzadeler&districtId=xxx
-// districtId varsa DB'den şehri okur → kesin konum; yoksa ilçe adına göre DB lookup
 // ---------------------------------------------------------------------------
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -138,22 +108,39 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "sport ve district parametreleri zorunlu" }, { status: 400 });
   }
 
-  // İlçenin bağlı olduğu şehri DB'den çek (Şehzadeler → Manisa)
+  // İlçenin bağlı olduğu şehri önce DB'den, yoksa Nominatim geocoding ile bul
   let cityName = "";
   try {
     const row = districtId
       ? await db.district.findUnique({ where: { id: districtId }, include: { city: true } })
       : await db.district.findFirst({ where: { name: { equals: district, mode: "insensitive" } }, include: { city: true } });
     cityName = row?.city?.name ?? "";
-  } catch {
-    /* DB hatası → şehirsiz devam */
+  } catch { /* DB hatası */ }
+
+  // DB'de bulunamadıysa Nominatim ile geocode et → şehri adres bilgisinden çıkar
+  if (!cityName) {
+    try {
+      const geoUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(district + ", Türkiye")}&format=json&limit=1&countrycodes=tr&addressdetails=1`;
+      const geoRes = await fetch(geoUrl, {
+        headers: { "User-Agent": "SportsPartnerApp/1.0 (sportspartner@example.com)" },
+        next: { revalidate: 0 },
+      });
+      if (geoRes.ok) {
+        const geoData: NominatimResult[] = await geoRes.json();
+        if (geoData.length > 0) {
+          const addr = geoData[0].address ?? {};
+          cityName = addr.city || addr.town || addr.province || "";
+        }
+      }
+    } catch { /* geocode hatası */ }
   }
 
-  const cacheKey = `overpass-${sport.toLowerCase()}-${district.toLowerCase()}-${cityName.toLowerCase()}`;
+  const cacheKey = `nom2-${sport.toLowerCase()}-${district.toLowerCase()}-${cityName.toLowerCase()}`;
+  const debug = searchParams.get("debug") === "1";
 
   try {
     // 1. DB cache — 24 saat geçerli
-    const cached = await db.venueCache.findUnique({ where: { query: cacheKey } });
+    const cached = !debug && await db.venueCache.findUnique({ where: { query: cacheKey } });
     if (cached) {
       const ageHours = (Date.now() - cached.createdAt.getTime()) / 3600000;
       if (ageHours < 24) {
@@ -161,50 +148,66 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // 2. İlçe merkez koordinatını bul (şehir adıyla birlikte → doğru il)
-    const coords = await geocodeDistrict(district, cityName);
-    if (!coords) {
-      log.warn("Geocode başarısız", { district, city: cityName });
-      const fallback = await getFallbackVenues(sport, district);
-      return NextResponse.json({ venues: fallback, source: "local" });
+    // 2. Nominatim şehir bazlı arama
+    const queries = getSportQueries(sport);
+    if (debug) {
+      // Debug: Nominatim'e gerçek istek gönder, sonucu göster
+      const testQ = queries[0];
+      const testUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(testQ + " " + cityName)}&format=json&limit=5&countrycodes=tr`;
+      let testResult = [];
+      let testError = "";
+      try {
+        const testRes = await fetch(testUrl, { headers: { "User-Agent": "SportsPartnerApp/1.0 (sportspartner@example.com)" }, next: { revalidate: 0 } });
+        testResult = testRes.ok ? await testRes.json() : [];
+        if (!testRes.ok) testError = `HTTP ${testRes.status}`;
+      } catch (e) { testError = String(e); }
+      return NextResponse.json({ debug: true, cityName, district, queries, cacheKey, testUrl, testCount: testResult.length, testError });
     }
+    const results = await searchNominatimInCity(queries, cityName);
 
-    // 3. Spor dalına özel OSM etiketleriyle Overpass'ta ara
-    const tags = getOverpassTags(sport);
-    let elements = await searchOverpass(coords.lat, coords.lng, tags, 5000);
-
-    // Sonuç yoksa yarıçapı genişlet
-    if (elements.length === 0) {
-      elements = await searchOverpass(coords.lat, coords.lng, tags, 10000);
-    }
-
-    // Hâlâ boşsa genel spor salonu/fitness merkezi ara
-    if (elements.length === 0) {
-      elements = await searchOverpass(coords.lat, coords.lng, SPORT_TO_OVERPASS.default, 8000);
-    }
-
-    // Koordinatsız ve tekrarlı elemanları temizle
-    const seen = new Set<string>();
-    const venues = elements
-      .map(elementToVenue)
-      .filter((v) => {
-        if (v.lat === 0 && v.lng === 0) return false;
-        if (seen.has(v.place_id)) return false;
-        seen.add(v.place_id);
-        return true;
-      })
-      .slice(0, 15);
-
-    // 4. Cache'e kaydet
-    await db.venueCache.upsert({
-      where:  { query: cacheKey },
-      update: { placesJson: JSON.stringify(venues), lat: coords.lat, lng: coords.lng },
-      create: { query: cacheKey, lat: coords.lat, lng: coords.lng, placesJson: JSON.stringify(venues) },
+    // İlçeye ait sonuçları öne al
+    const districtLower = district.toLowerCase();
+    results.sort((a, b) => {
+      const aInDistrict = a.display_name.toLowerCase().includes(districtLower) ? 0 : 1;
+      const bInDistrict = b.display_name.toLowerCase().includes(districtLower) ? 0 : 1;
+      return aInDistrict - bInDistrict;
     });
 
-    return NextResponse.json({ venues, source: "overpass" });
+    const venues = results.map((p) => {
+      const parts = p.display_name.split(",");
+      const name = parts[0].trim();
+      const addr = p.address ?? {};
+      const vicinity = [
+        addr.road,
+        addr.quarter || addr.suburb,
+        addr.district || addr.city || addr.town,
+      ]
+        .filter(Boolean)
+        .join(", ");
+
+      return {
+        place_id: `osm-${p.place_id}`,
+        name,
+        vicinity: vicinity || parts.slice(1, 3).join(",").trim() || null,
+        lat: parseFloat(p.lat),
+        lng: parseFloat(p.lon),
+        rating: null,
+        source: "openstreetmap",
+      };
+    });
+
+    // 3. Cache kaydet — sadece sonuç varsa kaydet (Nominatim geçici hatası cache'lenmemeli)
+    if (venues.length > 0) {
+      await db.venueCache.upsert({
+        where:  { query: cacheKey },
+        update: { placesJson: JSON.stringify(venues), lat: 0, lng: 0 },
+        create: { query: cacheKey, lat: 0, lng: 0, placesJson: JSON.stringify(venues) },
+      });
+    }
+
+    return NextResponse.json({ venues, source: venues.length > 0 ? "nominatim" : "empty" });
   } catch (err) {
-    log.error("Overpass API hatası", err);
+    log.error("Nominatim API hatası", err);
     const fallback = await getFallbackVenues(sport, district);
     return NextResponse.json({ venues: fallback, source: "local" });
   }
