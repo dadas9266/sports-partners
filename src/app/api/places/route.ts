@@ -1,121 +1,108 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { withCache, cacheKey, CACHE_TTL } from "@/lib/cache";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("api:places");
 
-// Spor → Google Places arama query'si eşleştirmesi
-const SPORT_TO_PLACE_QUERY: Record<string, string> = {
-  futbol: "futbol sahası halı saha",
+// Spor → Nominatim (OpenStreetMap) arama terimi
+const SPORT_TO_OSM_QUERY: Record<string, string> = {
+  futbol: "halı saha futbol sahası",
   basketbol: "basketbol sahası",
   tenis: "tenis kortu",
   voleybol: "voleybol sahası",
   yüzme: "yüzme havuzu",
-  boks: "boks salonu spor salonu",
+  boks: "boks salonu",
   fitness: "spor salonu fitness",
-  "masa tenisi": "masa tenisi salonu",
+  "masa tenisi": "masa tenisi",
   "buz pateni": "buz pateni pisti",
   golf: "golf sahası",
   bowling: "bowling salonu",
   "e-spor": "e-spor cafe",
-  koşu: "atletizm pisti park",
-  bisiklet: "bisiklet yolu park",
+  koşu: "atletizm parkur",
+  bisiklet: "bisiklet parkı",
   kayak: "kayak merkezi",
-  sörf: "sörf noktası plaj",
-  olta: "balık tutma noktası göl nehir",
-  okçuluk: "okçuluk menzili",
+  sörf: "sörf plaj",
+  okçuluk: "okçuluk",
   default: "spor tesisi",
 };
 
 function getSportQuery(sportName: string): string {
   const lower = sportName.toLowerCase();
-  return SPORT_TO_PLACE_QUERY[lower] ?? SPORT_TO_PLACE_QUERY.default;
+  for (const key of Object.keys(SPORT_TO_OSM_QUERY)) {
+    if (lower.includes(key)) return SPORT_TO_OSM_QUERY[key];
+  }
+  return SPORT_TO_OSM_QUERY.default;
 }
 
-// GET /api/places?sport=futbol&lat=41.01&lng=28.97&district=Kadıköy
+// Nominatim OpenStreetMap API — tamamen ücretsiz, kart yok
+async function searchNominatim(sport: string, district: string): Promise<NominatimPlace[]> {
+  const query = `${getSportQuery(sport)} ${district}`;
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=10&countrycodes=tr&addressdetails=1`;
+
+  const res = await fetch(url, {
+    headers: {
+      // Nominatim kullanım politikası gereği User-Agent zorunlu
+      "User-Agent": "SportsPartnerApp/1.0 (sportspartner@example.com)",
+    },
+    next: { revalidate: 0 },
+  });
+
+  if (!res.ok) throw new Error(`Nominatim hata: ${res.status}`);
+  return await res.json();
+}
+
+// GET /api/places?sport=futbol&district=Kadıköy
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const sport = searchParams.get("sport") ?? "";
-  const lat = parseFloat(searchParams.get("lat") ?? "0");
-  const lng = parseFloat(searchParams.get("lng") ?? "0");
   const district = searchParams.get("district") ?? "";
 
   if (!sport) {
     return NextResponse.json({ error: "sport parametresi zorunlu" }, { status: 400 });
   }
 
-  const cKey = cacheKey.googlePlaces(
-    `${sport}-${district}`,
-    lat || 0,
-    lng || 0
-  );
+  const cacheKey = `${sport.toLowerCase()}-${district.toLowerCase()}`;
 
   try {
-    const results = await withCache(cKey, CACHE_TTL.PLACES, async () => {
-      // Önce kendi DB'mizde VenueCache'e bak
-      const cached = await prisma.venueCache.findUnique({
-        where: { query: `${sport}-${district}-${lat.toFixed(3)}-${lng.toFixed(3)}` },
-      });
-
-      if (cached) {
-        const age = Date.now() - cached.createdAt.getTime();
-        // 24 saatten eski değilse kullan
-        if (age < 24 * 60 * 60 * 1000) {
-          return JSON.parse(cached.placesJson);
-        }
+    // 1. DB cache'e bak (24 saat geçerli)
+    const cached = await prisma.venueCache.findUnique({ where: { query: cacheKey } });
+    if (cached) {
+      const ageHours = (Date.now() - cached.createdAt.getTime()) / 3600000;
+      if (ageHours < 24) {
+        return NextResponse.json({ venues: JSON.parse(cached.placesJson), source: "cache" });
       }
+    }
 
-      // Google Places API'ye sor
-      const apiKey = process.env.GOOGLE_PLACES_API_KEY;
-      if (!apiKey) {
-        // API key yoksa DB'deki Venue tablosundan döndür
-        return await getFallbackVenues(sport, district);
-      }
+    // 2. Nominatim'den sorgula
+    const results = await searchNominatim(sport, district);
 
-      const query = getSportQuery(sport);
-      const locationParam = lat && lng ? `&location=${lat},${lng}&radius=5000` : "";
-      const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query + " " + district)}&type=establishment${locationParam}&language=tr&key=${apiKey}`;
+    const venues = results.map((p) => ({
+      place_id: `osm-${p.place_id}`,
+      name: p.display_name.split(",")[0].trim(),
+      vicinity: [p.address?.road, p.address?.suburb, p.address?.district]
+        .filter(Boolean)
+        .join(", "),
+      lat: parseFloat(p.lat),
+      lng: parseFloat(p.lon),
+      rating: null,
+      source: "openstreetmap",
+    }));
 
-      const response = await fetch(url);
-      if (!response.ok) throw new Error("Google Places API hatası");
-
-      const data = await response.json();
-      const places = (data.results ?? []).slice(0, 10).map((p: GooglePlace) => ({
-        id: p.place_id,
-        name: p.name,
-        address: p.formatted_address,
-        lat: p.geometry?.location?.lat,
-        lng: p.geometry?.location?.lng,
-        rating: p.rating,
-        source: "google",
-      }));
-
-      // DB'ye cache kaydet
-      await prisma.venueCache.upsert({
-        where: { query: `${sport}-${district}-${lat.toFixed(3)}-${lng.toFixed(3)}` },
-        update: { placesJson: JSON.stringify(places), lat, lng },
-        create: {
-          query: `${sport}-${district}-${lat.toFixed(3)}-${lng.toFixed(3)}`,
-          lat,
-          lng,
-          placesJson: JSON.stringify(places),
-        },
-      });
-
-      return places;
+    // 3. DB'ye cache kaydet
+    await prisma.venueCache.upsert({
+      where: { query: cacheKey },
+      update: { placesJson: JSON.stringify(venues), lat: 0, lng: 0 },
+      create: { query: cacheKey, lat: 0, lng: 0, placesJson: JSON.stringify(venues) },
     });
 
-    return NextResponse.json({ places: results });
+    return NextResponse.json({ venues, source: "nominatim" });
   } catch (err) {
-    log.error("Places API hatası", err);
-    // Hata durumunda DB fallback
+    log.error("Nominatim API hatası", err);
     const fallback = await getFallbackVenues(sport, district);
-    return NextResponse.json({ places: fallback });
+    return NextResponse.json({ venues: fallback, source: "local" });
   }
 }
 
-// Google Places yoksa veya hata varsa kendi Venue tablosundan döndür
 async function getFallbackVenues(sport: string, district: string) {
   const venues = await prisma.venue.findMany({
     where: {
@@ -129,9 +116,9 @@ async function getFallbackVenues(sport: string, district: string) {
   });
 
   return venues.map((v) => ({
-    id: v.id,
+    place_id: v.id,
     name: v.name,
-    address: v.address ?? `${v.district.name}`,
+    vicinity: v.address ?? v.district.name,
     lat: null,
     lng: null,
     rating: null,
@@ -139,10 +126,15 @@ async function getFallbackVenues(sport: string, district: string) {
   }));
 }
 
-interface GooglePlace {
-  place_id: string;
-  name: string;
-  formatted_address: string;
-  geometry?: { location?: { lat: number; lng: number } };
-  rating?: number;
+interface NominatimPlace {
+  place_id: number;
+  display_name: string;
+  lat: string;
+  lon: string;
+  address?: {
+    road?: string;
+    suburb?: string;
+    district?: string;
+    city?: string;
+  };
 }
