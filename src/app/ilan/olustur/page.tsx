@@ -53,16 +53,22 @@ export default function CreateListingPage() {
   const selectedSport = sports.find((s) => s.id === form.sportId);
   const selectedDistrict = districts.find((d) => d.id === form.districtId);
 
-  const fetchSmartVenues = async () => {
-    if (!selectedSport || !selectedDistrict) return;
+  // Spor dalı veya ilçe değişince mekanları otomatik yükle
+  useEffect(() => {
+    if (!selectedSport || !selectedDistrict) {
+      setSmartVenues([]);
+      return;
+    }
+    let cancelled = false;
     setSmartVenuesLoading(true);
-    try {
-      const res = await fetch(`/api/places?sport=${encodeURIComponent(selectedSport.name)}&district=${encodeURIComponent(selectedDistrict.name)}`);
-      const json = await res.json();
-      if (Array.isArray(json.venues)) setSmartVenues(json.venues);
-    } catch {}
-    finally { setSmartVenuesLoading(false); }
-  };
+    setSmartVenues([]);
+    fetch(`/api/places?sport=${encodeURIComponent(selectedSport.name)}&district=${encodeURIComponent(selectedDistrict.name)}`)
+      .then((r) => r.json())
+      .then((json) => { if (!cancelled && Array.isArray(json.venues)) setSmartVenues(json.venues); })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setSmartVenuesLoading(false); });
+    return () => { cancelled = true; };
+  }, [form.sportId, form.districtId]);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -261,57 +267,39 @@ export default function CreateListingPage() {
 
         {/* Mekan */}
         <div>
-          <div className="flex items-center justify-between mb-1">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Mekan <span className="text-gray-400">(opsiyonel)</span>
-            </label>
-            {form.districtId && form.sportId && (
-              <button
-                type="button"
-                onClick={fetchSmartVenues}
-                disabled={smartVenuesLoading}
-                className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline font-medium disabled:opacity-50"
-              >
-                {smartVenuesLoading ? "Aranıyor..." : "📍 Yakın mekanları bul"}
-              </button>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Mekan
+            {smartVenuesLoading && (
+              <span className="ml-2 text-xs text-emerald-600 dark:text-emerald-400 animate-pulse">📍 Yakındaki mekanlar aranıyor...</span>
             )}
-          </div>
-          {/* Smart venues from Google Places */}
-          {smartVenues.length > 0 && (
-            <div className="mb-2 space-y-1.5">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">📍 Önerilen mekanlar:</p>
-              {smartVenues.map((v: any) => (
-                <button
-                  key={v.place_id || v.name}
-                  type="button"
-                  onClick={() => setForm({ ...form, venueId: v.place_id || v.name })}
-                  className={`w-full text-left px-3 py-2 rounded-lg border text-sm transition ${
-                    form.venueId === (v.place_id || v.name)
-                      ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300"
-                      : "border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-emerald-300"
-                  }`}
-                >
-                  <span className="font-medium">{v.name}</span>
-                  {v.vicinity && <span className="block text-xs text-gray-400 mt-0.5">{v.vicinity}</span>}
-                  {v.rating && <span className="text-xs text-yellow-500 ml-1">⭐ {v.rating}</span>}
-                </button>
-              ))}
-              <button type="button" onClick={() => setSmartVenues([])} className="text-xs text-gray-400 hover:text-gray-600 mt-1">
-                × Önerileri kapat
-              </button>
-            </div>
-          )}
+            {!smartVenuesLoading && smartVenues.length > 0 && (
+              <span className="ml-2 text-xs text-emerald-600 dark:text-emerald-400">{smartVenues.length} mekan bulundu</span>
+            )}
+          </label>
           <select
             value={form.venueId}
             onChange={(e) => setForm({ ...form, venueId: e.target.value })}
-            disabled={!form.districtId}
+            disabled={!form.districtId || smartVenuesLoading}
             className={selectClass}
             aria-label="Mekan seçin"
           >
-            <option value="">Mekan henüz belli değil</option>
-            {venues.map((v) => (
-              <option key={v.id} value={v.id}>{v.name}</option>
-            ))}
+            <option value="">{smartVenuesLoading ? "Mekanlar yükleniyor..." : "Belirtmek istemiyorum"}</option>
+            {smartVenues.length > 0 && (
+              <optgroup label="📍 Yakındaki Mekanlar (OpenStreetMap)">
+                {smartVenues.map((v: any) => (
+                  <option key={v.place_id} value={v.place_id}>
+                    {v.name}{v.vicinity ? ` — ${v.vicinity}` : ""}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+            {venues.length > 0 && (
+              <optgroup label="🏟️ Kayıtlı Mekanlar">
+                {venues.map((v) => (
+                  <option key={v.id} value={v.id}>{v.name}</option>
+                ))}
+              </optgroup>
+            )}
           </select>
         </div>
 
