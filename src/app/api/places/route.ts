@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createLogger } from "@/lib/logger";
+import { getCityForDistrict, trLower } from "@/lib/district-city-map";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = prisma as any;
@@ -76,11 +77,12 @@ async function searchNominatimInCity(
 
       for (const item of data) {
         if (seen.has(item.place_id)) continue;
-        // Şehir filtresi: yalnızca doğru şehirdeki sonuçlar
+        // Şehir filtresi: province (il) öncelikli, city/town ikincil
+        // trLower kullanıyoruz: "İ".toLowerCase() JavaScript'te hatalı sonuç verir
         if (city) {
           const addr = item.address ?? {};
-          const itemCity = (addr.city || addr.town || addr.province || "").toLowerCase();
-          const cityLower = city.toLowerCase();
+          const itemCity = trLower(addr.province || addr.city || addr.town || "");
+          const cityLower = trLower(city);
           if (itemCity && !itemCity.includes(cityLower) && !cityLower.includes(itemCity)) continue;
         }
         seen.add(item.place_id);
@@ -117,7 +119,12 @@ export async function GET(req: NextRequest) {
     cityName = row?.city?.name ?? "";
   } catch { /* DB hatası */ }
 
-  // DB'de bulunamadıysa Nominatim ile geocode et → şehri adres bilgisinden çıkar
+  // DB'de bulunamadıysa önce statik ilçe→il eşlemesine bak (hızlı, API çağrısı yok)
+  if (!cityName) {
+    cityName = getCityForDistrict(district) ?? "";
+  }
+
+  // Statik listede de yoksa Nominatim ile geocode et (son çare)
   if (!cityName) {
     try {
       const geoUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(district + ", Türkiye")}&format=json&limit=1&countrycodes=tr&addressdetails=1`;
@@ -129,7 +136,7 @@ export async function GET(req: NextRequest) {
         const geoData: NominatimResult[] = await geoRes.json();
         if (geoData.length > 0) {
           const addr = geoData[0].address ?? {};
-          cityName = addr.city || addr.town || addr.province || "";
+          cityName = addr.province || addr.city || addr.town || "";
         }
       }
     } catch { /* geocode hatası */ }
