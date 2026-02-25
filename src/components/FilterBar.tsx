@@ -172,6 +172,9 @@ export default function FilterBar({ onFilterChange }: FilterBarProps) {
           <option value="">İlan Tipi</option>
           <option value="RIVAL">Rakip Arıyor</option>
           <option value="PARTNER">Partner Arıyor</option>
+          <option value="TRAINER">Eğitmen</option>
+          <option value="EQUIPMENT">Satılık Malzeme</option>
+          <option value="PARTNER">Partner Arıyor</option>
         </select>
       </div>
     </div>

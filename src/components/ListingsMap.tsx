@@ -91,7 +91,7 @@ export default function ListingsMap({ listings, className = "" }: MapProps) {
           marker.bindPopup(`
             <div style="min-width:180px">
               <strong>${listing.sport.icon ?? "🏅"} ${listing.sport.name}</strong><br/>
-              <span style="font-size:12px;color:#666">${listing.type === "RIVAL" ? "🥊 Rakip" : "🤝 Partner"} • ${listing.level}</span><br/>
+              <span style="font-size:12px;color:#666">${listing.type === "RIVAL" ? "🥊 Rakip" : listing.type === "TRAINER" ? "🎓 Eğitmen" : listing.type === "EQUIPMENT" ? "🛒 Satılık" : "🤝 Partner"} • ${listing.level}</span><br/>
               <span style="font-size:12px">📍 ${listing.district?.name}, ${city}</span><br/>
               <span style="font-size:12px">📅 ${dateStr}</span><br/>
               <span style="font-size:12px">👤 ${listing.user.name}</span><br/>

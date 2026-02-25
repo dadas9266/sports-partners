@@ -163,8 +163,8 @@ export default function ListingDetailPage({
               <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
                 {listing.sport?.name}
               </h1>
-              <Badge variant={listing.type === "RIVAL" ? "orange" : "emerald"} size="md">
-                {listing.type === "RIVAL" ? "🥊 Rakip Arıyor" : "🤝 Partner Arıyor"}
+              <Badge variant={listing.type === "RIVAL" ? "orange" : listing.type === "TRAINER" ? "blue" : listing.type === "EQUIPMENT" ? "purple" : "emerald"} size="md">
+                {listing.type === "RIVAL" ? "🥊 Rakip Arıyor" : listing.type === "TRAINER" ? "🎓 Eğitmen" : listing.type === "EQUIPMENT" ? "🛒 Satılık" : "🤝 Partner Arıyor"}
               </Badge>
             </div>
           </div>

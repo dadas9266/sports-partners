@@ -279,8 +279,8 @@ export default function PublicProfilePage({
                     <div className="flex items-center gap-2">
                       <span className="text-xl">{listing.sport?.icon || "🏆"}</span>
                       <span className="font-semibold text-gray-800 dark:text-gray-100">{listing.sport?.name}</span>
-                      <BadgeComp variant={listing.type === "RIVAL" ? "orange" : "emerald"} size="sm">
-                        {listing.type === "RIVAL" ? "Rakip" : "Partner"}
+                      <BadgeComp variant={listing.type === "RIVAL" ? "orange" : listing.type === "TRAINER" ? "blue" : listing.type === "EQUIPMENT" ? "purple" : "emerald"} size="sm">
+                        {listing.type === "RIVAL" ? "Rakip" : listing.type === "TRAINER" ? "Eğitmen" : listing.type === "EQUIPMENT" ? "Satılık" : "Partner"}
                       </BadgeComp>
                     </div>
                     <span className={`text-xs px-2 py-1 rounded-full font-medium ${LEVEL_COLORS[listing.level]}`}>

@@ -142,23 +142,7 @@ export default function EditListingPage({
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">İlan Tipi *</label>
           <div className="grid grid-cols-2 gap-3">
-            {(["RIVAL", "PARTNER"] as const).map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => setForm({ ...form, type: t })}
-                className={`p-3 rounded-lg border-2 text-center transition ${
-                  form.type === t
-                    ? t === "RIVAL"
-                      ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300"
-                      : "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300"
-                    : "border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400"
-                }`}
-                aria-pressed={form.type === t}
-              >
-                {t === "RIVAL" ? "🥊 Rakip Arıyorum" : "🤝 Partner Arıyorum"}
-              </button>
-            ))}
+            {(["RIVAL", "PARTNER", "TRAINER", "EQUIPMENT"] as const).map((t) => (\n              <button\n                key={t}\n                type="button"\n                onClick={() => setForm({ ...form, type: t })}\n                className={`p-3 rounded-lg border-2 text-center transition text-sm font-medium ${\n                  form.type === t\n                    ? t === "RIVAL"\n                      ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300"\n                      : t === "TRAINER"\n                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"\n                      : t === "EQUIPMENT"\n                      ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300"\n                      : "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300"\n                    : "border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400"\n                }`}\n                aria-pressed={form.type === t}\n              >\n                {t === "RIVAL" ? "🥊 Rakip Arıyorum" : t === "TRAINER" ? "🎓 Eğitmen İlanı" : t === "EQUIPMENT" ? "🛒 Spor Malzemesi" : "🤝 Partner Arıyorum"}\n              </button>\n            ))}
           </div>
         </div>
 

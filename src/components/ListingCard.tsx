@@ -137,8 +137,8 @@ export default function ListingCard({
             <h3 className="font-semibold text-gray-800 dark:text-gray-100">
               {listing.sport.name}
             </h3>
-            <Badge variant={listing.type === "RIVAL" ? "orange" : "emerald"}>
-              {listing.type === "RIVAL" ? "🥊 Rakip Arıyor" : "🤝 Partner Arıyor"}
+            <Badge variant={listing.type === "RIVAL" ? "orange" : listing.type === "TRAINER" ? "blue" : listing.type === "EQUIPMENT" ? "purple" : "emerald"}>
+              {listing.type === "RIVAL" ? "🥊 Rakip Arıyor" : listing.type === "TRAINER" ? "🎓 Eğitmen" : listing.type === "EQUIPMENT" ? "🛒 Satılık" : "🤝 Partner Arıyor"}
             </Badge>
           </div>
         </div>

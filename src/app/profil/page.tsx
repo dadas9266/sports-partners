@@ -580,8 +580,8 @@ export default function ProfilePage() {
                       {listing.sport?.icon} {listing.sport?.name}
                     </Link>
                     <div className="flex gap-2 mt-1">
-                      <Badge variant={listing.type === "RIVAL" ? "orange" : "emerald"}>
-                        {listing.type === "RIVAL" ? "Rakip" : "Partner"}
+                      <Badge variant={listing.type === "RIVAL" ? "orange" : listing.type === "TRAINER" ? "blue" : listing.type === "EQUIPMENT" ? "purple" : "emerald"}>
+                        {listing.type === "RIVAL" ? "Rakip" : listing.type === "TRAINER" ? "Eğitmen" : listing.type === "EQUIPMENT" ? "Satılık" : "Partner"}
                       </Badge>
                       <Badge variant={
                         listing.status === "OPEN" ? "blue" :
