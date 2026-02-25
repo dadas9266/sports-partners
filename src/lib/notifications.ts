@@ -68,4 +68,25 @@ export const NOTIF = {
     body: preview,
     link: `/mesajlar/${matchId}`,
   }),
+  newPostLike: (postOwnerId: string, likerName: string, postOwnderProfileId: string) => ({
+    userId: postOwnerId,
+    type: "NEW_POST_LIKE" as NotificationType,
+    title: "Gönderi Beğenildi",
+    body: `${likerName} gönderinizi beğendi.`,
+    link: `/profil/${postOwnderProfileId}`,
+  }),
+  newPostComment: (postOwnerId: string, commenterName: string, comment: string, postOwnerProfileId: string) => ({
+    userId: postOwnerId,
+    type: "NEW_POST_COMMENT" as NotificationType,
+    title: "Yeni Yorum",
+    body: `${commenterName}: ${comment.substring(0, 60)}`,
+    link: `/profil/${postOwnerProfileId}`,
+  }),
+  trainerVerified: (userId: string) => ({
+    userId,
+    type: "TRAINER_VERIFIED" as NotificationType,
+    title: "Eğitmen Profili Onaylandı ✅",
+    body: "Eğitmen profiliniz onaylandı. Artık doğrulanmış rozet gösteriliyor.",
+    link: `/profil`,
+  }),
 };

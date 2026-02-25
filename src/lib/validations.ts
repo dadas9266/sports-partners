@@ -39,7 +39,7 @@ export const loginSchema = z.object({
 
 // ========== LISTING ==========
 export const createListingSchema = z.object({
-  type: z.enum(["RIVAL", "PARTNER"], { message: "İlan tipi seçiniz" }),
+  type: z.enum(["RIVAL", "PARTNER", "TRAINER", "EQUIPMENT"], { message: "İlan tipi seçiniz" }),
   sportId: z.string().min(1, "Spor dalı seçiniz"),
   districtId: z.string().min(1, "İlçe seçiniz"),
   venueId: z.string().optional().nullable(),
@@ -104,7 +104,7 @@ export const listingFilterSchema = z.object({
   cityId: z.string().optional(),
   countryId: z.string().optional(),
   level: z.enum(["BEGINNER", "INTERMEDIATE", "ADVANCED"]).optional(),
-  type: z.enum(["RIVAL", "PARTNER"]).optional(),
+  type: z.enum(["RIVAL", "PARTNER", "TRAINER", "EQUIPMENT", "TRAINER", "EQUIPMENT"]).optional(),
   upcoming: z.string().optional(),
   quickOnly: z.string().optional(),  // "true" for hızlı ilan filter
   page: z.coerce.number().int().min(1).default(1),
@@ -133,6 +133,7 @@ export const updateProfileSchema = z
     districtId: z.string().optional().nullable(),
     sportIds: z.array(z.string()).max(5, "En fazla 5 spor seçebilirsiniz").optional(),
     avatarUrl: z.string().url("Geçerli bir URL giriniz").optional().nullable(),
+    coverUrl: z.string().url("Geçerli bir URL giriniz").optional().nullable(),
     gender: z.enum(["MALE", "FEMALE", "PREFER_NOT_TO_SAY"]).optional().nullable(),
     birthDate: z.string().optional().nullable(),
     preferredTime: z.enum(["morning", "evening", "anytime"]).optional().nullable(),

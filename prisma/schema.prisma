@@ -22,6 +22,7 @@ model User {
   passwordHash String?
   phone        String?
   avatarUrl    String?
+  coverUrl     String?   // Kapak fotoğrafı
   bio          String?
   cityId       String?
   city         City?     @relation(fields: [cityId], references: [id])
@@ -55,6 +56,10 @@ model User {
   messagesReceived  Message[]       @relation("MessageReceiver")
   noShowsReported   NoShowReport[]  @relation("NoShowReporter")
   noShowsReceived   NoShowReport[]  @relation("NoShowReceived")
+  trainerProfile    TrainerProfile?
+  posts             Post[]
+  postLikes         PostLike[]
+  postComments      PostComment[]
 }
 
 // ========== SPOR ==========
@@ -116,6 +121,8 @@ model Venue {
 enum ListingType {
   RIVAL
   PARTNER
+  TRAINER    // Eğitmen ilanı
+  EQUIPMENT  // Satılık spor malzemesi
 }
 
 enum Level {
@@ -164,7 +171,9 @@ model Listing {
   responses   Response[]
   match       Match?
   favorites   Favorite[]
-  noShows     NoShowReport[]
+  noShows         NoShowReport[]
+  trainerProfile  TrainerProfile?
+  equipmentDetail EquipmentDetail?
 
   @@index([status, dateTime])
   @@index([sportId])
@@ -246,6 +255,9 @@ enum NotificationType {
   NEW_FOLLOWER
   NEW_MESSAGE
   NO_SHOW_WARNING
+  NEW_POST_LIKE      // Gönderi beğenildi
+  NEW_POST_COMMENT   // Gönderiye yorum yapıldı
+  TRAINER_VERIFIED   // Eğitmen profili onaylandı
 }
 
 model Notification {
@@ -338,4 +350,106 @@ model Message {
   @@index([matchId])
   @@index([senderId])
   @@index([receiverId, read])
+}
+
+// ========== EĞİTMEN PROFİLİ ==========
+model TrainerProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id])
+  listingId       String?  @unique
+  listing         Listing? @relation(fields: [listingId], references: [id])
+  hourlyRate      Float?                       // Saatlik ücret
+  experience      Int?                         // Deneyim yılı
+  specialization  String?                      // "Çocuklar" | "Yetişkinler" | "Her Yaş"
+  gymName         String?                      // Çalıştığı salon
+  gymAddress      String?
+  certificates    String[] @default([])        // Sertifika URL'leri (Supabase Storage)
+  isVerified      Boolean  @default(false)     // Admin onayı
+  verifiedAt      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// ========== SATILIK MALZEME DETAYI ==========
+enum EquipmentCondition {
+  NEW
+  LIKE_NEW
+  GOOD
+  FAIR
+}
+
+model EquipmentDetail {
+  id          String             @id @default(cuid())
+  listingId   String             @unique
+  listing     Listing            @relation(fields: [listingId], references: [id])
+  price       Float
+  condition   EquipmentCondition @default(GOOD)
+  images      String[] @default([])  // Görsel URL'leri (Supabase Storage)
+  brand       String?
+  model       String?
+  isSold      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([listingId])
+}
+
+// ========== SOSYAL PAYLAŞIMLAR ==========
+model Post {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  content   String?                          // Yazı içeriği
+  images    String[]  @default([])           // Görsel URL'leri (Supabase Storage)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  likes     PostLike[]
+  comments  PostComment[]
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model PostLike {
+  id        String   @id @default(cuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@index([userId])
+}
+
+model PostComment {
+  id        String   @id @default(cuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([postId])
+  @@index([userId])
+}
+
+// ========== MEKAN CACHE (Google Places) ==========
+model VenueCache {
+  id          String   @id @default(cuid())
+  query       String                    // "İstanbul-Kadıköy-futbol"
+  lat         Float
+  lng         Float
+  placesJson  String                    // Google Places API yanıtı JSON
+  createdAt   DateTime @default(now())
+
+  @@unique([query])
+  @@index([query])
 }

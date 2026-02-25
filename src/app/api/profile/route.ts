@@ -5,6 +5,7 @@ import { updateProfileSchema } from "@/lib/validations";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { createLogger } from "@/lib/logger";
 import bcrypt from "bcryptjs";
+import { cacheDel, cacheKey } from "@/lib/cache";
 
 const log = createLogger("profile");
 
@@ -25,7 +26,7 @@ export async function GET() {
         // @ts-ignore
         select: {
           id: true, name: true, email: true, phone: true, createdAt: true,
-          bio: true, avatarUrl: true,
+          bio: true, avatarUrl: true, coverUrl: true,
           gender: true,
           birthDate: true,
           noShowCount: true,
@@ -164,6 +165,7 @@ export async function PUT(request: Request) {
     if ("cityId" in parsed.data && parsed.data.cityId !== undefined) updateData.cityId = parsed.data.cityId || null;
     if ("districtId" in parsed.data && parsed.data.districtId !== undefined) updateData.districtId = parsed.data.districtId || null;
     if ("avatarUrl" in parsed.data && parsed.data.avatarUrl !== undefined) updateData.avatarUrl = parsed.data.avatarUrl;
+    if ("coverUrl" in parsed.data && parsed.data.coverUrl !== undefined) updateData.coverUrl = parsed.data.coverUrl;
     if ("gender" in parsed.data && parsed.data.gender !== undefined) updateData.gender = parsed.data.gender;
     if ("birthDate" in parsed.data && parsed.data.birthDate !== undefined) {
       updateData.birthDate = parsed.data.birthDate ? new Date(parsed.data.birthDate) : null;
@@ -223,11 +225,14 @@ export async function PUT(request: Request) {
       data: updateData,
       select: {
         id: true, name: true, email: true, phone: true,
-        bio: true, avatarUrl: true,
+        bio: true, avatarUrl: true, coverUrl: true,
         city: { select: { id: true, name: true } },
         sports: { select: { id: true, name: true, icon: true } },
       },
     });
+
+    // Profil cache'ini temizle
+    await cacheDel(cacheKey.profile(userId));
 
     log.info("Profil güncellendi", { userId });
 

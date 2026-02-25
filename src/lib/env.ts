@@ -5,6 +5,15 @@ const envSchema = z.object({
   NEXTAUTH_SECRET: z.string().min(8, "NEXTAUTH_SECRET must be at least 8 characters"),
   NEXTAUTH_URL: z.string().url("NEXTAUTH_URL must be a valid URL"),
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+  // Supabase Storage
+  NEXT_PUBLIC_SUPABASE_URL: z.string().min(1).optional(),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1).optional(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
+  // Upstash Redis Cache
+  UPSTASH_REDIS_REST_URL: z.string().min(1).optional(),
+  UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
+  // Google Places API
+  GOOGLE_PLACES_API_KEY: z.string().min(1).optional(),
 });
 
 function validateEnv() {

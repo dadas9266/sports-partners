@@ -5,6 +5,7 @@ import { createListingSchema, listingFilterSchema } from "@/lib/validations";
 import { getCurrentUserId } from "@/lib/api-utils";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { createLogger } from "@/lib/logger";
+import { withCache, cacheDel, cacheKey, CACHE_TTL, cacheDelPattern } from "@/lib/cache";
 
 const log = createLogger("listings");
 
@@ -77,38 +78,43 @@ export async function GET(request: Request) {
       const weekLater = new Date();
       weekLater.setDate(weekLater.getDate() + 7);
       where.dateTime = { gte: now, lte: weekLater };
-    }
-    if (quickOnly === "true") {
+    }    if (quickOnly === "true") {
       where.isQuick = true;
     }
 
-    const [total, listings] = await Promise.all([
-      prisma.listing.count({ where }),
-      prisma.listing.findMany({
-        where,
-        include: {
-          sport: true,
-          district: { include: { city: { include: { country: true } } } },
-          venue: true,
-          // @ts-ignore
-          user: {
-            select: {
-              id: true,
-              name: true,
-              avatarUrl: true,
-              gender: true,
-              birthDate: true,
-              preferredTime: true,
-              preferredStyle: true,
+    const [total, listings] = await withCache(
+      cacheKey.listings({ sportId, districtId, cityId, level, type, upcoming, quickOnly, page, pageSize }),
+      CACHE_TTL.LISTINGS,
+      async () => {
+        return Promise.all([
+          prisma.listing.count({ where }),
+          prisma.listing.findMany({
+            where,
+            include: {
+              sport: true,
+              district: { include: { city: { include: { country: true } } } },
+              venue: true,
+              // @ts-ignore
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  avatarUrl: true,
+                  gender: true,
+                  birthDate: true,
+                  preferredTime: true,
+                  preferredStyle: true,
+                },
+              },
+              _count: { select: { responses: true } },
             },
-          },
-          _count: { select: { responses: true } },
-        },
-        orderBy: [{ isQuick: "desc" }, { dateTime: "asc" }],
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-      }),
-    ]);
+            orderBy: [{ isQuick: "desc" }, { dateTime: "asc" }],
+            skip: (page - 1) * pageSize,
+            take: pageSize,
+          }),
+        ]);
+      }
+    );
 
     // Uyumluluk skoru — sadece giriş yapan kullanıcılar için
     let viewer: { cityId: string | null; sportIds: string[]; preferredTime: string | null; preferredStyle: string | null } | null = null;
@@ -248,6 +254,9 @@ export async function POST(request: Request) {
     });
 
     log.info("İlan oluşturuldu", { listingId: listing.id, userId, isQuick: listing.isQuick });
+
+    // İlan listesi cache'ini temizle - yeni ilan eklendi
+    await cacheDelPattern("listings:*");
 
     return NextResponse.json(
       { success: true, data: listing },
