@@ -52,6 +52,7 @@ export async function POST(request: Request) {
         districtId,
         gender: gender as any,
         birthDate: birthDate ? new Date(birthDate) : null,
+        userType: "INDIVIDUAL" as any,
       } as any,
     });
 

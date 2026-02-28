@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUserId, unauthorized, notFound, isValidId } from "@/lib/api-utils";
+import { getCurrentUserId, unauthorized, notFound, isValidId, sanitizeText } from "@/lib/api-utils";
 import { createLogger } from "@/lib/logger";
 import { createNotification, NOTIF } from "@/lib/notifications";
+import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { z } from "zod";
 
 const log = createLogger("messages:match");
@@ -39,6 +40,9 @@ export async function GET(
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       select: {
         id: true,
+        matchId: true,
+        senderId: true,
+        receiverId: true,
         content: true,
         createdAt: true,
         read: true,
@@ -57,8 +61,10 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      data: messages.reverse(),
-      nextCursor: hasMore ? messages[0]?.id : null,
+      data: {
+        messages: messages.reverse(),
+        nextCursor: hasMore ? messages[0]?.id : null,
+      },
     });
   } catch (error) {
     log.error("Mesajlar yüklenemedi", error);
@@ -81,8 +87,13 @@ export async function POST(
     if (!userId) return unauthorized();
     if (!isValidId(matchId)) return notFound("Konuşma bulunamadı");
 
+    // Rate limit: 60 mesaj/dk
+    const rl = checkRateLimit(userId, "message");
+    if (!rl.allowed) return rateLimitResponse(rl.remaining);
+
     const body = await req.json();
-    const { content } = sendSchema.parse(body);
+    const { content: rawContent } = sendSchema.parse(body);
+    const content = sanitizeText(rawContent);
 
     const match = await prisma.match.findUnique({
       where: { id: matchId },
@@ -99,6 +110,9 @@ export async function POST(
       data: { matchId, senderId: userId, receiverId, content },
       select: {
         id: true,
+        matchId: true,
+        senderId: true,
+        receiverId: true,
         content: true,
         createdAt: true,
         read: true,

@@ -64,9 +64,12 @@ export async function GET(request: Request) {
 
     const where: Prisma.ListingWhereInput = {
       status: "OPEN",
-      dateTime: { gte: now },
-      // Süresi dolmuş hızlı ilanları gizle
-      OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+      AND: [
+        // Süresi dolmuş hızlı ilanları gizle
+        { OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
+        // TRAINER ve EQUIPMENT için tarih kısıtı yok; RIVAL/PARTNER yalnızca gelecektekiler
+        { OR: [{ type: { in: ["TRAINER", "EQUIPMENT"] } }, { dateTime: { gte: now } }] },
+      ],
     };
 
     if (sportId) where.sportId = sportId;
@@ -77,7 +80,8 @@ export async function GET(request: Request) {
     if (upcoming === "true") {
       const weekLater = new Date();
       weekLater.setDate(weekLater.getDate() + 7);
-      where.dateTime = { gte: now, lte: weekLater };
+      // AND dizisine ekle - üst koşulları ezmez
+      (where.AND as Prisma.ListingWhereInput[]).push({ dateTime: { gte: now, lte: weekLater } });
     }    if (quickOnly === "true") {
       where.isQuick = true;
     }
@@ -107,6 +111,8 @@ export async function GET(request: Request) {
                 },
               },
               _count: { select: { responses: true } },
+              equipmentDetail: { select: { price: true, isSold: true } },
+              trainerProfile: { select: { hourlyRate: true } },
             },
             orderBy: [{ isQuick: "desc" }, { dateTime: "asc" }],
             skip: (page - 1) * pageSize,
@@ -181,23 +187,10 @@ export async function POST(request: Request) {
       );
     }
 
-    // Rate limit
-    const rateCheck = checkRateLimit(userId, "listing");
-    if (!rateCheck.allowed) {
-      log.warn("Rate limit aşıldı", { userId });
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Günlük ilan limitinize ulaştınız (max 5 ilan/gün)",
-        },
-        { status: 429 }
-      );
-    }
-
     // Banned kullanıcı ilan oluşturamaz
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { isBanned: true },
+      select: { isBanned: true, currentStreak: true },
     });
 
     if (user?.isBanned) {
@@ -205,6 +198,23 @@ export async function POST(request: Request) {
         { success: false, error: "Hesabınız geçici olarak kısıtlandı. İlan oluşturamazsınız." },
         { status: 403 }
       );
+    }
+
+    // Hafta sonu + 7 günlük seri = +1 bonus ilan hakkı
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayListingCount = await prisma.listing.count({
+      where: { userId, createdAt: { gte: todayStart } },
+    });
+    const isWeekend = [0, 6].includes(new Date().getDay()); // 0=Pazar, 6=Cumartesi
+    const hasStreakBonus = isWeekend && (user?.currentStreak ?? 0) >= 7;
+    const dailyLimit = 5 + (hasStreakBonus ? 1 : 0);
+
+    if (todayListingCount >= dailyLimit) {
+      const msg = hasStreakBonus
+        ? "Hafta sonu seri bonus hakkınız dahil günlük ilan limitinize ulaştınız (max 6 ilan/gün)"
+        : "Günlük ilan limitinize ulaştınız (max 5 ilan/gün)";
+      return NextResponse.json({ success: false, error: msg }, { status: 429 });
     }
 
     const body = await request.json();
@@ -234,8 +244,11 @@ export async function POST(request: Request) {
         districtId: parsed.data.districtId,
         venueId: parsed.data.venueId || null,
         userId,
-        dateTime: new Date(parsed.data.dateTime),
-        level: parsed.data.level,
+        // TRAINER/EQUIPMENT için tarih opsiyonel; yoksa şu anki zaman kullanılır (gizli field)
+        dateTime: parsed.data.dateTime
+          ? new Date(parsed.data.dateTime)
+          : new Date(),
+        level: parsed.data.level ?? "BEGINNER",
         description: parsed.data.description || null,
         maxParticipants: parsed.data.maxParticipants ?? 2,
         allowedGender: parsed.data.allowedGender ?? "ANY",
@@ -245,11 +258,53 @@ export async function POST(request: Request) {
         recurringDays: parsed.data.recurringDays?.length
           ? parsed.data.recurringDays.join(",")
           : null,
+        minAge: parsed.data.minAge ?? null,
+        maxAge: parsed.data.maxAge ?? null,
+        groupId: parsed.data.groupId ?? null,
+        // Eğitmen profili verisi
+        ...(parsed.data.type === "TRAINER" && parsed.data.trainerProfile
+          ? {
+              trainerProfile: {
+                create: {
+                  userId,
+                  hourlyRate: parsed.data.trainerProfile.hourlyRate ?? null,
+                  gymName: parsed.data.trainerProfile.gymName || null,
+                  gymAddress: parsed.data.trainerProfile.gymAddress || null,
+                  ...(parsed.data.trainerProfile.specialization || parsed.data.trainerProfile.experience !== undefined
+                    ? {
+                        specializations: {
+                          create: {
+                            sportName: parsed.data.trainerProfile.specialization || "Genel",
+                            years: parsed.data.trainerProfile.experience ?? 0,
+                          },
+                        },
+                      }
+                    : {}),
+                },
+              },
+            }
+          : {}),
+        // Ekipman detayı
+        ...(parsed.data.type === "EQUIPMENT" && parsed.data.equipmentDetail
+          ? {
+              equipmentDetail: {
+                create: {
+                  price: parsed.data.equipmentDetail.price ?? 0,
+                  condition: parsed.data.equipmentDetail.condition ?? "GOOD",
+                  brand: parsed.data.equipmentDetail.brand || null,
+                  model: parsed.data.equipmentDetail.model || null,
+                  images: parsed.data.equipmentDetail.images ?? [],
+                },
+              },
+            }
+          : {}),
       },
       include: {
         sport: true,
         district: { include: { city: true } },
         venue: true,
+        trainerProfile: { include: { specializations: true } },
+        equipmentDetail: true,
       },
     });
 

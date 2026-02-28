@@ -29,17 +29,32 @@ export async function GET(
         gender: true,
         city: { select: { name: true, country: { select: { name: true } } } },
         sports: { select: { id: true, name: true, icon: true } },
+        ratingsReceived: {
+          select: { score: true },
+        },
+        trainerProfile: { select: { isVerified: true, experience: true, specialization: true, hourlyRate: true } },
+        coverUrl: true,
+        clubMemberships: {
+          select: {
+            role: true,
+            club: {
+              select: {
+                id: true, name: true,
+                sport: { select: { id: true, name: true, icon: true } },
+              },
+            },
+          },
+        },
         _count: {
           select: {
             listings: true,
             matches1: true,
             matches2: true,
             ratingsReceived: true,
+            followers: true,
+            following: true,
           },
-        },
-        ratingsReceived: {
-          select: { score: true },
-        },
+        } as any,
         listings: {
           where: { status: "OPEN" as any, dateTime: { gte: new Date() } },
           orderBy: { dateTime: "asc" as any },
@@ -77,6 +92,11 @@ export async function GET(
     };
     const totalMatches = (count.matches1 || 0) + (count.matches2 || 0);
 
+    const [followersCount, followingCount] = await Promise.all([
+      prisma.follow.count({ where: { followingId: id } }),
+      prisma.follow.count({ where: { followerId: id } }),
+    ]);
+
     // Kendi profilinde ekstra bilgiler
     const isOwnProfile = currentUserId === id;
 
@@ -100,6 +120,11 @@ export async function GET(
         totalMatches,
         activeListings: user.listings || [],
         isOwnProfile,
+        trainerProfile: user.trainerProfile ?? null,
+        coverUrl: user.coverUrl ?? null,
+        clubs: (user.clubMemberships ?? []).map((m: any) => ({ ...m.club, role: m.role })),
+        followersCount,
+        followingCount,
       },
     });
   } catch (error) {

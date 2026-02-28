@@ -74,10 +74,10 @@ export async function POST(request: Request) {
       );
     }
 
-    // İlan banned kullanıcı engeli + cinsiyet kısıtı kontrolü
+    // İlan banned kullanıcı engeli + cinsiyet kısıtı + yaş kısıtı kontrolü
     const applicant = await prisma.user.findUnique({
       where: { id: userId },
-      select: { isBanned: true, gender: true },
+      select: { isBanned: true, gender: true, birthDate: true },
     });
 
     if (applicant?.isBanned) {
@@ -97,6 +97,24 @@ export async function POST(request: Request) {
       if (listing.allowedGender === "MALE_ONLY" && applicant?.gender !== "MALE") {
         return NextResponse.json(
           { success: false, error: "Bu ilan yalnızca erkeklere açıktır" },
+          { status: 403 }
+        );
+      }
+    }
+
+    // Yaş aralığı kontrolü
+    const listingWithAge = listing as typeof listing & { minAge?: number | null; maxAge?: number | null };
+    if ((listingWithAge.minAge || listingWithAge.maxAge) && applicant?.birthDate) {
+      const age = Math.floor((Date.now() - new Date(applicant.birthDate).getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+      if (listingWithAge.minAge && age < listingWithAge.minAge) {
+        return NextResponse.json(
+          { success: false, error: `Bu ilan için minimum yaş ${listingWithAge.minAge}'dir. Mevcut yaşınız: ${age}` },
+          { status: 403 }
+        );
+      }
+      if (listingWithAge.maxAge && age > listingWithAge.maxAge) {
+        return NextResponse.json(
+          { success: false, error: `Bu ilan için maksimum yaş ${listingWithAge.maxAge}'dir. Mevcut yaşınız: ${age}` },
           { status: 403 }
         );
       }

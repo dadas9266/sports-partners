@@ -20,7 +20,7 @@ export async function GET() {
       );
     }
 
-    const [user, myListings, myResponses, myMatches, myFavorites, unreadNotifications] = await Promise.all([
+    const [user, myListings, myResponses, myMatches, myFavorites, unreadNotifications, followersCount, followingCount, myClubs, myGroups] = await Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
         // @ts-ignore
@@ -35,10 +35,19 @@ export async function GET() {
           preferredTime: true,
           preferredStyle: true,
           onboardingDone: true,
+          userType: true,
+          userLevel: true,
+          currentStreak: true,
+          longestStreak: true,
+          totalMatches: true,
+          totalPoints: true,
+          lastActiveDate: true,
           city: { select: { id: true, name: true, country: { select: { id: true, name: true } } } },
           district: { select: { id: true, name: true } },
           sports: { select: { id: true, name: true, icon: true } },
           ratingsReceived: { select: { score: true } },
+          ratingsGiven: { select: { matchId: true } },
+          trainerProfile: { select: { isVerified: true, gymName: true, specializations: { select: { sportName: true, years: true } } } },
           _count: {
             select: {
               followers: true,
@@ -103,6 +112,38 @@ export async function GET() {
       }),
       // Okunmamış bildirim sayısı
       prisma.notification.count({ where: { userId, read: false } }),
+      prisma.follow.count({ where: { followingId: userId } }),
+      prisma.follow.count({ where: { followerId: userId } }),
+      // Kulüp üyelikleri
+      prisma.userClubMembership.findMany({
+        where: { userId },
+        include: {
+          club: {
+            select: {
+              id: true, name: true, description: true, website: true,
+              sport: { select: { id: true, name: true, icon: true } },
+              city: { select: { id: true, name: true } },
+              _count: { select: { members: true } },
+            },
+          },
+        },
+        orderBy: { joinedAt: "desc" },
+      }),
+      // Grup üyelikleri
+      prisma.groupMembership.findMany({
+        where: { userId },
+        include: {
+          group: {
+            select: {
+              id: true, name: true, description: true, isPublic: true,
+              sport: { select: { id: true, name: true, icon: true } },
+              city: { select: { id: true, name: true } },
+              _count: { select: { members: true } },
+            },
+          },
+        },
+        orderBy: { joinedAt: "desc" },
+      }),
     ]);
 
     if (!user) {
@@ -112,18 +153,31 @@ export async function GET() {
       );
     }
 
-    const avgRating = user.ratingsReceived.length > 0
-      ? Math.round((user.ratingsReceived.reduce((s, r) => s + r.score, 0) / user.ratingsReceived.length) * 10) / 10
+    const avgRating = (user as any).ratingsReceived?.length > 0
+      ? Math.round(((user as any).ratingsReceived.reduce((s: number, r: { score: number }) => s + r.score, 0) / (user as any).ratingsReceived.length) * 10) / 10
       : null;
+    const ratedMatchIds = new Set(((user as any).ratingsGiven ?? []).map((r: { matchId: string }) => r.matchId));
 
     return NextResponse.json({
       success: true,
       data: {
-        user: { ...user, avgRating, ratingCount: user?.ratingsReceived.length ?? 0 },
+        user: {
+          ...user,
+          _count: {
+            ...(user as any)._count,
+            followers: followersCount,
+            following: followingCount,
+          },
+          avgRating,
+          ratingCount: (user as any).ratingsReceived?.length ?? 0,
+        },
+        ratedMatchIds: Array.from(ratedMatchIds),
         myListings,
         myResponses,
         myMatches,
         myFavorites: myFavorites.map((f) => f.listing),
+        myClubs,
+        myGroups,
         unreadNotifications,
       },
     });
@@ -158,21 +212,44 @@ export async function PUT(request: Request) {
     }
 
     const updateData: Record<string, unknown> = {};
+    const userBefore = await prisma.user.findUnique({ where: { id: userId } });
 
-    if (parsed.data.name !== undefined) updateData.name = parsed.data.name;
-    if (parsed.data.phone !== undefined) updateData.phone = parsed.data.phone;
-    if ("bio" in parsed.data && parsed.data.bio !== undefined) updateData.bio = parsed.data.bio;
-    if ("cityId" in parsed.data && parsed.data.cityId !== undefined) updateData.cityId = parsed.data.cityId || null;
-    if ("districtId" in parsed.data && parsed.data.districtId !== undefined) updateData.districtId = parsed.data.districtId || null;
-    if ("avatarUrl" in parsed.data && parsed.data.avatarUrl !== undefined) updateData.avatarUrl = parsed.data.avatarUrl;
-    if ("coverUrl" in parsed.data && parsed.data.coverUrl !== undefined) updateData.coverUrl = parsed.data.coverUrl;
-    if ("gender" in parsed.data && parsed.data.gender !== undefined) updateData.gender = parsed.data.gender;
+    if (parsed.data.name !== undefined) {
+      updateData.name = parsed.data.name;
+    }
+    if (parsed.data.phone !== undefined) {
+      updateData.phone = parsed.data.phone;
+    }
+    if ("bio" in parsed.data && parsed.data.bio !== undefined) {
+      updateData.bio = parsed.data.bio;
+    }
+    if ("cityId" in parsed.data && parsed.data.cityId !== undefined) {
+      updateData.cityId = parsed.data.cityId || null;
+    }
+    if ("districtId" in parsed.data && parsed.data.districtId !== undefined) {
+      updateData.districtId = parsed.data.districtId || null;
+    }
+    if ("avatarUrl" in parsed.data && parsed.data.avatarUrl !== undefined) {
+      updateData.avatarUrl = parsed.data.avatarUrl;
+    }
+    if ("coverUrl" in parsed.data && parsed.data.coverUrl !== undefined) {
+      updateData.coverUrl = parsed.data.coverUrl;
+    }
+    if ("gender" in parsed.data && parsed.data.gender !== undefined) {
+      updateData.gender = parsed.data.gender;
+    }
     if ("birthDate" in parsed.data && parsed.data.birthDate !== undefined) {
       updateData.birthDate = parsed.data.birthDate ? new Date(parsed.data.birthDate) : null;
     }
-    if ("preferredTime" in parsed.data && parsed.data.preferredTime !== undefined) updateData.preferredTime = parsed.data.preferredTime;
-    if ("preferredStyle" in parsed.data && parsed.data.preferredStyle !== undefined) updateData.preferredStyle = parsed.data.preferredStyle;
-    if ("onboardingDone" in parsed.data && parsed.data.onboardingDone !== undefined) updateData.onboardingDone = parsed.data.onboardingDone;
+    if ("preferredTime" in parsed.data && parsed.data.preferredTime !== undefined) {
+      updateData.preferredTime = parsed.data.preferredTime;
+    }
+    if ("preferredStyle" in parsed.data && parsed.data.preferredStyle !== undefined) {
+      updateData.preferredStyle = parsed.data.preferredStyle;
+    }
+    if ("onboardingDone" in parsed.data && parsed.data.onboardingDone !== undefined) {
+      updateData.onboardingDone = parsed.data.onboardingDone;
+    }
 
     // Favori sporlar güncelleme
     const sportIds = "sportIds" in parsed.data ? (parsed.data as { sportIds?: string[] }).sportIds : undefined;
@@ -219,6 +296,9 @@ export async function PUT(request: Request) {
         { status: 400 }
       );
     }
+
+
+    // Trust score update kaldırıldı (guvenPuani alanı mevcut değil)
 
     const updated = await prisma.user.update({
       where: { id: userId },

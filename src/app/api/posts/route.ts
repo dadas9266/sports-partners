@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUserId } from "@/lib/api-utils";
+import { getCurrentUserId, sanitizeText } from "@/lib/api-utils";
 import { createLogger } from "@/lib/logger";
+import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { z } from "zod";
 
 const log = createLogger("api:posts");
@@ -35,7 +36,7 @@ export async function GET(req: NextRequest) {
         where: { followerId: userId },
         select: { followingId: true },
       });
-      const followingIds = [userId, ...following.map((f) => f.followingId)];
+      const followingIds = [userId, ...following.map((f: { followingId: string }) => f.followingId)];
       userIdFilter = { in: followingIds };
     }
 
@@ -58,7 +59,7 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    const postsWithLiked = posts.map((p) => ({
+    const postsWithLiked = posts.map((p: (typeof posts)[number]) => ({
       ...p,
       liked: p.likes.length > 0,
       likes: undefined,
@@ -81,6 +82,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const rl = checkRateLimit(userId, "post");
+  if (!rl.allowed) return rateLimitResponse(rl.remaining);
+
   try {
     const body = await req.json();
     const parsed = createPostSchema.safeParse(body);
@@ -88,7 +92,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
     }
 
-    const { content, images } = parsed.data;
+    const rawContent = parsed.data.content;
+    const content = rawContent ? sanitizeText(rawContent) : undefined;
+    const { images } = parsed.data;
     if (!content && images.length === 0) {
       return NextResponse.json({ error: "İçerik veya görsel zorunlu" }, { status: 400 });
     }

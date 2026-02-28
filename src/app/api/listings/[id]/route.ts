@@ -23,6 +23,10 @@ export async function GET(
         district: { include: { city: { include: { country: true } } } },
         venue: true,
         user: { select: { id: true, name: true, phone: true, email: true } },
+        trainerProfile: {
+          include: { specializations: true },
+        },
+        equipmentDetail: true,
         responses: {
           include: {
             user: { select: { id: true, name: true } },

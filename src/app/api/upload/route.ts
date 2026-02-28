@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUserId } from "@/lib/api-utils";
+import { checkRateLimit, rateLimitResponse, getClientIP } from "@/lib/rate-limit";
 import {
   uploadFile,
   deleteFile,
@@ -48,6 +49,11 @@ export async function POST(req: NextRequest) {
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  // Rate limit: 20 upload/saat
+  const ip = getClientIP(req);
+  const rl = checkRateLimit(`${userId}:${ip}`, "upload");
+  if (!rl.allowed) return rateLimitResponse(rl.remaining);
 
   // Supabase env kontrolü
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {

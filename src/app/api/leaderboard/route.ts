@@ -28,6 +28,8 @@ export async function GET(req: NextRequest) {
         city: { select: { name: true } },
         sports: { select: { id: true, name: true, icon: true } },
         ratingsReceived: { select: { score: true } },
+        totalPoints: true,
+        currentStreak: true,
         _count: {
           select: {
             matches1: true,
@@ -39,15 +41,25 @@ export async function GET(req: NextRequest) {
     });
 
     // Puan hesapla, sırala, filtrele (min 1 değerlendirme)
-    const ranked = users
-      .map((u) => {
+    type RankedEntry = {
+      id: string; name: string; avatarUrl: string | null;
+      city: { name: string } | null; sports: { id: string; name: string; icon: string | null }[];
+      avgRating: number; ratingCount: number; totalMatches: number;
+      totalPoints: number; currentStreak: number; totalListings: number;
+      badges: ReturnType<typeof computeBadges>;
+    };
+    const ranked: RankedEntry[] = users
+      .map((u: (typeof users)[number]) => {
         const totalMatches = u._count.matches1 + u._count.matches2;
         const avgRating =
           u.ratingsReceived.length > 0
             ? u.ratingsReceived.reduce((s: number, r: { score: number }) => s + r.score, 0) /
               u.ratingsReceived.length
             : 0;
-        const badges = computeBadges({ totalMatches, avgRating, ratingCount: u.ratingsReceived.length });
+        const badges = computeBadges({
+          totalMatches, avgRating, ratingCount: u.ratingsReceived.length,
+          currentStreak: u.currentStreak, longestStreak: 0,
+        });
 
         return {
           id: u.id,
@@ -58,12 +70,14 @@ export async function GET(req: NextRequest) {
           avgRating: Math.round(avgRating * 10) / 10,
           ratingCount: u.ratingsReceived.length,
           totalMatches,
+          totalPoints: u.totalPoints,
+          currentStreak: u.currentStreak,
           totalListings: u._count.listings,
           badges,
         };
       })
-      .filter((u) => u.avgRating > 0)
-      .sort((a, b) => b.avgRating - a.avgRating || b.ratingCount - a.ratingCount)
+      .filter((u: RankedEntry) => u.avgRating > 0)
+      .sort((a: RankedEntry, b: RankedEntry) => b.avgRating - a.avgRating || b.ratingCount - a.ratingCount)
       .slice(0, limit);
 
     return NextResponse.json({ success: true, data: ranked });
