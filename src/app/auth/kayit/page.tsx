@@ -8,6 +8,7 @@ import toast from "react-hot-toast";
 import { registerUser } from "@/services/api";
 import Button from "@/components/ui/Button";
 import { useLocations } from "@/hooks/useLocations";
+import LocationSelector from "@/components/LocationSelector";
 
 // ─── Adım göstergesi ────────────────────────────────────────────────────────
 function StepBar({ current, total }: { current: number; total: number }) {
@@ -323,72 +324,15 @@ export default function KayitPage() {
                 />
               </div>
 
-              <div>
-                <label htmlFor="country" className={labelClass}>
-                  Ülke
-                </label>
-                <select
-                  id="country"
-                  required
-                  value={form.countryId}
-                  onChange={(e) => setForm({ ...form, countryId: e.target.value, cityId: "", districtId: "" })}
-                  className={inputClass}
-                  disabled={locLoading}
-                >
-                  <option value="">{locLoading ? "Yükleniyor..." : "Ülke seçiniz"}</option>
-                  {countries.map((country) => (
-                    <option key={country.id} value={country.id}>
-                      {country.name}
-                    </option>
-                  ))}
-                </select>
+              <div className="col-span-full">
+                <LocationSelector
+                  countryId={form.countryId}
+                  cityId={form.cityId}
+                  districtId={form.districtId}
+                  onChange={(updates) => setForm({ ...form, ...updates })}
+                  className="grid grid-cols-1 gap-4"
+                />
               </div>
-
-              {form.countryId && (
-                <div>
-                  <label htmlFor="city" className={labelClass}>
-                    Şehir
-                  </label>
-                  <select
-                    id="city"
-                    required
-                    value={form.cityId}
-                    onChange={(e) => setForm({ ...form, cityId: e.target.value, districtId: "" })}
-                    className={inputClass}
-                    disabled={!form.countryId || locLoading}
-                  >
-                    <option value="">{locLoading ? "Yükleniyor..." : "Şehir seçiniz"}</option>
-                    {cities.map((city) => (
-                      <option key={city.id} value={city.id}>
-                        {city.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              {form.cityId && (
-                <div>
-                  <label htmlFor="district" className={labelClass}>
-                    İlçe
-                  </label>
-                  <select
-                    id="district"
-                    required
-                    value={form.districtId}
-                    onChange={(e) => setForm({ ...form, districtId: e.target.value })}
-                    className={inputClass}
-                    disabled={!form.cityId}
-                  >
-                    <option value="">İlçe seçiniz</option>
-                    {districts.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
 
               <div className="flex gap-3 pt-2">
                 <button

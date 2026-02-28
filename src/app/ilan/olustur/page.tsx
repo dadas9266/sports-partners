@@ -10,6 +10,7 @@ import { createListing } from "@/services/api";
 import type { CreateListingForm, ListingType } from "@/types";
 import Button from "@/components/ui/Button";
 import type { MapVenue } from "@/components/VenueMapPicker";
+import LocationSelector from "@/components/LocationSelector";
 
 // Leaflet SSR sorunu — sadece client-side yükle
 const VenueMapPicker = dynamic(() => import("@/components/VenueMapPicker"), { ssr: false });
@@ -233,55 +234,12 @@ export default function CreateListingPage() {
         </div>
 
         {/* Konum */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ülke *</label>
-            <select
-              required
-              value={form.countryId}
-              onChange={(e) => setForm({ ...form, countryId: e.target.value, cityId: "", districtId: "", venueId: "" })}
-              className={selectClass}
-              aria-label="Ülke seçin"
-            >
-              <option value="">Seçiniz</option>
-              {locations.map((l) => (
-                <option key={l.id} value={l.id}>{l.name}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Şehir *</label>
-            <select
-              required
-              value={form.cityId}
-              onChange={(e) => setForm({ ...form, cityId: e.target.value, districtId: "", venueId: "" })}
-              disabled={!form.countryId}
-              className={selectClass}
-              aria-label="Şehir seçin"
-            >
-              <option value="">Seçiniz</option>
-              {cities.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">İlçe *</label>
-            <select
-              required
-              value={form.districtId}
-              onChange={(e) => setForm({ ...form, districtId: e.target.value, venueId: "" })}
-              disabled={!form.cityId}
-              className={selectClass}
-              aria-label="İlçe seçin"
-            >
-              <option value="">Seçiniz</option>
-              {districts.map((d) => (
-                <option key={d.id} value={d.id}>{d.name}</option>
-              ))}
-            </select>
-          </div>
-        </div>
+        <LocationSelector
+          countryId={form.countryId}
+          cityId={form.cityId}
+          districtId={form.districtId}
+          onChange={(updates) => setForm({ ...form, ...updates, venueId: "" })}
+        />
 
         {/* Mekan */}
         <div>

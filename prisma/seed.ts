@@ -396,109 +396,135 @@ async function main() {
   }
   console.log(`✅ ${internationalData.length} uluslararası ülke + şehir + ilçe eklendi`);
 
+  // ─── ADMIN HESABI OLUŞTURMA ──────────────────────────────────────────
+  const adminEmail = process.argv.find(arg => arg.includes("@")) || "admin@gmail.com";
+  const adminPassword = process.argv[process.argv.indexOf(adminEmail) + 1] || "Admin123!";
+  
+  const adminHash = await bcrypt.hash(adminPassword, 12);
+  await prisma.user.upsert({
+    where: { email: adminEmail },
+    update: {
+      isAdmin: true,
+      passwordHash: adminHash,
+    },
+    create: {
+      name: "Sistem Yöneticisi",
+      email: adminEmail,
+      passwordHash: adminHash,
+      isAdmin: true,
+    },
+  });
+  console.log(`\n👑 Admin hesabı hazır: ${adminEmail} / ${adminPassword}`);
+
   // Mekanlar
-  const mekanlar = await Promise.all([
-    prisma.venue.create({
-      data: {
-        name: "Kadıköy Spor Salonu",
-        address: "Caferağa Mah. Moda Cad. No:12",
-        districtId: kadikoy.id,
-        sportId: sporlar[0].id,
+  const venueData = [
+    {
+      name: "Kadıköy Spor Salonu",
+      address: "Caferağa Mah. Moda Cad. No:12",
+      districtId: kadikoy.id,
+      sportId: sporlar[0].id,
+    },
+    {
+      name: "Fenerbahçe Korları",
+      address: "Fenerbahçe Parkı İçi",
+      districtId: kadikoy.id,
+      sportId: sporlar[2].id,
+    },
+    {
+      name: "Beşiktaş Basketbol Sahası",
+      address: "Barbaros Bulvarı Açık Saha",
+      districtId: besiktas.id,
+      sportId: sporlar[1].id,
+    },
+    {
+      name: "Üsküdar Halı Saha",
+      address: "Altunizade Mah.",
+      districtId: uskudar.id,
+      sportId: sporlar[0].id,
+    },
+    {
+      name: "Şişli Spor Merkezi",
+      address: "Mecidiyeköy Mah.",
+      districtId: sisli.id,
+      sportId: sporlar[0].id,
+    },
+    {
+      name: "Bakırköy Yüzme Havuzu",
+      address: "Ataköy Sahil",
+      districtId: bakirkoy.id,
+      sportId: sporlar[5].id, // Yüzme
+    },
+    {
+      name: "Çankaya Tenis Kulübü",
+      address: "Tunalı Hilmi Cad.",
+      districtId: cankaya.id,
+      sportId: sporlar[2].id,
+    },
+    {
+      name: "Keçiören Spor Kompleksi",
+      address: "Keçiören Belediyesi Tesisleri",
+      districtId: kecioren.id,
+      sportId: sporlar[1].id,
+    },
+    {
+      name: "Karşıyaka Voleybol Sahası",
+      address: "Karşıyaka Sahil",
+      districtId: karsiyaka.id,
+      sportId: sporlar[3].id,
+    },
+    {
+      name: "Bornova Stadyumu",
+      address: "Bornova Merkez",
+      districtId: bornova.id,
+      sportId: sporlar[0].id,
+    },
+  ];
+
+  const mekanlar = [];
+  for (const v of venueData) {
+    const created = await prisma.venue.upsert({
+      where: {
+        name_districtId: {
+          name: v.name,
+          districtId: v.districtId,
+        },
       },
-    }),
-    prisma.venue.create({
-      data: {
-        name: "Fenerbahçe Korları",
-        address: "Fenerbahçe Parkı İçi",
-        districtId: kadikoy.id,
-        sportId: sporlar[2].id,
+      update: {
+        address: v.address,
+        sportId: v.sportId,
       },
-    }),
-    prisma.venue.create({
-      data: {
-        name: "Beşiktaş Basketbol Sahası",
-        address: "Barbaros Bulvarı Açık Saha",
-        districtId: besiktas.id,
-        sportId: sporlar[1].id,
-      },
-    }),
-    prisma.venue.create({
-      data: {
-        name: "Üsküdar Halı Saha",
-        address: "Altunizade Mah.",
-        districtId: uskudar.id,
-        sportId: sporlar[0].id,
-      },
-    }),
-    prisma.venue.create({
-      data: {
-        name: "Şişli Spor Merkezi",
-        address: "Mecidiyeköy Mah.",
-        districtId: sisli.id,
-      },
-    }),
-    prisma.venue.create({
-      data: {
-        name: "Bakırköy Yüzme Havuzu",
-        address: "Ataköy Sahil",
-        districtId: bakirkoy.id,
-        sportId: sporlar[6].id,
-      },
-    }),
-    prisma.venue.create({
-      data: {
-        name: "Çankaya Tenis Kulübü",
-        address: "Tunalı Hilmi Cad.",
-        districtId: cankaya.id,
-        sportId: sporlar[2].id,
-      },
-    }),
-    prisma.venue.create({
-      data: {
-        name: "Keçiören Spor Kompleksi",
-        address: "Keçiören Belediyesi Tesisleri",
-        districtId: kecioren.id,
-      },
-    }),
-    prisma.venue.create({
-      data: {
-        name: "Karşıyaka Voleybol Sahası",
-        address: "Karşıyaka Sahil",
-        districtId: karsiyaka.id,
-        sportId: sporlar[3].id,
-      },
-    }),
-    prisma.venue.create({
-      data: {
-        name: "Bornova Stadyumu",
-        address: "Bornova Merkez",
-        districtId: bornova.id,
-        sportId: sporlar[0].id,
-      },
-    }),
-  ]);
+      create: v,
+    });
+    mekanlar.push(created);
+  }
   console.log(`✅ ${mekanlar.length} mekan oluşturuldu`);
 
   // Örnek kullanıcılar
   const hash = await bcrypt.hash("Test123!", 12);
-  const user1 = await prisma.user.create({
-    data: {
+  const user1 = await prisma.user.upsert({
+    where: { email: "ahmet@test.com" },
+    update: {},
+    create: {
       name: "Ahmet Yılmaz",
       email: "ahmet@test.com",
       passwordHash: hash,
       phone: "05551112233",
     },
   });
-  const user2 = await prisma.user.create({
-    data: {
+  const user2 = await prisma.user.upsert({
+    where: { email: "mehmet@test.com" },
+    update: {},
+    create: {
       name: "Mehmet Kaya",
       email: "mehmet@test.com",
       passwordHash: hash,
       phone: "05554445566",
     },
   });
-  const user3 = await prisma.user.create({
-    data: {
+  const user3 = await prisma.user.upsert({
+    where: { email: "ayse@test.com" },
+    update: {},
+    create: {
       name: "Ayşe Demir",
       email: "ayse@test.com",
       passwordHash: hash,

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocations, useSports } from "@/hooks/useLocations";
 import { useDebounce } from "@/hooks/useDebounce";
+import LocationSelector from "./LocationSelector";
 
 type FilterBarProps = {
   onFilterChange: (filters: Record<string, string>) => void;
@@ -110,59 +111,20 @@ export default function FilterBar({ onFilterChange }: FilterBarProps) {
         </button>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        {/* Ülke */}
-        <select
-          value={selectedCountry}
-          onChange={(e) => {
-            setSelectedCountry(e.target.value);
-            setSelectedCity("");
-            setSelectedDistrict("");
+        {/* Konum Seçimi (Ülke, Şehir, İlçe) */}
+        <LocationSelector
+          countryId={selectedCountry}
+          cityId={selectedCity}
+          districtId={selectedDistrict}
+          onChange={(updates) => {
+            if (updates.countryId !== undefined) setSelectedCountry(updates.countryId);
+            if (updates.cityId !== undefined) setSelectedCity(updates.cityId);
+            if (updates.districtId !== undefined) setSelectedDistrict(updates.districtId);
           }}
-          className={selectClass}
-          aria-label="Ülke seçin"
-        >
-          <option value="">Ülke</option>
-          {locations.map((l) => (
-            <option key={l.id} value={l.id}>
-              {l.name}
-            </option>
-          ))}
-        </select>
-
-        {/* Şehir */}
-        <select
-          value={selectedCity}
-          onChange={(e) => {
-            setSelectedCity(e.target.value);
-            setSelectedDistrict("");
-          }}
-          className={selectClass}
-          disabled={!selectedCountry}
-          aria-label="Şehir seçin"
-        >
-          <option value="">Şehir</option>
-          {cities.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-
-        {/* İlçe */}
-        <select
-          value={selectedDistrict}
-          onChange={(e) => setSelectedDistrict(e.target.value)}
-          className={selectClass}
-          disabled={!selectedCity}
-          aria-label="İlçe seçin"
-        >
-          <option value="">İlçe</option>
-          {districts.map((d) => (
-            <option key={d.id} value={d.id}>
-              {d.name}
-            </option>
-          ))}
-        </select>
+          showLabels={false}
+          className="contents"
+          selectClass={selectClass}
+        />
 
         {/* Spor */}
         <select
