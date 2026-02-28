@@ -10,6 +10,8 @@ const log = createLogger("api:posts");
 const createPostSchema = z.object({
   content: z.string().max(1000).optional(),
   images: z.array(z.string().url()).max(5).default([]),
+  groupId: z.string().optional(),
+  clubId: z.string().optional(),
 });
 
 // GET /api/posts?userId=&cursor=&limit=
@@ -21,15 +23,25 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const targetUserId = searchParams.get("userId");
+  const groupId = searchParams.get("groupId");
+  const clubId = searchParams.get("clubId");
   const cursor = searchParams.get("cursor");
   const limit = Math.min(parseInt(searchParams.get("limit") ?? "10"), 20);
 
   try {
-    // userId belirtilmişse o kullanıcının gönderileri, yoksa feed (takip edilenlerin)
-    let userIdFilter: string | { in: string[] } | undefined;
+    const cursorFilter = cursor ? { id: { lt: cursor } } : {};
 
-    if (targetUserId) {
-      userIdFilter = targetUserId;
+    let whereFilter: Record<string, unknown> = cursorFilter;
+
+    if (groupId) {
+      // Grup gönderileri
+      whereFilter = { groupId, ...cursorFilter };
+    } else if (clubId) {
+      // Kulüp gönderileri
+      whereFilter = { clubId, ...cursorFilter };
+    } else if (targetUserId) {
+      // Belirli kullanıcının gönderileri
+      whereFilter = { userId: targetUserId, ...cursorFilter };
     } else {
       // Feed: kendi gönderileri + takip edilenlerin gönderileri
       const following = await prisma.follow.findMany({
@@ -37,13 +49,11 @@ export async function GET(req: NextRequest) {
         select: { followingId: true },
       });
       const followingIds = [userId, ...following.map((f: { followingId: string }) => f.followingId)];
-      userIdFilter = { in: followingIds };
+      whereFilter = { userId: { in: followingIds }, groupId: null, clubId: null, ...cursorFilter };
     }
 
-    const cursorFilter = cursor ? { id: { lt: cursor } } : {};
-
     const posts = await prisma.post.findMany({
-      where: { userId: userIdFilter, ...cursorFilter },
+      where: whereFilter as any,
       orderBy: { createdAt: "desc" },
       take: limit,
       include: {
@@ -94,13 +104,17 @@ export async function POST(req: NextRequest) {
 
     const rawContent = parsed.data.content;
     const content = rawContent ? sanitizeText(rawContent) : undefined;
-    const { images } = parsed.data;
+    const { images, groupId, clubId } = parsed.data;
     if (!content && images.length === 0) {
       return NextResponse.json({ error: "İçerik veya görsel zorunlu" }, { status: 400 });
     }
 
     const post = await prisma.post.create({
-      data: { userId, content, images },
+      data: {
+        userId, content, images,
+        ...(groupId ? { groupId } : {}),
+        ...(clubId ? { clubId } : {}),
+      },
       include: {
         user: { select: { id: true, name: true, avatarUrl: true } },
         _count: { select: { likes: true, comments: true } },

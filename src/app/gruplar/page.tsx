@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 
 interface Group {
@@ -17,10 +18,15 @@ interface Group {
   _count: { members: number; listings: number };
 }
 
+type MyGroupStatus = "APPROVED" | "PENDING";
+
 export default function GruplarPage() {
   const { data: session } = useSession();
+  const router = useRouter();
   const [groups, setGroups] = useState<Group[]>([]);
   const [myGroupIds, setMyGroupIds] = useState<Set<string>>(new Set());
+  const [myGroupRoles, setMyGroupRoles] = useState<Map<string, string>>(new Map());
+  const [myGroupStatuses, setMyGroupStatuses] = useState<Map<string, MyGroupStatus>>(new Map());
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
@@ -51,10 +57,16 @@ export default function GruplarPage() {
       const res = await fetch("/api/profile");
       const json = await res.json();
       if (json.success) {
-        const ids = new Set<string>(
-          (json.data.myGroups ?? []).map((m: { groupId: string }) => m.groupId)
+        const memberships: Array<{ groupId: string; role: string; status: string }> = json.data.myGroups ?? [];
+        setMyGroupIds(new Set(memberships.map((m) => m.groupId)));
+        setMyGroupRoles(new Map(memberships.map((m) => [m.groupId, m.role])));
+        setMyGroupStatuses(
+          new Map(
+            memberships
+              .filter((m) => m.status === "PENDING" || m.status === "APPROVED")
+              .map((m) => [m.groupId, m.status as MyGroupStatus])
+          )
         );
-        setMyGroupIds(ids);
       }
     } catch { /* ignore */ }
   };
@@ -80,19 +92,33 @@ export default function GruplarPage() {
       });
       const json = await res.json();
       if (json.success) {
-        setMyGroupIds((prev) => {
-          const next = new Set(prev);
-          isMember ? next.delete(groupId) : next.add(groupId);
-          return next;
-        });
-        toast.success(isMember ? "Gruptan ayrıldınız" : "Gruba katıldınız!");
-        setGroups((prev) =>
-          prev.map((g) =>
-            g.id === groupId
-              ? { ...g, _count: { ...g._count, members: g._count.members + (isMember ? -1 : 1) } }
-              : g
-          )
-        );
+        if (isMember) {
+          setMyGroupIds((prev) => { const next = new Set(prev); next.delete(groupId); return next; });
+          setMyGroupStatuses((prev) => { const next = new Map(prev); next.delete(groupId); return next; });
+          setMyGroupRoles((prev) => { const next = new Map(prev); next.delete(groupId); return next; });
+          toast.success("Gruptan ayrıldınız");
+          setGroups((prev) =>
+            prev.map((g) =>
+              g.id === groupId
+                ? { ...g, _count: { ...g._count, members: g._count.members - 1 } }
+                : g
+            )
+          );
+        } else {
+          setMyGroupIds((prev) => new Set([...prev, groupId]));
+          const isPending = json.message?.includes("talep") || json.message?.includes("bekleniyor");
+          setMyGroupStatuses((prev) => new Map([...prev, [groupId, isPending ? "PENDING" : "APPROVED"]]));
+          toast.success(json.message ?? "Gruba katıldınız!");
+          if (!isPending) {
+            setGroups((prev) =>
+              prev.map((g) =>
+                g.id === groupId
+                  ? { ...g, _count: { ...g._count, members: g._count.members + 1 } }
+                  : g
+              )
+            );
+          }
+        }
       } else {
         toast.error(json.error ?? "İşlem başarısız");
       }
@@ -121,6 +147,8 @@ export default function GruplarPage() {
         setCreateForm({ name: "", description: "", isPublic: true });
         setGroups((prev) => [json.group, ...prev]);
         setMyGroupIds((prev) => new Set([...prev, json.group.id]));
+        setMyGroupRoles((prev) => new Map([...prev, [json.group.id, "ADMIN"]]));
+        setMyGroupStatuses((prev) => new Map([...prev, [json.group.id, "APPROVED"]]));
       } else {
         toast.error(json.error ?? "Grup oluşturulamadı");
       }
@@ -224,7 +252,9 @@ export default function GruplarPage() {
       ) : (
         <div className="space-y-4">
           {groups.map((g) => {
-            const isMember = myGroupIds.has(g.id);
+            const isMember = myGroupIds.has(g.id) && myGroupStatuses.get(g.id) !== undefined;
+            const isPending = myGroupStatuses.get(g.id) === "PENDING";
+            const isAdmin = myGroupRoles.get(g.id) === "ADMIN" && myGroupStatuses.get(g.id) === "APPROVED";
             return (
               <div
                 key={g.id}
@@ -234,14 +264,19 @@ export default function GruplarPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-semibold text-gray-900 dark:text-white">{g.name}</h3>
-                      {isMember && (
+                      {isMember && !isPending && (
                         <span className="text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full">
                           ✓ Üyesiniz
                         </span>
                       )}
+                      {isPending && (
+                        <span className="text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 px-2 py-0.5 rounded-full">
+                          ⏳ Onay Bekleniyor
+                        </span>
+                      )}
                       {!g.isPublic && (
-                        <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-500 px-2 py-0.5 rounded-full">
-                          🔒 Kapalı
+                        <span className="text-xs bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 px-2 py-0.5 rounded-full">
+                          🔒 Özel
                         </span>
                       )}
                     </div>
@@ -256,25 +291,33 @@ export default function GruplarPage() {
                     </div>
                   </div>
                   {session && (
-                    <button
-                      onClick={() => handleJoin(g.id)}
-                      disabled={joiningId === g.id || (!g.isPublic && !isMember)}
-                      className={`shrink-0 text-xs font-medium px-3 py-1.5 rounded-lg transition disabled:opacity-50 ${
-                        isMember
-                          ? "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-red-100 hover:text-red-600"
-                          : g.isPublic
-                          ? "bg-emerald-600 hover:bg-emerald-700 text-white"
-                          : "bg-gray-200 dark:bg-gray-700 text-gray-500 cursor-not-allowed"
-                      }`}
-                    >
-                      {joiningId === g.id
-                        ? "..."
-                        : isMember
-                        ? "Ayrıl"
-                        : g.isPublic
-                        ? "Katıl"
-                        : "Kapalı"}
-                    </button>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {isAdmin && (
+                        <button
+                          onClick={() => router.push(`/grup-yonet/${g.id}`)}
+                          className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition"
+                        >
+                          ⚙️ Yönet
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleJoin(g.id)}
+                        disabled={joiningId === g.id}
+                        className={`text-xs font-medium px-3 py-1.5 rounded-lg transition disabled:opacity-50 ${
+                          isMember
+                            ? "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-red-100 hover:text-red-600"
+                            : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                        }`}
+                      >
+                        {joiningId === g.id
+                          ? "..."
+                          : isMember
+                          ? "Ayrıl"
+                          : !g.isPublic
+                          ? "🔒 Başvur"
+                          : "Katıl"}
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>

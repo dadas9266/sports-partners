@@ -142,6 +142,11 @@ export const listingFilterSchema = z.object({
   type: z.enum(["RIVAL", "PARTNER", "TRAINER", "EQUIPMENT"]).optional(),
   upcoming: z.string().optional(),
   quickOnly: z.string().optional(),  // "true" for hızlı ilan filter
+  isRecurring: z.string().optional(), // "true" for recurring listings
+  dateFrom: z.string().optional(),    // ISO date string
+  dateTo: z.string().optional(),      // ISO date string
+  minPrice: z.coerce.number().min(0).optional(),
+  maxPrice: z.coerce.number().min(0).optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(50).default(12),
 });

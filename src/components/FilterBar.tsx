@@ -18,6 +18,10 @@ export default function FilterBar({ onFilterChange }: FilterBarProps) {
   const [selectedSport, setSelectedSport] = useState("");
   const [selectedLevel, setSelectedLevel] = useState("");
   const [selectedType, setSelectedType] = useState("");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [datePreset, setDatePreset] = useState("");
 
   const cities = locations.find((l) => l.id === selectedCountry)?.cities || [];
   const districts = cities.find((c) => c.id === selectedCity)?.districts || [];
@@ -25,8 +29,8 @@ export default function FilterBar({ onFilterChange }: FilterBarProps) {
   const isFirstRender = useRef(true);
 
   const filterInput = useMemo(
-    () => ({ selectedSport, selectedDistrict, selectedCity, selectedLevel, selectedType }),
-    [selectedSport, selectedDistrict, selectedCity, selectedLevel, selectedType]
+    () => ({ selectedSport, selectedDistrict, selectedCity, selectedLevel, selectedType, minPrice, maxPrice, isRecurring, datePreset }),
+    [selectedSport, selectedDistrict, selectedCity, selectedLevel, selectedType, minPrice, maxPrice, isRecurring, datePreset]
   );
 
   const debouncedFilters = useDebounce(filterInput, 300);
@@ -39,6 +43,28 @@ export default function FilterBar({ onFilterChange }: FilterBarProps) {
     else if (debouncedFilters.selectedCity) filters.cityId = debouncedFilters.selectedCity;
     if (debouncedFilters.selectedLevel) filters.level = debouncedFilters.selectedLevel;
     if (debouncedFilters.selectedType) filters.type = debouncedFilters.selectedType;
+    if (debouncedFilters.minPrice) filters.minPrice = debouncedFilters.minPrice;
+    if (debouncedFilters.maxPrice) filters.maxPrice = debouncedFilters.maxPrice;
+    if (debouncedFilters.isRecurring) filters.isRecurring = "true";
+    if (debouncedFilters.datePreset) {
+      const now = new Date();
+      if (debouncedFilters.datePreset === "today") {
+        const end = new Date(now); end.setHours(23, 59, 59, 999);
+        filters.dateFrom = now.toISOString();
+        filters.dateTo = end.toISOString();
+      } else if (debouncedFilters.datePreset === "week") {
+        const end = new Date(now); end.setDate(now.getDate() + 7);
+        filters.dateFrom = now.toISOString();
+        filters.dateTo = end.toISOString();
+      } else if (debouncedFilters.datePreset === "weekend") {
+        const day = now.getDay();
+        const daysToSat = day === 6 ? 0 : (6 - day);
+        const sat = new Date(now); sat.setDate(now.getDate() + daysToSat); sat.setHours(0, 0, 0, 0);
+        const sun = new Date(sat); sun.setDate(sat.getDate() + 1); sun.setHours(23, 59, 59, 999);
+        filters.dateFrom = sat.toISOString();
+        filters.dateTo = sun.toISOString();
+      }
+    }
     onFilterChange(filters);
     if (isFirstRender.current) {
       isFirstRender.current = false;
@@ -53,6 +79,10 @@ export default function FilterBar({ onFilterChange }: FilterBarProps) {
     setSelectedSport("");
     setSelectedLevel("");
     setSelectedType("");
+    setMinPrice("");
+    setMaxPrice("");
+    setIsRecurring(false);
+    setDatePreset("");
   };
 
   const selectClass =
@@ -174,8 +204,63 @@ export default function FilterBar({ onFilterChange }: FilterBarProps) {
           <option value="PARTNER">Partner Arıyor</option>
           <option value="TRAINER">Eğitmen</option>
           <option value="EQUIPMENT">Satılık Malzeme</option>
-          <option value="PARTNER">Partner Arıyor</option>
         </select>
+      </div>
+
+      {/* Satır 2: Hızlı tarih seçenekleri + fiyat aralığı + tekrarlayan */}
+      <div className="flex flex-wrap items-center gap-3 mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+        {/* Hızlı Tarih */}
+        <div className="flex gap-1">
+          {([{ id: "today", label: "Bugün" }, { id: "week", label: "Bu Hafta" }, { id: "weekend", label: "Hafta Sonu" }] as const).map(p => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => setDatePreset(prev => prev === p.id ? "" : p.id)}
+              className={`px-3 py-1.5 text-xs rounded-full border transition font-medium ${
+                datePreset === p.id
+                  ? "bg-emerald-500 border-emerald-500 text-white"
+                  : "border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-emerald-400 dark:hover:border-emerald-500"
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Fiyat Aralığı — yalnızca EQUIPMENT veya TRAINER seçiliyken ya da tip seçilmemişse */}
+        {(!selectedType || selectedType === "EQUIPMENT" || selectedType === "TRAINER") && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">💰 Fiyat</span>
+            <input
+              type="number"
+              min={0}
+              placeholder="Min ₺"
+              value={minPrice}
+              onChange={e => setMinPrice(e.target.value)}
+              className="w-24 border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 text-xs text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-emerald-500 outline-none"
+            />
+            <span className="text-xs text-gray-400">—</span>
+            <input
+              type="number"
+              min={0}
+              placeholder="Max ₺"
+              value={maxPrice}
+              onChange={e => setMaxPrice(e.target.value)}
+              className="w-24 border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 text-xs text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-emerald-500 outline-none"
+            />
+          </div>
+        )}
+
+        {/* Tekrarlayan Etkinlik */}
+        <label className="flex items-center gap-2 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={isRecurring}
+            onChange={e => setIsRecurring(e.target.checked)}
+            className="accent-emerald-500 w-4 h-4"
+          />
+          <span className="text-xs text-gray-600 dark:text-gray-300">🔄 Tekrarlayan</span>
+        </label>
       </div>
     </div>
   );

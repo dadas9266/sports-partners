@@ -138,6 +138,9 @@ export default function Navbar() {
             <Link href="/gruplar" className="hover:bg-emerald-700 dark:hover:bg-emerald-800 px-3 py-2 rounded transition" aria-label="Gruplar">
               <span className="text-lg">👥</span>
             </Link>
+            <Link href="/arama" className="hover:bg-emerald-700 dark:hover:bg-emerald-800 px-3 py-2 rounded transition" aria-label="Ara">
+              <span className="text-lg">🔍</span>
+            </Link>
           </div>
 
           <div className="flex-1 flex justify-center">
@@ -212,6 +215,7 @@ export default function Navbar() {
           <Link href="/sosyal" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">🌐 Sosyal Akış</Link>
           <Link href="/kulupler" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">🏅 Spor Kulüpleri</Link>
           <Link href="/gruplar" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">👥 Spor Grupları</Link>
+          <Link href="/arama" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">🔍 Ara</Link>
           {session ? (
             <>
               <Link href="/ilan/olustur" className="block bg-white text-emerald-700 font-semibold px-3 py-2 rounded" onClick={() => setMenuOpen(false)} role="menuitem">+ İlan Oluştur</Link>

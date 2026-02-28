@@ -257,6 +257,12 @@ export default function PublicProfilePage({
             {/* Rozetler */}
             <div className="flex flex-wrap gap-1.5 mt-2 items-center">
               {badges.length > 0 && badges.map((b) => <BadgeChip key={b.id} badge={b} />)}
+              {/* Streak Rozeti */}
+              {(profile as any).currentStreak > 0 && (
+                <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300" title={`En uzun seri: ${(profile as any).longestStreak} gün`}>
+                  🔥 {(profile as any).currentStreak} Günlük Seri
+                </span>
+              )}
             </div>
 
             {/* Trainer Badges */}

@@ -46,7 +46,7 @@ export async function GET(request: Request) {
       );
     }
 
-    let { sportId, districtId, cityId, level, type, upcoming, quickOnly, page, pageSize } = parsed.data;
+    let { sportId, districtId, cityId, level, type, upcoming, quickOnly, isRecurring, dateFrom, dateTo, minPrice, maxPrice, page, pageSize } = parsed.data;
 
     // OTOMATİK ŞEHİR FİLTRELEMESİ (Sadece "Sana Uygun" veya genel aramalar için)
     // Eğer kullanıcı giriş yapmışsa ve manuell bir şehir/ilçe seçmemişse, kendi şehrini baz al.
@@ -85,9 +85,56 @@ export async function GET(request: Request) {
     }    if (quickOnly === "true") {
       where.isQuick = true;
     }
+    if (isRecurring === "true") {
+      where.isRecurring = true;
+    }
+    if (dateFrom || dateTo) {
+      (where.AND as Prisma.ListingWhereInput[]).push({
+        dateTime: {
+          ...(dateFrom ? { gte: new Date(dateFrom) } : {}),
+          ...(dateTo ? { lte: new Date(dateTo) } : {}),
+        },
+      });
+    }
+    if (minPrice !== undefined || maxPrice !== undefined) {
+      // Price filter applies to EQUIPMENT (equipmentDetail.price) or TRAINER (trainerProfile.hourlyRate)
+      if (!type || type === "EQUIPMENT") {
+        (where.AND as Prisma.ListingWhereInput[]).push({
+          OR: [
+            {
+              equipmentDetail: {
+                price: {
+                  ...(minPrice !== undefined ? { gte: minPrice } : {}),
+                  ...(maxPrice !== undefined ? { lte: maxPrice } : {}),
+                },
+              },
+            },
+            ...(!type
+              ? [{
+                  trainerProfile: {
+                    hourlyRate: {
+                      ...(minPrice !== undefined ? { gte: minPrice } : {}),
+                      ...(maxPrice !== undefined ? { lte: maxPrice } : {}),
+                    },
+                  },
+                }]
+              : []),
+          ],
+        });
+      } else if (type === "TRAINER") {
+        (where.AND as Prisma.ListingWhereInput[]).push({
+          trainerProfile: {
+            hourlyRate: {
+              ...(minPrice !== undefined ? { gte: minPrice } : {}),
+              ...(maxPrice !== undefined ? { lte: maxPrice } : {}),
+            },
+          },
+        });
+      }
+    }
 
     const [total, listings] = await withCache(
-      cacheKey.listings({ sportId, districtId, cityId, level, type, upcoming, quickOnly, page, pageSize }),
+      cacheKey.listings({ sportId, districtId, cityId, level, type, upcoming, quickOnly, isRecurring, dateFrom, dateTo, minPrice, maxPrice, page, pageSize }),
       CACHE_TTL.LISTINGS,
       async () => {
         return Promise.all([

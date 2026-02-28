@@ -15,7 +15,7 @@ export async function GET(request: Request) {
 
     const term = q.toLowerCase();
 
-    const [listings, users, sports] = await Promise.all([
+    const [listings, users, sports, clubs, groups] = await Promise.all([
       // İlanlar: spor adı, ilçe/şehir adı, mekan adı, açıklama
       prisma.listing.findMany({
         where: {
@@ -65,13 +65,53 @@ export async function GET(request: Request) {
         select: { id: true, name: true, icon: true },
         take: 5,
       }),
+
+      // Kulüpler
+      prisma.club.findMany({
+        where: {
+          OR: [
+            { name: { contains: term, mode: "insensitive" } },
+            { description: { contains: term, mode: "insensitive" } },
+          ],
+        },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          logoUrl: true,
+          sport: { select: { name: true, icon: true } },
+          city: { select: { name: true } },
+          _count: { select: { members: true } },
+        },
+        take: 5,
+      }),
+
+      // Gruplar
+      prisma.group.findMany({
+        where: {
+          isPublic: true,
+          OR: [
+            { name: { contains: term, mode: "insensitive" } },
+            { description: { contains: term, mode: "insensitive" } },
+          ],
+        },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          sport: { select: { name: true, icon: true } },
+          city: { select: { name: true } },
+          _count: { select: { members: true } },
+        },
+        take: 5,
+      }),
     ]);
 
-    log.info("Arama yapıldı", { q, results: listings.length + users.length });
+    log.info("Arama yapıldı", { q, results: listings.length + users.length + clubs.length + groups.length });
 
     return NextResponse.json({
       success: true,
-      data: { listings, users, sports },
+      data: { listings, users, sports, clubs, groups },
     });
   } catch (error) {
     log.error("Arama hatası", error);

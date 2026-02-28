@@ -27,6 +27,10 @@ export async function GET(
         birthDate: true,
         // @ts-ignore
         gender: true,
+        // @ts-ignore
+        currentStreak: true,
+        // @ts-ignore
+        longestStreak: true,
         city: { select: { name: true, country: { select: { name: true } } } },
         sports: { select: { id: true, name: true, icon: true } },
         ratingsReceived: {
@@ -125,6 +129,8 @@ export async function GET(
         clubs: (user.clubMemberships ?? []).map((m: any) => ({ ...m.club, role: m.role })),
         followersCount,
         followingCount,
+        currentStreak: user.currentStreak ?? 0,
+        longestStreak: user.longestStreak ?? 0,
       },
     });
   } catch (error) {

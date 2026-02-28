@@ -426,6 +426,23 @@ export interface SearchResults {
     sports: { name: string; icon: string | null }[];
   }[];
   sports: Sport[];
+  clubs: {
+    id: string;
+    name: string;
+    description?: string | null;
+    logoUrl?: string | null;
+    sport?: { name: string; icon: string } | null;
+    city?: { name: string } | null;
+    _count: { members: number };
+  }[];
+  groups: {
+    id: string;
+    name: string;
+    description?: string | null;
+    sport?: { name: string; icon: string } | null;
+    city?: { name: string } | null;
+    _count: { members: number };
+  }[];
 }
 
 // --- UI Helper Types ---

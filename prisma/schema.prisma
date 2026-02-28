@@ -89,6 +89,7 @@ model User {
   challengesReceived DirectChallenge[] @relation("ChallengesReceived")
   groupMemberships   GroupMembership[]
   groupsCreated      Group[]           @relation("GroupCreator")
+  clubsCreated       Club[]            @relation("ClubCreator")
 }
 
 // ========== SPOR ==========
@@ -551,6 +552,8 @@ model EquipmentDetail {
 model Club {
   id          String   @id @default(cuid())
   name        String
+  creatorId   String?
+  creator     User?    @relation("ClubCreator", fields: [creatorId], references: [id])
   sportId     String?
   sport       Sport?   @relation(fields: [sportId], references: [id])
   cityId      String?
@@ -558,13 +561,16 @@ model Club {
   website     String?
   logoUrl     String?
   description String?
+  isPrivate   Boolean  @default(false)   // true = katılım onay gerektirir
   createdAt   DateTime @default(now())
 
   members     UserClubMembership[]
+  posts       Post[]
 
   @@unique([name, cityId])
   @@index([sportId])
   @@index([cityId])
+  @@index([creatorId])
 }
 
 model UserClubMembership {
@@ -573,12 +579,14 @@ model UserClubMembership {
   user      User     @relation(fields: [userId], references: [id])
   clubId    String
   club      Club     @relation(fields: [clubId], references: [id])
-  role      String   @default("MEMBER") // "MEMBER" | "CAPTAIN"
+  role      String   @default("MEMBER")   // "MEMBER" | "CAPTAIN"
+  status    String   @default("APPROVED") // "PENDING" | "APPROVED" | "REJECTED"
   joinedAt  DateTime @default(now())
 
   @@unique([userId, clubId])
   @@index([userId])
   @@index([clubId])
+  @@index([status])
 }
 
 // ========== GRUP ==========
@@ -603,6 +611,7 @@ model Group {
 
   members  GroupMembership[]
   listings Listing[]
+  posts    Post[]
 
   @@unique([name, cityId])
   @@index([sportId])
@@ -617,6 +626,7 @@ model GroupMembership {
   groupId  String
   group    Group           @relation(fields: [groupId], references: [id])
   role     GroupMemberRole @default(MEMBER)
+  status   String          @default("APPROVED") // "PENDING" | "APPROVED" | "REJECTED"
   joinedAt DateTime        @default(now())
 
   @@unique([userId, groupId])
@@ -662,6 +672,10 @@ model Post {
   user      User      @relation(fields: [userId], references: [id])
   content   String?                          // Yazı içeriği
   images    String[]  @default([])           // Görsel URL'leri (Supabase Storage)
+  groupId   String?                          // Grup gönderisi
+  group     Group?    @relation(fields: [groupId], references: [id])
+  clubId    String?                          // Kulüb gönderisi
+  club      Club?     @relation(fields: [clubId], references: [id])
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
@@ -670,6 +684,8 @@ model Post {
 
   @@index([userId])
   @@index([createdAt])
+  @@index([groupId])
+  @@index([clubId])
 }
 
 model PostLike {

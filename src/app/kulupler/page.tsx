@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 
 interface Club {
@@ -9,19 +10,25 @@ interface Club {
   name: string;
   description?: string | null;
   website?: string | null;
+  isPrivate?: boolean;
   sport?: { id: string; name: string; icon: string | null } | null;
   city?: { id: string; name: string } | null;
   _count: { members: number };
 }
 
+type MyClubStatus = "APPROVED" | "PENDING";
+
 export default function KuluplerimPage() {
   const { data: session } = useSession();
+  const router = useRouter();
   const [clubs, setClubs] = useState<Club[]>([]);
   const [myClubIds, setMyClubIds] = useState<Set<string>>(new Set());
+  const [myClubRoles, setMyClubRoles] = useState<Map<string, string>>(new Map());
+  const [myClubStatuses, setMyClubStatuses] = useState<Map<string, MyClubStatus>>(new Map());
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
-  const [createForm, setCreateForm] = useState({ name: "", description: "", website: "" });
+  const [createForm, setCreateForm] = useState({ name: "", description: "", website: "", isPrivate: false });
   const [creating, setCreating] = useState(false);
   const [joiningId, setJoiningId] = useState<string | null>(null);
 
@@ -44,8 +51,16 @@ export default function KuluplerimPage() {
       const res = await fetch("/api/profile");
       const json = await res.json();
       if (json.success) {
-        const ids = new Set<string>((json.data.myClubs ?? []).map((m: any) => m.clubId));
-        setMyClubIds(ids);
+        const memberships: Array<{ clubId: string; role: string; status: string }> = json.data.myClubs ?? [];
+        setMyClubIds(new Set(memberships.map((m) => m.clubId)));
+        setMyClubRoles(new Map(memberships.map((m) => [m.clubId, m.role])));
+        setMyClubStatuses(
+          new Map(
+            memberships
+              .filter((m) => m.status === "PENDING" || m.status === "APPROVED")
+              .map((m) => [m.clubId, m.status as MyClubStatus])
+          )
+        );
       }
     } catch { /* ignore */ }
   };
@@ -71,12 +86,18 @@ export default function KuluplerimPage() {
       });
       const json = await res.json();
       if (json.success) {
-        setMyClubIds((prev) => {
-          const next = new Set(prev);
-          isMember ? next.delete(clubId) : next.add(clubId);
-          return next;
-        });
-        toast.success(isMember ? "Kulüpten ayrıldınız" : "Kulübe katıldınız!");
+        if (isMember) {
+          setMyClubIds((prev) => { const next = new Set(prev); next.delete(clubId); return next; });
+          setMyClubStatuses((prev) => { const next = new Map(prev); next.delete(clubId); return next; });
+          setMyClubRoles((prev) => { const next = new Map(prev); next.delete(clubId); return next; });
+          toast.success("Kulüpten ayrıldınız");
+        } else {
+          setMyClubIds((prev) => new Set([...prev, clubId]));
+          // Determine if it was a pending request (message contains "talep")
+          const isPending = json.message?.includes("talep") || json.message?.includes("bekleniyor");
+          setMyClubStatuses((prev) => new Map([...prev, [clubId, isPending ? "PENDING" : "APPROVED"]]));
+          toast.success(json.message ?? "Kulübe katıldınız!");
+        }
       } else {
         toast.error(json.error ?? "İşlem başarısız");
       }
@@ -101,9 +122,11 @@ export default function KuluplerimPage() {
       if (json.success) {
         toast.success("Kulüp oluşturuldu!");
         setShowCreate(false);
-        setCreateForm({ name: "", description: "", website: "" });
+        setCreateForm({ name: "", description: "", website: "", isPrivate: false });
         setClubs((prev) => [json.data, ...prev]);
         setMyClubIds((prev) => new Set([...prev, json.data.id]));
+        setMyClubRoles((prev) => new Map([...prev, [json.data.id, "CAPTAIN"]]));
+        setMyClubStatuses((prev) => new Map([...prev, [json.data.id, "APPROVED"]]));
       } else {
         toast.error(json.error ?? "Kulüp oluşturulamadı");
       }
@@ -160,6 +183,18 @@ export default function KuluplerimPage() {
             onChange={(e) => setCreateForm({ ...createForm, website: e.target.value })}
             className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-emerald-500 outline-none text-sm"
           />
+          <label className="flex items-center gap-3 cursor-pointer">
+            <button
+              type="button"
+              onClick={() => setCreateForm((f) => ({ ...f, isPrivate: !f.isPrivate }))}
+              className={`relative w-10 h-5 rounded-full transition-colors ${createForm.isPrivate ? "bg-indigo-600" : "bg-gray-300 dark:bg-gray-600"}`}
+            >
+              <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${createForm.isPrivate ? "translate-x-5" : ""}`} />
+            </button>
+            <span className="text-sm text-gray-600 dark:text-gray-300">
+              {createForm.isPrivate ? "🔒 Özel kulüp (başvurular onay bekler)" : "🌍 Herkese açık kulüp"}
+            </span>
+          </label>
           <div className="flex gap-2">
             <button
               type="submit"
@@ -210,7 +245,7 @@ export default function KuluplerimPage() {
       ) : (
         <div className="space-y-3">
           {clubs.map((club) => {
-            const isMember = myClubIds.has(club.id);
+            const isMember = myClubIds.has(club.id) && myClubStatuses.get(club.id) !== undefined;
             return (
               <div
                 key={club.id}
@@ -222,9 +257,17 @@ export default function KuluplerimPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="font-semibold text-gray-800 dark:text-gray-100 truncate">{club.name}</h3>
-                    {isMember && (
+                    {club.isPrivate && (
+                      <span className="text-xs bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 px-2 py-0.5 rounded-full font-medium">🔒 Özel</span>
+                    )}
+                    {isMember && myClubStatuses.get(club.id) === "APPROVED" && (
                       <span className="text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full font-medium">
                         ✓ Üyesiniz
+                      </span>
+                    )}
+                    {myClubStatuses.get(club.id) === "PENDING" && (
+                      <span className="text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 px-2 py-0.5 rounded-full font-medium">
+                        ⏳ Onay Bekleniyor
                       </span>
                     )}
                   </div>
@@ -238,17 +281,33 @@ export default function KuluplerimPage() {
                   )}
                 </div>
                 {session && (
-                  <button
-                    onClick={() => handleJoin(club.id)}
-                    disabled={joiningId === club.id}
-                    className={`flex-shrink-0 text-sm font-semibold px-3 py-1.5 rounded-lg transition disabled:opacity-60 ${
-                      isMember
-                        ? "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
-                        : "bg-emerald-600 hover:bg-emerald-700 text-white"
-                    }`}
-                  >
-                    {joiningId === club.id ? "..." : isMember ? "Ayrıl" : "Katıl"}
-                  </button>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {myClubRoles.get(club.id) === "CAPTAIN" && myClubStatuses.get(club.id) === "APPROVED" && (
+                      <button
+                        onClick={() => router.push(`/kulup-yonet/${club.id}`)}
+                        className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition"
+                      >
+                        ⚙️ Yönet
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleJoin(club.id)}
+                      disabled={joiningId === club.id}
+                      className={`text-sm font-semibold px-3 py-1.5 rounded-lg transition disabled:opacity-60 ${
+                        isMember
+                          ? "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+                          : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                      }`}
+                    >
+                      {joiningId === club.id
+                        ? "..."
+                        : isMember
+                        ? "Ayrıl"
+                        : club.isPrivate
+                        ? "🔒 Başvur"
+                        : "Katıl"}
+                    </button>
+                  </div>
                 )}
               </div>
             );

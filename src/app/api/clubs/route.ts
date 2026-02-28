@@ -12,6 +12,7 @@ const createClubSchema = z.object({
   cityId: z.string().optional().nullable(),
   website: z.string().url("Geçerli bir URL giriniz").optional().nullable(),
   description: z.string().max(500).optional().nullable(),
+  isPrivate: z.boolean().default(false), // true = katılım kaptan onayı gerektirir
 });
 
 // GET /api/clubs — Kulüpleri listele (cityId veya sportId ile filtrele)
@@ -58,18 +59,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: parsed.error.issues[0].message }, { status: 400 });
     }
 
-    const { name, sportId, cityId, website, description } = parsed.data;
+    const { name, sportId, cityId, website, description, isPrivate } = parsed.data;
 
     const club = await prisma.club.create({
       data: {
         name,
+        creatorId: userId,
         sportId: sportId || null,
         cityId: cityId || null,
         website: website || null,
         description: description || null,
-        // Oluşturan kişi otomatik CAPTAIN olarak eklenir
+        isPrivate: isPrivate ?? false,
+        // Oluşturan kişi otomatik CAPTAIN (APPROVED) olarak eklenir
         members: {
-          create: { userId, role: "CAPTAIN" },
+          create: { userId, role: "CAPTAIN", status: "APPROVED" },
         },
       },
       include: {

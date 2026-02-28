@@ -7,7 +7,8 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
 import toast from "react-hot-toast";
-import type { ListingDetail, ListingResponse } from "@/types";
+import type { ListingDetail, ListingResponse, ListingSummary } from "@/types";
+import ListingCard from "@/components/ListingCard";
 import { LEVEL_LABELS_WITH_ICON, STATUS_LABELS, ALLOWED_GENDER_LABELS } from "@/types";
 import { getListingDetail, sendResponse, handleResponse as handleResponseApi, closeListing, deleteListing, reportNoShow } from "@/services/api";
 import Button from "@/components/ui/Button";
@@ -33,6 +34,7 @@ export default function ListingDetailPage({
   const [closing, setClosing] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [noShowSending, setNoShowSending] = useState(false);
+  const [similar, setSimilar] = useState<ListingSummary[]>([]);
 
   const currentUserId = session?.user?.id;
 
@@ -51,6 +53,25 @@ export default function ListingDetailPage({
   useEffect(() => {
     fetchListing();
   }, [fetchListing]);
+
+  useEffect(() => {
+    if (!listing) return;
+    const sportId = listing.sport?.id;
+    if (!sportId) return;
+    const cityId = listing.district?.city?.id;
+    const params = new URLSearchParams({ sportId, pageSize: "5" });
+    if (cityId) params.set("cityId", cityId);
+    fetch(`/api/listings?${params}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          setSimilar(
+            (data.data?.listings ?? []).filter((l: ListingSummary) => l.id !== listing.id).slice(0, 4)
+          );
+        }
+      })
+      .catch(() => {});
+  }, [listing]);
 
   const handleSendResponse = async () => {
     if (!session) {
@@ -489,6 +510,18 @@ export default function ListingDetailPage({
                   </div>
                 )}
               </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Benzer İlanlar */}
+      {similar.length > 0 && (
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 mb-4">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">🔍 Benzer İlanlar</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {similar.map(s => (
+              <ListingCard key={s.id} listing={s} />
             ))}
           </div>
         </div>
