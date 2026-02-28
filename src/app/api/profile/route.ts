@@ -48,6 +48,11 @@ export async function GET() {
           ratingsReceived: { select: { score: true } },
           ratingsGiven: { select: { matchId: true } },
           trainerProfile: { select: { isVerified: true, gymName: true, specializations: { select: { sportName: true, years: true } } } },
+          instagram: true,
+          tiktok: true,
+          facebook: true,
+          twitterX: true,
+          vk: true,
           _count: {
             select: {
               followers: true,
@@ -250,6 +255,12 @@ export async function PUT(request: Request) {
     if ("onboardingDone" in parsed.data && parsed.data.onboardingDone !== undefined) {
       updateData.onboardingDone = parsed.data.onboardingDone;
     }
+    // Sosyal Medya linkleri
+    if ("instagram" in parsed.data) updateData.instagram = parsed.data.instagram ?? null;
+    if ("tiktok" in parsed.data) updateData.tiktok = parsed.data.tiktok ?? null;
+    if ("facebook" in parsed.data) updateData.facebook = parsed.data.facebook ?? null;
+    if ("twitterX" in parsed.data) updateData.twitterX = parsed.data.twitterX ?? null;
+    if ("vk" in parsed.data) updateData.vk = parsed.data.vk ?? null;
 
     // Favori sporlar güncelleme
     const sportIds = "sportIds" in parsed.data ? (parsed.data as { sportIds?: string[] }).sportIds : undefined;

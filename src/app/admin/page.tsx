@@ -33,6 +33,18 @@ interface VenueProfileAdmin {
   user: { id: string; name: string; email: string; avatarUrl: string | null };
 }
 
+interface TrainerProfileAdmin {
+  id: string;
+  gymName: string | null;
+  gymAddress: string | null;
+  certificates: string[];
+  isVerified: boolean;
+  verifiedAt: string | null;
+  createdAt: string;
+  specializations: { sportName: string; years: number | null }[];
+  user: { id: string; name: string; email: string; avatarUrl: string | null; city: { name: string } | null };
+}
+
 interface Pagination {
   page: number;
   limit: number;
@@ -56,9 +68,11 @@ export default function AdminPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"users" | "venues">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "venues" | "trainers">("users");
   const [venueProfiles, setVenueProfiles] = useState<VenueProfileAdmin[]>([]);
   const [venueLoading, setVenueLoading] = useState(false);
+  const [trainerProfiles, setTrainerProfiles] = useState<TrainerProfileAdmin[]>([]);
+  const [trainerLoading, setTrainerLoading] = useState(false);
   const [dbStats, setDbStats] = useState<{
     users: { total: number; new30d: number; new7d: number; banned: number };
     listings: { total: number; open: number };
@@ -90,6 +104,21 @@ export default function AdminPage() {
       toast.error("Mekan profilleri yüklenemedi");
     } finally {
       setVenueLoading(false);
+    }
+  }, []);
+
+  const fetchTrainers = useCallback(async (filterStatus = "PENDING") => {
+    setTrainerLoading(true);
+    try {
+      const res = await fetch(`/api/admin/trainers?status=${filterStatus}&limit=50`);
+      if (res.ok) {
+        const data = await res.json();
+        setTrainerProfiles(data.data ?? []);
+      }
+    } catch {
+      toast.error("Antrenör profilleri yüklenemedi");
+    } finally {
+      setTrainerLoading(false);
     }
   }, []);
 
@@ -150,6 +179,10 @@ export default function AdminPage() {
   useEffect(() => {
     if (session?.user?.isAdmin && activeTab === "venues") fetchVenues();
   }, [session, activeTab, fetchVenues]);
+
+  useEffect(() => {
+    if (session?.user?.isAdmin && activeTab === "trainers") fetchTrainers();
+  }, [session, activeTab, fetchTrainers]);
 
   const handleAction = async (
     userId: string,
@@ -256,7 +289,7 @@ export default function AdminPage() {
 
       {/* Sekme Butonları */}
       <div className="flex gap-2 mb-6 border-b border-gray-200 dark:border-gray-700">
-        {([["users", "👥 Kullanıcılar"], ["venues", "🏙️ Mekan Onayları"]] as const).map(([tab, label]) => (
+        {([[ "users", "👥 Kullanıcılar"], ["venues", "🏙️ Mekan Onayları"], ["trainers", "🎓 Antrenör Onayları"]] as const).map(([tab, label]) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -270,6 +303,11 @@ export default function AdminPage() {
             {tab === "venues" && venueProfiles.filter(v => !v.isVerified).length > 0 && (
               <span className="ml-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
                 {venueProfiles.filter(v => !v.isVerified).length}
+              </span>
+            )}
+            {tab === "trainers" && trainerProfiles.filter(t => !t.isVerified).length > 0 && (
+              <span className="ml-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                {trainerProfiles.filter(t => !t.isVerified).length}
               </span>
             )}
           </button>
@@ -358,7 +396,143 @@ export default function AdminPage() {
           )}
         </div>
       )}
-
+      {/* ── Antrenör Onayları Sekmesi ──────────────────────────────────────── */}
+      {activeTab === "trainers" && (
+        <div>
+          <div className="flex gap-2 mb-4">
+            {(["PENDING", "APPROVED", "ALL"] as const).map((s) => (
+              <button key={s} onClick={() => fetchTrainers(s)}
+                className="text-xs px-3 py-1.5 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                {s === "PENDING" ? "⏳ Bekleyenler" : s === "APPROVED" ? "✅ Onaylı" : "📋 Tümü"}
+              </button>
+            ))}
+          </div>
+          {trainerLoading ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full" />
+            </div>
+          ) : trainerProfiles.length === 0 ? (
+            <div className="text-center py-16 text-gray-400 dark:text-gray-500">
+              <span className="text-4xl">🎓</span>
+              <p className="mt-3 text-sm">Bekleyen antrenör başvurusu yok</p>
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              {trainerProfiles.map((trainer) => (
+                <div key={trainer.id} className={`bg-white dark:bg-gray-800 rounded-2xl border p-5 shadow-sm ${
+                  trainer.isVerified ? "border-emerald-200 dark:border-emerald-800" : "border-orange-200 dark:border-orange-800/50"
+                }`}>
+                  <div className="flex items-start justify-between gap-4 flex-wrap">
+                    <div className="flex gap-3 items-start">
+                      {trainer.user.avatarUrl ? (
+                        <img src={trainer.user.avatarUrl} className="w-10 h-10 rounded-full object-cover border" alt={trainer.user.name} />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-sm font-bold text-blue-600">
+                          {trainer.user.name.charAt(0)}
+                        </div>
+                      )}
+                      <div>
+                        <p className="font-bold text-gray-900 dark:text-white text-sm">{trainer.user.name}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{trainer.user.email}</p>
+                        {trainer.user.city && <p className="text-xs text-gray-400 dark:text-gray-500">📍 {trainer.user.city.name}</p>}
+                        {trainer.gymName && <p className="text-xs text-gray-400 mt-0.5">🏢 {trainer.gymName}</p>}
+                        {trainer.gymAddress && <p className="text-xs text-gray-400">📍 {trainer.gymAddress}</p>}
+                        {trainer.specializations.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {trainer.specializations.map((s, i) => (
+                              <span key={i} className="text-[10px] bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded-full">
+                                {s.sportName}{s.years ? ` (${s.years}y)` : ""}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        {trainer.certificates.length > 0 && (
+                          <p className="text-[11px] text-gray-400 mt-1">🏅 {trainer.certificates.join(", ")}</p>
+                        )}
+                        <p className="text-[11px] text-gray-400 mt-2">
+                          Başvuru: {format(new Date(trainer.createdAt), "d MMM yyyy HH:mm", { locale: tr })}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {trainer.isVerified ? (
+                        <>
+                          <span className="text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 px-3 py-1.5 rounded-lg font-medium">
+                            ✅ Onaylı
+                          </span>
+                          <button
+                            disabled={actionLoading === `trainer-${trainer.id}`}
+                            onClick={async () => {
+                              setActionLoading(`trainer-${trainer.id}`);
+                              try {
+                                const res = await fetch("/api/admin/trainers", {
+                                  method: "PATCH",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ profileId: trainer.id, action: "reject" }),
+                                });
+                                const data = await res.json();
+                                if (!res.ok) throw new Error(data.error);
+                                toast.success("Onay geri alındı");
+                                setTrainerProfiles(prev => prev.map(t => t.id === trainer.id ? { ...t, isVerified: false } : t));
+                              } catch (err) { toast.error(err instanceof Error ? err.message : "Hata"); }
+                              finally { setActionLoading(null); }
+                            }}
+                            className="text-[11px] px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 hover:bg-gray-200 rounded-lg font-medium transition disabled:opacity-50">
+                            Geri Al
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            disabled={actionLoading === `trainer-${trainer.id}`}
+                            onClick={async () => {
+                              setActionLoading(`trainer-${trainer.id}`);
+                              try {
+                                const res = await fetch("/api/admin/trainers", {
+                                  method: "PATCH",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ profileId: trainer.id, action: "approve" }),
+                                });
+                                const data = await res.json();
+                                if (!res.ok) throw new Error(data.error);
+                                toast.success("Antrenör onaylandı ✅");
+                                setTrainerProfiles(prev => prev.map(t => t.id === trainer.id ? { ...t, isVerified: true } : t));
+                              } catch (err) { toast.error(err instanceof Error ? err.message : "Hata"); }
+                              finally { setActionLoading(null); }
+                            }}
+                            className="text-xs px-3 py-1.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 hover:bg-emerald-200 dark:hover:bg-emerald-800/40 rounded-lg font-medium transition disabled:opacity-50">
+                            {actionLoading === `trainer-${trainer.id}` ? "..." : "✅ Onayla"}
+                          </button>
+                          <button
+                            disabled={actionLoading === `trainer-${trainer.id}`}
+                            onClick={async () => {
+                              setActionLoading(`trainer-${trainer.id}`);
+                              try {
+                                const res = await fetch("/api/admin/trainers", {
+                                  method: "PATCH",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ profileId: trainer.id, action: "reject" }),
+                                });
+                                const data = await res.json();
+                                if (!res.ok) throw new Error(data.error);
+                                toast.success("Antrenör reddedildi");
+                                setTrainerProfiles(prev => prev.map(t => t.id === trainer.id ? { ...t, isVerified: false } : t));
+                              } catch (err) { toast.error(err instanceof Error ? err.message : "Hata"); }
+                              finally { setActionLoading(null); }
+                            }}
+                            className="text-xs px-3 py-1.5 bg-red-100 dark:bg-red-900/30 text-red-600 hover:bg-red-200 dark:hover:bg-red-800/40 rounded-lg font-medium transition disabled:opacity-50">
+                            {actionLoading === `trainer-${trainer.id}` ? "..." : "❌ Reddet"}
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
       {/* ── Kullanıcı Yönetimi Sekmesi ────────────────────────────────── */}
       {activeTab === "users" && <>
       {/* Arama */}

@@ -18,7 +18,7 @@ export default function Navbar() {
   const notifRef = useRef<HTMLDivElement>(null);
 
   // Gerçek zamanlı bildirimler — NotificationContext'ten (SSE Providers.tsx'de açık)
-  const { notifications, unreadCount, unreadMessages, markAllRead } = useNotifications();
+  const { notifications, unreadCount, unreadMessages, markAllRead, refresh: refreshNotifs } = useNotifications();
 
   useEffect(() => {
     if (!session) return;
@@ -46,9 +46,14 @@ export default function Navbar() {
   }, [menuOpen, notifOpen]);
 
   const handleOpenNotif = async () => {
+    const opening = !notifOpen;
     setNotifOpen((v) => !v);
-    if (!notifOpen && unreadCount > 0) {
-      await markAllRead();
+    if (opening) {
+      // Her açılışta güncel bildirimleri çek
+      await refreshNotifs();
+      if (unreadCount > 0) {
+        await markAllRead();
+      }
     }
   };
 
@@ -136,6 +141,11 @@ export default function Navbar() {
                     </span>
                   }
                 >
+                  {session.user?.isAdmin && (
+                    <Link href="/admin" className="block px-4 py-2 text-sm font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30">
+                      🛡️ Yönetici Paneli
+                    </Link>
+                  )}
                   <Link href="/profil" className="block px-4 py-2 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/30">Profilim</Link>
                   <Link href="/mekan-profil" className="block px-4 py-2 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/30">Mekanım</Link>
                   <Link href="/topluluklarim" className="block px-4 py-2 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/30">Topluluklarım</Link>

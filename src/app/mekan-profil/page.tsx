@@ -113,7 +113,7 @@ export default function MekanProfilPage() {
           <div>
             <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">🏟️ Mekan Profili</h1>
             <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-              {session?.user?.name} · Kurumsal Hesap
+              {form.businessName || session?.user?.name} · Kurumsal Hesap
             </p>
           </div>
           {isVerified ? (
@@ -135,6 +135,34 @@ export default function MekanProfilPage() {
               <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400 mt-1">Onaylanan Maç</p>
               <p className="text-xs text-emerald-500 dark:text-emerald-500 mt-0.5">Mekanınızda onayladığınız maçlar</p>
             </div>
+          </div>
+        )}
+
+        {/* Durum Bilgisi */}
+        {isVerified ? (
+          <div className="mt-4 p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-100 dark:border-emerald-800">
+            <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300 mb-2">✅ Mekanınız Aktif</p>
+            <ul className="space-y-1.5 text-xs text-emerald-600 dark:text-emerald-400">
+              <li>🔍 Mekanınız harita aramasında görünür</li>
+              <li>🏅 Maçlarda &quot;Kesin Kanıt&quot; onayı verebilirsiniz</li>
+              <li>📋 Kullanıcılar maç yerini mekanınız olarak seçebilir</li>
+              <li>⭐ Mekanınız öne çıkan mekanlar listesine girebilir</li>
+            </ul>
+          </div>
+        ) : (
+          <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-100 dark:border-amber-800">
+            <p className="text-sm font-semibold text-amber-700 dark:text-amber-300 mb-2">⏳ Onay Sürecindedir</p>
+            <p className="text-xs text-amber-600 dark:text-amber-400 mb-2">
+              Mekan profiliniz admin tarafından inceleniyor. Onaylandıktan sonra:
+            </p>
+            <ul className="space-y-1.5 text-xs text-amber-600 dark:text-amber-400">
+              <li>🔍 Harita aramalarında görünür olacaksınız</li>
+              <li>🏅 Maçlara &quot;Kesin Kanıt&quot; onayı verebileceksiniz</li>
+              <li>📋 Kullanıcılar sizi maç yeri olarak seçebilecek</li>
+            </ul>
+            <p className="text-xs text-amber-500 dark:text-amber-500 mt-2">
+              💡 İpucu: Profil bilgilerinizi eksiksiz doldurmak onay sürecini hızlandırır.
+            </p>
           </div>
         )}
       </div>

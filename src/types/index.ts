@@ -299,6 +299,11 @@ export interface ProfileEditForm {
   sportIds: string[];
   currentPassword: string;
   newPassword: string;
+  instagram?: string;
+  tiktok?: string;
+  facebook?: string;
+  twitterX?: string;
+  vk?: string;
 }
 
 // --- Notification Types ---

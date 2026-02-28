@@ -181,6 +181,11 @@ export const updateProfileSchema = z
     onboardingDone: z.boolean().optional(),
     currentPassword: z.string().optional(),
     newPassword: passwordSchema.optional(),
+    instagram: z.string().max(100).optional().nullable(),
+    tiktok: z.string().max(100).optional().nullable(),
+    facebook: z.string().max(200).optional().nullable(),
+    twitterX: z.string().max(100).optional().nullable(),
+    vk: z.string().max(200).optional().nullable(),
   })
   .refine(
     (data) => {

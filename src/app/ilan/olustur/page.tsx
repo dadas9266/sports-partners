@@ -58,7 +58,7 @@ export default function CreateListingPage() {
   }, [session]);
 
   // Trainer extra fields
-  const [trainerForm, setTrainerForm] = useState({ hourlyRate: "", experience: "", specialization: "", gymName: "", gymAddress: "" });
+  const [trainerForm, setTrainerForm] = useState({ experience: "", specialization: "", gymName: "", gymAddress: "" });
   // Equipment extra fields
   const [equipForm, setEquipForm] = useState({ price: "", condition: "", brand: "", model: "" });
   const [equipImages, setEquipImages] = useState<File[]>([]);
@@ -131,7 +131,6 @@ export default function CreateListingPage() {
       };
       if (form.type === "TRAINER") {
         payload.trainerProfile = {
-          hourlyRate: trainerForm.hourlyRate ? parseFloat(trainerForm.hourlyRate) : undefined,
           experience: trainerForm.experience ? parseInt(trainerForm.experience) : undefined,
           specialization: trainerForm.specialization || undefined,
           gymName: trainerForm.gymName || undefined,
@@ -329,10 +328,6 @@ export default function CreateListingPage() {
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 space-y-3">
             <p className="font-semibold text-blue-800 dark:text-blue-200 text-sm">🎓 Eğitmen Bilgileri</p>
             <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Saatlik Ücret (₺)</label>
-                <input type="number" min="0" value={trainerForm.hourlyRate} onChange={(e) => setTrainerForm({ ...trainerForm, hourlyRate: e.target.value })} className={selectClass} placeholder="200" />
-              </div>
               <div>
                 <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Deneyim (Yıl)</label>
                 <input type="number" min="0" value={trainerForm.experience} onChange={(e) => setTrainerForm({ ...trainerForm, experience: e.target.value })} className={selectClass} placeholder="5" />

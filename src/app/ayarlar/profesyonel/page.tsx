@@ -20,7 +20,6 @@ export default function ProfesyonelPage() {
   const [trainerForm, setTrainerForm] = useState({
     branches: [] as string[],
     gymName: "",
-    hourlyRate: "",
     experience: "",
     certNote: "",
   });
@@ -180,17 +179,6 @@ export default function ProfesyonelPage() {
                 onChange={(e) => setTrainerForm({ ...trainerForm, gymName: e.target.value })}
                 className={inputClass}
                 placeholder="Örn: FitLife Spor Merkezi"
-              />
-            </div>
-            <div>
-              <label className={labelClass}>Saatlik Ücret (₺) <span className="text-gray-400 font-normal">(opsiyonel)</span></label>
-              <input
-                type="number"
-                min={0}
-                value={trainerForm.hourlyRate}
-                onChange={(e) => setTrainerForm({ ...trainerForm, hourlyRate: e.target.value })}
-                className={inputClass}
-                placeholder="Örn: 300"
               />
             </div>
             <div>

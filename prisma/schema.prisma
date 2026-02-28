@@ -59,6 +59,12 @@ model User {
   preferredStyle String?                             // "competitive" | "casual" | "both"
   onboardingDone Boolean @default(false)
   isAdmin        Boolean   @default(false)             // Yönetici yetkisi
+  // Sosyal Medya Linkleri
+  instagram      String?                              // Instagram URL/kullanıcı adı
+  tiktok         String?                              // TikTok kullanıcı adı
+  facebook       String?                              // Facebook URL
+  twitterX       String?                              // X (Twitter) kullanıcı adı
+  vk             String?                              // VK URL
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
