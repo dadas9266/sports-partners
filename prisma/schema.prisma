@@ -93,6 +93,8 @@ model User {
   groupMemberships   GroupMembership[]
   groupsCreated      Group[]           @relation("GroupCreator")
   clubsCreated       Club[]            @relation("ClubCreator")
+  communityMemberships CommunityMembership[]
+  communitiesCreated   Community[]       @relation("CommunityCreator")
 }
 
 // ========== SPOR ==========
@@ -103,9 +105,10 @@ model Sport {
   listings Listing[]
   venues   Venue[]
   users    User[]    @relation("UserSports")
-  clubs    Club[]
-  challenges DirectChallenge[]
-  groups     Group[]
+  clubs       Club[]
+  challenges  DirectChallenge[]
+  groups      Group[]
+  communities Community[]
 }
 
 // ========== KONUM ==========
@@ -123,8 +126,9 @@ model City {
   country   Country    @relation(fields: [countryId], references: [id])
   districts District[]
   users     User[]
-  clubs     Club[]
-  groups    Group[]
+  clubs       Club[]
+  groups      Group[]
+  communities Community[]
 
   @@unique([name, countryId])
 }
@@ -334,6 +338,8 @@ enum NotificationType {
   MATCH_OTP_REQUESTED   // OTP doğrulama talebi
   VENUE_VERIFIED        // Mekan profili onaylandı
   DIRECT_CHALLENGE      // Doğrudan maç teklifi
+  COMMUNITY_JOIN_REQUEST // Topluluk katılma talebi
+  COMMUNITY_UPDATE      // Topluluk üyelik güncellemesi
 }
 
 model Notification {
@@ -802,4 +808,58 @@ model VenueCache {
 
   @@unique([query])
   @@index([query])
+}
+
+// ========== TOPLULUK (Group + Club birleşimi) ==========
+enum CommunityType {
+  GROUP  // Spor grubu (herkes katılabilir / onay gerektirir)
+  CLUB   // Spor kulübü (kurumsal, kaptan onaylı)
+  TEAM   // Takım (küçük, maç odaklı)
+}
+
+enum CommunityRole {
+  MEMBER
+  ADMIN
+}
+
+model Community {
+  id          String        @id @default(cuid())
+  type        CommunityType @default(GROUP)
+  name        String
+  description String?
+  avatarUrl   String?
+  website     String?                        // Kulüpler için
+  isPrivate   Boolean       @default(false)  // true = katılım onay gerektirir
+  sportId     String?
+  sport       Sport?        @relation(fields: [sportId], references: [id])
+  cityId      String?
+  city        City?         @relation(fields: [cityId], references: [id])
+  creatorId   String
+  creator     User          @relation("CommunityCreator", fields: [creatorId], references: [id])
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  members     CommunityMembership[]
+
+  @@unique([name, cityId, type])
+  @@index([sportId])
+  @@index([cityId])
+  @@index([creatorId])
+  @@index([type])
+}
+
+model CommunityMembership {
+  id          String        @id @default(cuid())
+  userId      String
+  user        User          @relation(fields: [userId], references: [id])
+  communityId String
+  community   Community     @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  role        CommunityRole @default(MEMBER)
+  status      String        @default("APPROVED") // "PENDING" | "APPROVED" | "REJECTED"
+  joinedAt    DateTime      @default(now())
+
+  @@unique([userId, communityId])
+  @@index([userId])
+  @@index([communityId])
+  @@index([status])
 }

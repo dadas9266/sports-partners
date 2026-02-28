@@ -132,11 +132,8 @@ export default function Navbar() {
             <Link href="/sosyal" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-2.5 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label="Sosyal">
               <span className="text-base">🌐</span>
             </Link>
-            <Link href="/kulupler" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-2.5 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label="Kulüpler">
-              <span className="text-base">🏅</span>
-            </Link>
-            <Link href="/gruplar" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-2.5 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label="Gruplar">
-              <span className="text-base">👥</span>
+            <Link href="/topluluklar" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-2.5 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label="Topluluklar">
+              <span className="text-base">🏛️</span>
             </Link>
             <Link href="/arama" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-2.5 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label="Ara">
               <span className="text-base">🔍</span>
@@ -181,8 +178,7 @@ export default function Navbar() {
                 >
                   <Link href="/profil" className="block px-4 py-2 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/30">Profilim</Link>
                   <Link href="/mekan-profil" className="block px-4 py-2 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/30">Mekanım</Link>
-                  <Link href="/gruplarim" className="block px-4 py-2 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/30">Gruplarım</Link>
-                  <Link href="/kuluplerim" className="block px-4 py-2 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/30">Kulüplerim</Link>
+                  <Link href="/topluluklarim" className="block px-4 py-2 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/30">Topluluklarım</Link>
                   <Link href="/ayarlar" className="block px-4 py-2 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/30">Ayarlar</Link>
                   <button onClick={() => signOut()} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30">
                     Çıkış Yap
@@ -214,8 +210,7 @@ export default function Navbar() {
           <Link href="/harita" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">🗺️ Harita</Link>
           <Link href="/liderlik" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">🏅 Liderlik Tablosu</Link>
           <Link href="/sosyal" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">🌐 Sosyal Akış</Link>
-          <Link href="/kulupler" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">🏅 Spor Kulüpleri</Link>
-          <Link href="/gruplar" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">👥 Spor Grupları</Link>
+          <Link href="/topluluklar" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">🏛️ Topluluklar</Link>
           <Link href="/arama" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">🔍 Ara</Link>
           {session ? (
             <>

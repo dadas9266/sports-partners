@@ -25,6 +25,18 @@ const nextConfig: NextConfig = {
     ];
   },
 
+  // Eski grup/kulüp URL'lerini yeni topluluk URL'lerine yönlendir
+  async redirects() {
+    return [
+      { source: "/gruplar",        destination: "/topluluklar?type=GROUP", permanent: false },
+      { source: "/gruplar/:id",    destination: "/topluluklar/:id",        permanent: false },
+      { source: "/gruplarim",      destination: "/topluluklarim",          permanent: false },
+      { source: "/kulupler",       destination: "/topluluklar?type=CLUB",  permanent: false },
+      { source: "/kulupler/:id",   destination: "/topluluklar/:id",        permanent: false },
+      { source: "/kuluplerim",     destination: "/topluluklarim",          permanent: false },
+    ];
+  },
+
   // Dış görsel kaynakları (ileride avatar upload için)
   images: {
     remotePatterns: [
