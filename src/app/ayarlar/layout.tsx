@@ -30,6 +30,12 @@ const MENU = [
     label: "Gizlilik",
     desc: "Hesap görünürlüğü, engellenenler",
   },
+  {
+    href: "/ayarlar/bildirimler",
+    icon: "🔔",
+    label: "Bildirimler",
+    desc: "Push bildirim tercihleri",
+  },
 ];
 
 export default function AyarlarLayout({ children }: { children: React.ReactNode }) {
