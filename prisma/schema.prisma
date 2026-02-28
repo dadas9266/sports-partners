@@ -697,6 +697,7 @@ model PostLike {
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   userId    String
   user      User     @relation(fields: [userId], references: [id])
+  reaction  String   @default("like")       // "like" | "fire" | "muscle" | "clap" | "goal"
   createdAt DateTime @default(now())
 
   @@unique([postId, userId])

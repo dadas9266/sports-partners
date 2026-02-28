@@ -72,7 +72,7 @@ export default function ListingCard({
     <article
       onClick={() => router.push(`/ilan/${listing.id}`)}
       onKeyDown={(e) => e.key === "Enter" && router.push(`/ilan/${listing.id}`)}
-      className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 hover:shadow-md transition cursor-pointer h-full relative card-hover"
+      className="bg-white dark:bg-gray-800/80 rounded-2xl shadow-sm border border-gray-100/80 dark:border-gray-700/50 p-5 hover:shadow-lg hover:border-emerald-200/60 dark:hover:border-emerald-700/40 transition-all duration-200 cursor-pointer h-full relative group"
       role="button"
       tabIndex={0}
       aria-label={`${listing.sport.name} ilanı detayı`}
@@ -81,10 +81,10 @@ export default function ListingCard({
       <button
         onClick={handleFavorite}
         disabled={favLoading}
-        className={`absolute top-3 right-3 text-xl transition hover:scale-125 disabled:opacity-60 ${
+        className={`absolute top-3 right-3 text-lg transition-all hover:scale-125 disabled:opacity-60 z-10 w-8 h-8 flex items-center justify-center rounded-full ${
           favorited
-            ? "text-red-500"
-            : "text-gray-300 dark:text-gray-600 hover:text-red-400"
+            ? "text-red-500 bg-red-50 dark:bg-red-900/30"
+            : "text-gray-300 dark:text-gray-600 hover:text-red-400 bg-gray-50 dark:bg-gray-700/50"
         }`}
         aria-label={favorited ? "Favorilerden kaldır" : "Favorilere ekle"}
         title={favorited ? "Favorilerden kaldır" : "Favorilere ekle"}
@@ -234,7 +234,7 @@ export default function ListingCard({
               ⏱️ {listing.trainerProfile.hourlyRate.toLocaleString("tr-TR")} ₺/saat
             </span>
           )}
-          <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+          <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold group-hover:translate-x-1 transition-transform">
             Detay →
           </span>
         </div>

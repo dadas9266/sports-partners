@@ -9,26 +9,47 @@ import { withCache, cacheDel, cacheKey, CACHE_TTL, cacheDelPattern } from "@/lib
 
 const log = createLogger("listings");
 
-// Uyumluluk skoru hesapla (0-100)
+// Seviye yakınlığı hesapla
+const LEVEL_ORDER: Record<string, number> = { BEGINNER: 0, INTERMEDIATE: 1, ADVANCED: 2, PROFESSIONAL: 3 };
+
+// Uyumluluk skoru hesapla (0-100) — akıllı eşleşme
 function computeCompatibility(
   listing: {
     sportId: string;
+    level: string;
     district: { cityId: string };
-    user: { preferredTime: string | null; preferredStyle: string | null };
+    user: { id: string; preferredTime: string | null; preferredStyle: string | null };
   },
   viewer: {
     cityId: string | null;
     sportIds: string[];
     preferredTime: string | null;
     preferredStyle: string | null;
+    level?: string | null;
   }
 ): number {
   let score = 0;
-  if (viewer.cityId && viewer.cityId === listing.district.cityId) score += 30;
-  if (viewer.sportIds.includes(listing.sportId)) score += 35;
-  if (viewer.preferredTime && viewer.preferredTime === listing.user.preferredTime) score += 20;
-  if (viewer.preferredStyle && viewer.preferredStyle === listing.user.preferredStyle) score += 15;
-  return score;
+
+  // Aynı şehir: +25
+  if (viewer.cityId && viewer.cityId === listing.district.cityId) score += 25;
+
+  // Aynı spor dalı: +30
+  if (viewer.sportIds.includes(listing.sportId)) score += 30;
+
+  // Seviye yakınlığı: aynı = +20, 1 kademe fark = +10, 2+ = +0
+  if (viewer.level && listing.level) {
+    const diff = Math.abs((LEVEL_ORDER[listing.level] ?? 1) - (LEVEL_ORDER[viewer.level] ?? 1));
+    if (diff === 0) score += 20;
+    else if (diff === 1) score += 10;
+  }
+
+  // Tercih edilen zaman dilimi: +15
+  if (viewer.preferredTime && viewer.preferredTime === listing.user.preferredTime) score += 15;
+
+  // Tercih edilen stil: +10
+  if (viewer.preferredStyle && viewer.preferredStyle === listing.user.preferredStyle) score += 10;
+
+  return Math.min(score, 100);
 }
 
 // İlan listele (filtreleme + pagination ile)
@@ -170,7 +191,7 @@ export async function GET(request: Request) {
     );
 
     // Uyumluluk skoru — sadece giriş yapan kullanıcılar için
-    let viewer: { cityId: string | null; sportIds: string[]; preferredTime: string | null; preferredStyle: string | null } | null = null;
+    let viewer: { cityId: string | null; sportIds: string[]; preferredTime: string | null; preferredStyle: string | null; level?: string | null } | null = null;
 
     if (userId) {
       const profile = await prisma.user.findUnique({
@@ -179,6 +200,7 @@ export async function GET(request: Request) {
           cityId: true,
           preferredTime: true,
           preferredStyle: true,
+          userLevel: true,
           sports: { select: { id: true } },
         },
       });
@@ -188,6 +210,7 @@ export async function GET(request: Request) {
           sportIds: profile.sports.map((s) => s.id),
           preferredTime: profile.preferredTime,
           preferredStyle: profile.preferredStyle,
+          level: profile.userLevel,
         };
       }
     }
@@ -195,7 +218,7 @@ export async function GET(request: Request) {
     const listingsWithScore = listings.map((l: any) => ({
       ...l,
       compatibilityScore: viewer ? computeCompatibility(
-        { sportId: l.sportId, district: { cityId: l.district.cityId }, user: l.user },
+        { sportId: l.sportId, level: l.level, district: { cityId: l.district.cityId }, user: l.user },
         viewer
       ) : undefined,
     }));

@@ -20,6 +20,7 @@ const GENDER_ICONS: Record<string, string> = {
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import Modal from "@/components/ui/Modal";
+import ProfileCompletionRing from "@/components/ProfileCompletionRing";
 
 // Eksik alanları tespit eden fonksiyon
 function getMissingProfileFields(user: any) {
@@ -287,21 +288,14 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      {/* Eksik profil alanı bannerı */}
-      {missingFields.length > 0 && (
-        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-xl p-4 mb-4 flex items-center justify-between">
-          <div>
-            <p className="font-semibold text-yellow-800 dark:text-yellow-200">⚠️ Profilin eksik!</p>
-            <p className="text-sm text-yellow-700 dark:text-yellow-300">Aşağıdaki alanları tamamlayarak güven puanını artırabilirsin:</p>
-            <ul className="mt-1 ml-4 list-disc text-yellow-700 dark:text-yellow-200 text-sm">
-              {missingFields.map((f) => <li key={f}>{f}</li>)}
-            </ul>
-          </div>
-          <Link href="#profile-edit" className="bg-yellow-600 hover:bg-yellow-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
-            Profilini Tamamla
-          </Link>
-        </div>
-      )}
+      {/* Profil Tamamlanma Çemberi */}
+      <div className="mb-4">
+        <ProfileCompletionRing
+          user={data.user as any}
+          listings={data.myListings}
+          matches={data.myMatches}
+        />
+      </div>
       {/* Profil başlığı */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 mb-6 overflow-hidden">
         {/* Kapak Fotoğrafı */}

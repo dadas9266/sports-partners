@@ -49,10 +49,11 @@ export default function HomePage() {
   return (
     <div>
       {/* Hero */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-emerald-600 via-teal-600 to-emerald-700 dark:from-emerald-800 dark:via-teal-900 dark:to-emerald-900 rounded-2xl mb-8 p-8 md:p-10 text-white shadow-lg">
+      <div className="relative overflow-hidden bg-gradient-to-br from-emerald-600 via-teal-600 to-emerald-700 dark:from-emerald-800 dark:via-teal-900 dark:to-emerald-900 rounded-2xl mb-8 p-8 md:p-10 text-white shadow-lg animate-fade-in">
         {/* Dekoratif arka plan halkaları */}
         <div className="absolute -top-10 -right-10 w-48 h-48 bg-white/5 rounded-full" aria-hidden="true" />
         <div className="absolute -bottom-8 -left-8 w-36 h-36 bg-white/5 rounded-full" aria-hidden="true" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-white/[0.03] rounded-full" aria-hidden="true" />
         <div className="relative text-center">
           <div className="text-4xl mb-3" role="img" aria-label="kupa">🏆</div>
           <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-2">
@@ -76,13 +77,13 @@ export default function HomePage() {
 
       {/* Öneri bölümü */}
       {recommendations.length > 0 && (
-        <div className="mb-8">
+        <div className="mb-8 animate-fade-in">
           <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-3">
             {recReason === "personalized" ? "✨ Sana Özel" : "🔥 Popüler İlanlar"}
           </h2>
-          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
+          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin snap-x snap-mandatory">
             {recommendations.map((listing) => (
-              <div key={listing.id} className="min-w-[260px]">
+              <div key={listing.id} className="min-w-[260px] snap-start">
                 <ListingCard listing={listing} />
               </div>
             ))}
@@ -128,20 +129,24 @@ export default function HomePage() {
               {[1, 2, 3, 4, 5, 6].map((i) => (
                 <div
                   key={i}
-                  className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-5 animate-pulse"
+                  className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-5"
                   aria-hidden="true"
                 >
                   <div className="flex items-center gap-2 mb-3">
-                    <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full" />
+                    <div className="w-10 h-10 skeleton rounded-full" />
                     <div className="flex-1">
-                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24 mb-1" />
-                      <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-16" />
+                      <div className="h-4 skeleton rounded w-24 mb-1.5" />
+                      <div className="h-3 skeleton rounded w-16" />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-full" />
-                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
-                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2" />
+                    <div className="h-3 skeleton rounded w-full" />
+                    <div className="h-3 skeleton rounded w-3/4" />
+                    <div className="h-3 skeleton rounded w-1/2" />
+                  </div>
+                  <div className="flex gap-2 mt-4">
+                    <div className="h-6 skeleton rounded-full w-16" />
+                    <div className="h-6 skeleton rounded-full w-20" />
                   </div>
                 </div>
               ))}
@@ -158,7 +163,7 @@ export default function HomePage() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 stagger-fade">
                 {listings.map((listing) => (
                   <ListingCard key={listing.id} listing={listing} />
                 ))}
@@ -198,7 +203,7 @@ export default function HomePage() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 stagger-fade">
                 {feedListings.map((listing) => (
                   <div key={listing.id} className="relative">
                     {listing.isFromFollowing && (

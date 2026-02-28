@@ -3,13 +3,17 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #ffffff;
+  --background: #fafbfc;
   --foreground: #171717;
+  --accent: #059669;
+  --accent-light: #d1fae5;
 }
 
 .dark {
-  --background: #0a0a0a;
+  --background: #0c0f14;
   --foreground: #ededed;
+  --accent: #10b981;
+  --accent-light: #064e3b;
 }
 
 @theme inline {
@@ -22,7 +26,9 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Scrollbar dark mode */
@@ -62,15 +68,74 @@ a, button {
 
 /* Kart hover efekti */
 .card-hover {
-  transition: box-shadow 200ms, transform 200ms;
+  transition: box-shadow 250ms ease, transform 250ms ease, border-color 250ms ease;
 }
 .card-hover:hover {
-  box-shadow: 0 8px 24px -4px rgba(0,0,0,0.10);
-  transform: translateY(-1px);
+  box-shadow: 0 12px 32px -8px rgba(0,0,0,0.08), 0 4px 8px -2px rgba(0,0,0,0.04);
+  transform: translateY(-2px);
 }
 
 /* Focus ring geliştirmesi */
 *:focus-visible {
-  outline: 2px solid #059669;
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+/* Skeleton loading pulse */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+.dark .skeleton {
+  background: linear-gradient(90deg, #1f2937 25%, #374151 50%, #1f2937 75%);
+  background-size: 200% 100%;
+}
+
+/* Fade-in animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* Staggered fade-in for children (card grids) */
+.stagger-fade > * {
+  opacity: 0;
+  animation: fadeIn 0.35s ease-out forwards;
+}
+.stagger-fade > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-fade > *:nth-child(2) { animation-delay: 50ms; }
+.stagger-fade > *:nth-child(3) { animation-delay: 100ms; }
+.stagger-fade > *:nth-child(4) { animation-delay: 150ms; }
+.stagger-fade > *:nth-child(5) { animation-delay: 200ms; }
+.stagger-fade > *:nth-child(6) { animation-delay: 250ms; }
+.stagger-fade > *:nth-child(7) { animation-delay: 300ms; }
+.stagger-fade > *:nth-child(8) { animation-delay: 350ms; }
+.stagger-fade > *:nth-child(9) { animation-delay: 400ms; }
+.stagger-fade > *:nth-child(n+10) { animation-delay: 450ms; }
+
+/* Slide-up for modals */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-slide-up {
+  animation: slideUp 0.25s ease-out forwards;
+}
+
+/* Glass card effect */
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.dark .glass {
+  background: rgba(15, 23, 42, 0.7);
 }

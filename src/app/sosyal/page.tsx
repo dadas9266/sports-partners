@@ -23,6 +23,8 @@ interface Post {
   images: string[];
   createdAt: string;
   liked: boolean;
+  userReaction?: string | null;
+  reactions?: Record<string, number>;
   user: PostUser;
   _count: { likes: number; comments: number };
 }
@@ -162,34 +164,60 @@ export default function SosyalPage() {
     }
   };
 
-  const handleLike = async (postId: string) => {
+  const handleLike = async (postId: string, reaction: string = "like") => {
     // Optimistic
     setPosts((prev) =>
-      prev.map((p) =>
-        p.id === postId
-          ? {
-              ...p,
-              liked: !p.liked,
-              _count: { ...p._count, likes: p.liked ? p._count.likes - 1 : p._count.likes + 1 },
-            }
-          : p
-      )
+      prev.map((p) => {
+        if (p.id !== postId) return p;
+        const wasLiked = p.liked;
+        const prevReaction = p.userReaction;
+        const sameReaction = wasLiked && prevReaction === reaction;
+        const newReactions = { ...(p.reactions ?? {}) };
+
+        if (sameReaction) {
+          // Geri al
+          newReactions[reaction] = Math.max(0, (newReactions[reaction] ?? 1) - 1);
+          if (newReactions[reaction] === 0) delete newReactions[reaction];
+          return {
+            ...p,
+            liked: false,
+            userReaction: null,
+            reactions: newReactions,
+            _count: { ...p._count, likes: p._count.likes - 1 },
+          };
+        } else if (wasLiked && prevReaction && prevReaction !== reaction) {
+          // Farklı reaction'a geç
+          newReactions[prevReaction] = Math.max(0, (newReactions[prevReaction] ?? 1) - 1);
+          if (newReactions[prevReaction] === 0) delete newReactions[prevReaction];
+          newReactions[reaction] = (newReactions[reaction] ?? 0) + 1;
+          return {
+            ...p,
+            liked: true,
+            userReaction: reaction,
+            reactions: newReactions,
+          };
+        } else {
+          // Yeni beğeni
+          newReactions[reaction] = (newReactions[reaction] ?? 0) + 1;
+          return {
+            ...p,
+            liked: true,
+            userReaction: reaction,
+            reactions: newReactions,
+            _count: { ...p._count, likes: p._count.likes + 1 },
+          };
+        }
+      })
     );
     try {
-      await fetch(`/api/posts/${postId}/like`, { method: "POST" });
+      await fetch(`/api/posts/${postId}/like`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reaction }),
+      });
     } catch {
-      // Revert on error
-      setPosts((prev) =>
-        prev.map((p) =>
-          p.id === postId
-            ? {
-                ...p,
-                liked: !p.liked,
-                _count: { ...p._count, likes: p.liked ? p._count.likes - 1 : p._count.likes + 1 },
-              }
-            : p
-        )
-      );
+      // Refresh on error
+      fetchPosts();
     }
   };
 
@@ -250,8 +278,28 @@ export default function SosyalPage() {
 
   if (status === "loading" || loading) {
     return (
-      <div className="flex justify-center py-20">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600" />
+      <div className="max-w-2xl mx-auto space-y-4">
+        {/* Skeleton post cards */}
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 skeleton rounded-full" />
+              <div className="flex-1">
+                <div className="h-4 skeleton rounded w-28 mb-1.5" />
+                <div className="h-3 skeleton rounded w-20" />
+              </div>
+            </div>
+            <div className="space-y-2 mb-4">
+              <div className="h-3 skeleton rounded w-full" />
+              <div className="h-3 skeleton rounded w-4/5" />
+              <div className="h-3 skeleton rounded w-2/3" />
+            </div>
+            <div className="flex gap-4 pt-3 border-t border-gray-50 dark:border-gray-700">
+              <div className="h-5 skeleton rounded w-12" />
+              <div className="h-5 skeleton rounded w-12" />
+            </div>
+          </div>
+        ))}
       </div>
     );
   }
@@ -354,7 +402,7 @@ export default function SosyalPage() {
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-4 stagger-fade">
           {posts.map((post) => (
             <PostCard
               key={post.id}
@@ -419,7 +467,7 @@ function PostCard({
   commentText: Record<string, string>;
   commentsLoading: Record<string, boolean>;
   submittingComment: string | null;
-  onLike: (id: string) => void;
+  onLike: (id: string, reaction?: string) => void;
   onToggleComments: (id: string) => void;
   onCommentChange: (id: string, text: string) => void;
   onComment: (id: string) => void;
@@ -501,16 +549,13 @@ function PostCard({
 
       {/* Aksiyonlar */}
       <div className="px-4 py-3 flex items-center gap-4 border-t border-gray-50 dark:border-gray-700">
-        <button
-          onClick={() => onLike(post.id)}
-          className={`flex items-center gap-1.5 text-sm font-medium transition ${
-            post.liked
-              ? "text-rose-500 dark:text-rose-400"
-              : "text-gray-400 dark:text-gray-500 hover:text-rose-400 dark:hover:text-rose-400"
-          }`}
-        >
-          {post.liked ? "❤️" : "🤍"} {post._count.likes}
-        </button>
+        <ReactionButton
+          liked={post.liked}
+          userReaction={post.userReaction ?? null}
+          reactions={post.reactions ?? {}}
+          totalLikes={post._count.likes}
+          onReact={(reaction) => onLike(post.id, reaction)}
+        />
         <button
           onClick={() => onToggleComments(post.id)}
           className="flex items-center gap-1.5 text-sm font-medium text-gray-400 dark:text-gray-500 hover:text-blue-500 dark:hover:text-blue-400 transition"
@@ -569,5 +614,117 @@ function PostCard({
         </div>
       )}
     </article>
+  );
+}
+
+// ─── Reaction Emojileri ──────────────────────────────────────────────────────
+const REACTION_EMOJIS: Record<string, string> = {
+  like: "❤️",
+  fire: "🔥",
+  muscle: "💪",
+  clap: "👏",
+  goal: "⚽",
+};
+
+function ReactionButton({
+  liked,
+  userReaction,
+  reactions,
+  totalLikes,
+  onReact,
+}: {
+  liked: boolean;
+  userReaction: string | null;
+  reactions: Record<string, number>;
+  totalLikes: number;
+  onReact: (reaction: string) => void;
+}) {
+  const [showPicker, setShowPicker] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Dış tıklamada kapat
+  useEffect(() => {
+    if (!showPicker) return;
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setShowPicker(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showPicker]);
+
+  const handlePointerDown = () => {
+    timerRef.current = setTimeout(() => setShowPicker(true), 400);
+  };
+  const handlePointerUp = () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+  };
+  const handleClick = () => {
+    if (showPicker) return;
+    onReact(userReaction ?? "like");
+  };
+  const handlePickReaction = (reaction: string) => {
+    setShowPicker(false);
+    onReact(reaction);
+  };
+
+  // Hangi emoji gösterilecek
+  const displayEmoji = liked && userReaction ? REACTION_EMOJIS[userReaction] ?? "❤️" : "🤍";
+
+  // Top 3 reaction göster
+  const topReactions = Object.entries(reactions)
+    .filter(([, count]) => count > 0)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3);
+
+  return (
+    <div ref={containerRef} className="relative flex items-center gap-1.5">
+      <button
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onPointerLeave={handlePointerUp}
+        onClick={handleClick}
+        className={`flex items-center gap-1 text-sm font-medium transition select-none ${
+          liked
+            ? "text-rose-500 dark:text-rose-400"
+            : "text-gray-400 dark:text-gray-500 hover:text-rose-400"
+        }`}
+      >
+        {displayEmoji}
+      </button>
+      {/* Mini reaction sayaçları */}
+      {topReactions.length > 0 && (
+        <div className="flex items-center -space-x-0.5">
+          {topReactions.map(([r]) => (
+            <span key={r} className="text-xs" title={r}>
+              {REACTION_EMOJIS[r]}
+            </span>
+          ))}
+          <span className="text-xs text-gray-500 dark:text-gray-400 ml-1.5 font-medium">{totalLikes}</span>
+        </div>
+      )}
+      {topReactions.length === 0 && totalLikes > 0 && (
+        <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">{totalLikes}</span>
+      )}
+      {/* Reaction Picker */}
+      {showPicker && (
+        <div className="absolute bottom-full left-0 mb-2 flex items-center gap-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-full shadow-lg px-2 py-1.5 z-50 animate-fade-in">
+          {Object.entries(REACTION_EMOJIS).map(([key, emoji]) => (
+            <button
+              key={key}
+              onClick={() => handlePickReaction(key)}
+              className={`text-xl hover:scale-125 transition-transform p-0.5 rounded-full ${
+                userReaction === key ? "bg-gray-100 dark:bg-gray-700 ring-2 ring-emerald-400" : ""
+              }`}
+              title={key}
+            >
+              {emoji}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

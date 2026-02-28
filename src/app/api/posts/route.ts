@@ -63,15 +63,33 @@ export async function GET(req: NextRequest) {
         _count: { select: { likes: true, comments: true } },
         likes: {
           where: { userId },
-          select: { id: true },
+          select: { id: true, reaction: true },
           take: 1,
         },
       },
     });
 
+    // Her post için reaction dağılımını hesapla
+    const postIds = posts.map((p: (typeof posts)[number]) => p.id);
+    const reactionCounts = postIds.length > 0
+      ? await prisma.postLike.groupBy({
+          by: ["postId", "reaction"],
+          where: { postId: { in: postIds } },
+          _count: { id: true },
+        })
+      : [];
+
+    const reactionMap: Record<string, Record<string, number>> = {};
+    for (const rc of reactionCounts) {
+      if (!reactionMap[rc.postId]) reactionMap[rc.postId] = {};
+      reactionMap[rc.postId][rc.reaction] = rc._count.id;
+    }
+
     const postsWithLiked = posts.map((p: (typeof posts)[number]) => ({
       ...p,
       liked: p.likes.length > 0,
+      userReaction: p.likes.length > 0 ? (p.likes[0] as any).reaction ?? "like" : null,
+      reactions: reactionMap[p.id] ?? {},
       likes: undefined,
     }));
 

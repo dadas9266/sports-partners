@@ -107,48 +107,47 @@ export default function Navbar() {
     }
   };
 
-  const mobileLinkClass = "block hover:bg-emerald-700 dark:hover:bg-emerald-800 px-3 py-2 rounded transition";
+  const mobileLinkClass = "block hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-2.5 rounded-xl transition text-gray-700 dark:text-gray-200 text-sm font-medium";
 
   return (
     <nav
       ref={navRef}
-      className="bg-emerald-600 dark:bg-emerald-800 text-white shadow-lg sticky top-0 z-50"
+      className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl text-gray-800 dark:text-gray-100 shadow-sm border-b border-gray-200/60 dark:border-gray-700/60 sticky top-0 z-50"
       role="navigation"
       aria-label="Ana navigasyon"
     >
-      <div className="max-w-6xl mx-auto px-4">
-        <div className="flex justify-between items-center h-16">
-          <div className="flex items-center gap-2 md:gap-4">
-            <Link href="/" className="text-xl font-bold flex items-center gap-2" aria-label="SporPartner Ana Sayfa">
-              <span role="img" aria-label="kupa">🏆</span>
-              <span className="hidden sm:inline">SporPartner</span>
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="flex justify-between items-center h-14">
+          <div className="flex items-center gap-1 md:gap-2">
+            <Link href="/" className="text-xl font-bold flex items-center gap-2 mr-2" aria-label="SporPartner Ana Sayfa">
+              <span className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center text-white text-sm font-black shadow-sm">SP</span>
+              <span className="hidden sm:inline text-lg font-extrabold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">SporPartner</span>
             </Link>
-            <Link href="/" className="hover:bg-emerald-700 dark:hover:bg-emerald-800 px-3 py-2 rounded transition" aria-label="İlanlar">
-              <span className="text-lg">📋</span>
+            <Link href="/" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-2.5 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label="İlanlar">
+              <span className="text-base">📋</span>
             </Link>
-            <Link href="/harita" className="hover:bg-emerald-700 dark:hover:bg-emerald-800 px-3 py-2 rounded transition" aria-label="Harita">
-              <span className="text-lg">🗺️</span>
+            <Link href="/harita" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-2.5 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label="Harita">
+              <span className="text-base">🗺️</span>
             </Link>
-            <Link href="/sosyal" className="hover:bg-emerald-700 dark:hover:bg-emerald-800 px-3 py-2 rounded transition" aria-label="Sosyal">
-              <span className="text-lg">🌐</span>
+            <Link href="/sosyal" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-2.5 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label="Sosyal">
+              <span className="text-base">🌐</span>
             </Link>
-            <Link href="/kulupler" className="hover:bg-emerald-700 dark:hover:bg-emerald-800 px-3 py-2 rounded transition" aria-label="Kulüpler">
-              <span className="text-lg">🏅</span>
+            <Link href="/kulupler" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-2.5 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label="Kulüpler">
+              <span className="text-base">🏅</span>
             </Link>
-            <Link href="/gruplar" className="hover:bg-emerald-700 dark:hover:bg-emerald-800 px-3 py-2 rounded transition" aria-label="Gruplar">
-              <span className="text-lg">👥</span>
+            <Link href="/gruplar" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-2.5 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label="Gruplar">
+              <span className="text-base">👥</span>
             </Link>
-            <Link href="/arama" className="hover:bg-emerald-700 dark:hover:bg-emerald-800 px-3 py-2 rounded transition" aria-label="Ara">
-              <span className="text-lg">🔍</span>
+            <Link href="/arama" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-2.5 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label="Ara">
+              <span className="text-base">🔍</span>
             </Link>
           </div>
 
           <div className="flex-1 flex justify-center">
             {session && (
               <Link href="/ilan/olustur" className="group">
-                <Button variant="primary" size="lg" className="shadow-lg px-6 py-2 text-base font-bold tracking-wide relative overflow-hidden transition-all group-hover:scale-105">
+                <Button variant="primary" size="lg" className="shadow-md px-5 py-1.5 text-sm font-bold tracking-wide relative overflow-hidden transition-all group-hover:scale-105 bg-gradient-to-r from-emerald-500 to-teal-600 border-0 rounded-xl">
                   <span className="relative z-10">+ İlan Oluştur</span>
-                  <span className="absolute inset-0 bg-emerald-400 opacity-0 group-hover:opacity-10 transition" />
                 </Button>
               </Link>
             )}
@@ -157,15 +156,15 @@ export default function Navbar() {
           <div className="flex items-center gap-2 md:gap-3">
             {session ? (
               <>
-                <Link href="/mesajlar" className="relative p-2 rounded-full hover:bg-emerald-700 dark:hover:bg-emerald-800 transition" aria-label="Mesajlar">
-                  <span className="text-lg">💬</span>
+                <Link href="/mesajlar" className="relative p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition" aria-label="Mesajlar">
+                  <span className="text-base">💬</span>
                   {unreadMessages > 0 && (
                     <Badge variant="blue" size="sm">{unreadMessages > 9 ? "9+" : unreadMessages}</Badge>
                   )}
                 </Link>
                 <div className="relative" ref={notifRef}>
-                  <button onClick={handleOpenNotif} className="relative p-2 rounded-full hover:bg-emerald-700 dark:hover:bg-emerald-800 transition" aria-label="Bildirimler">
-                    <span className="text-lg">🔔</span>
+                  <button onClick={handleOpenNotif} className="relative p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition" aria-label="Bildirimler">
+                    <span className="text-base">🔔</span>
                     {unreadCount > 0 && (
                       <Badge variant="red" size="sm">{unreadCount > 9 ? "9+" : unreadCount}</Badge>
                     )}
@@ -174,9 +173,9 @@ export default function Navbar() {
                 <Dropdown
                   align="right"
                   trigger={
-                    <span className="inline-flex items-center gap-2 cursor-pointer p-1.5 rounded-full hover:bg-emerald-700 dark:hover:bg-emerald-800 transition">
-                      <img src={session.user?.image || "/icons/avatar.svg"} alt="Profil" className="w-8 h-8 rounded-full border-2 border-white shadow" />
-                      <span className="hidden md:inline text-sm font-semibold">{session.user?.name}</span>
+                    <span className="inline-flex items-center gap-2 cursor-pointer p-1 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+                      <img src={session.user?.image || "/icons/avatar.svg"} alt="Profil" className="w-8 h-8 rounded-full border-2 border-emerald-200 dark:border-emerald-700 shadow-sm" />
+                      <span className="hidden md:inline text-sm font-semibold text-gray-700 dark:text-gray-200">{session.user?.name}</span>
                     </span>
                   }
                 >
@@ -189,28 +188,28 @@ export default function Navbar() {
                     Çıkış Yap
                   </button>
                 </Dropdown>
-                <button onClick={toggleDarkMode} className="ml-1 p-2 rounded-full hover:bg-emerald-700 dark:hover:bg-emerald-800 transition" aria-label="Tema Değiştir">
-                  {darkMode ? <span className="text-lg">🌙</span> : <span className="text-lg">☀️</span>}
+                <button onClick={toggleDarkMode} className="ml-1 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition" aria-label="Tema Değiştir">
+                  {darkMode ? <span className="text-base">🌙</span> : <span className="text-base">☀️</span>}
                 </button>
               </>
             ) : (
               <>
-                <Link href="/auth/giris" className="hover:bg-emerald-700 dark:hover:bg-emerald-800 px-3 py-2 rounded transition">Giriş Yap</Link>
-                <Link href="/auth/kayit" className="bg-white text-emerald-700 font-semibold px-3 py-2 rounded hover:bg-emerald-50 transition">Kayıt Ol</Link>
-                <button onClick={toggleDarkMode} className="ml-1 p-2 rounded-full hover:bg-emerald-700 dark:hover:bg-emerald-800 transition" aria-label="Tema Değiştir">
-                  {darkMode ? <span className="text-lg">🌙</span> : <span className="text-lg">☀️</span>}
+                <Link href="/auth/giris" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-1.5 rounded-lg transition text-sm font-medium">Giriş Yap</Link>
+                <Link href="/auth/kayit" className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold px-4 py-1.5 rounded-xl hover:opacity-90 transition text-sm shadow-sm">Kayıt Ol</Link>
+                <button onClick={toggleDarkMode} className="ml-1 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition" aria-label="Tema Değiştir">
+                  {darkMode ? <span className="text-base">🌙</span> : <span className="text-base">☀️</span>}
                 </button>
               </>
             )}
-            <button className="md:hidden p-2 rounded hover:bg-emerald-700 transition" onClick={() => setMenuOpen((v) => !v)} aria-label="Menüyü aç/kapat" aria-expanded={menuOpen} aria-controls="mobile-menu">
-              <span className="text-xl">{menuOpen ? "✕" : "☰"}</span>
+            <button className="md:hidden p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition" onClick={() => setMenuOpen((v) => !v)} aria-label="Menüyü aç/kapat" aria-expanded={menuOpen} aria-controls="mobile-menu">
+              <span className="text-xl text-gray-600 dark:text-gray-300">{menuOpen ? "✕" : "☰"}</span>
             </button>
           </div>
         </div>
       </div>
 
       {menuOpen && (
-        <div id="mobile-menu" className="md:hidden pb-4 space-y-2 px-4" role="menu">
+        <div id="mobile-menu" className="md:hidden pb-4 space-y-1 px-4 border-t border-gray-100 dark:border-gray-700/50 pt-2" role="menu">
           <Link href="/" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">📋 İlanlar</Link>
           <Link href="/harita" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">🗺️ Harita</Link>
           <Link href="/liderlik" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">🏅 Liderlik Tablosu</Link>
@@ -220,24 +219,24 @@ export default function Navbar() {
           <Link href="/arama" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">🔍 Ara</Link>
           {session ? (
             <>
-              <Link href="/ilan/olustur" className="block bg-white text-emerald-700 font-semibold px-3 py-2 rounded" onClick={() => setMenuOpen(false)} role="menuitem">+ İlan Oluştur</Link>
+              <Link href="/ilan/olustur" className="block bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold px-3 py-2.5 rounded-xl text-sm text-center shadow-sm" onClick={() => setMenuOpen(false)} role="menuitem">+ İlan Oluştur</Link>
               <Link href="/profil" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">👤 Profilim</Link>
               <Link href="/ayarlar" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">⚙️ Ayarlar</Link>
               <Link href="/mekan-profil" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">🏙️ Mekan Profili</Link>
-              <Link href="/mesajlar" className="flex items-center gap-2 hover:bg-emerald-700 dark:hover:bg-emerald-800 px-3 py-2 rounded transition" onClick={() => setMenuOpen(false)} role="menuitem">
+              <Link href="/mesajlar" className="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-2.5 rounded-xl transition text-sm text-gray-700 dark:text-gray-200" onClick={() => setMenuOpen(false)} role="menuitem">
                 <span>💬 Mesajlar</span>
                 {unreadMessages > 0 && <span className="bg-blue-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{unreadMessages > 9 ? "9+" : unreadMessages}</span>}
               </Link>
-              <button onClick={() => { setMenuOpen(false); handleOpenNotif(); }} className="flex items-center gap-2 w-full text-left hover:bg-emerald-700 dark:hover:bg-emerald-800 px-3 py-2 rounded transition" role="menuitem" aria-label="Bildirimler">
+              <button onClick={() => { setMenuOpen(false); handleOpenNotif(); }} className="flex items-center gap-2 w-full text-left hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-2.5 rounded-xl transition text-sm text-gray-700 dark:text-gray-200" role="menuitem" aria-label="Bildirimler">
                 <span>🔔 Bildirimler</span>
                 {unreadCount > 0 && <span className="bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{unreadCount > 9 ? "9+" : unreadCount}</span>}
               </button>
-              <button onClick={() => { setMenuOpen(false); signOut(); }} className="block w-full text-left hover:bg-emerald-700 px-3 py-2 rounded transition" role="menuitem">Çıkış</button>
+              <button onClick={() => { setMenuOpen(false); signOut(); }} className="block w-full text-left hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-2.5 rounded-xl transition text-sm text-red-600 dark:text-red-400 font-medium" role="menuitem">Çıkış</button>
             </>
           ) : (
             <>
               <Link href="/auth/giris" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">Giriş Yap</Link>
-              <Link href="/auth/kayit" className="block bg-white text-emerald-700 font-semibold px-3 py-2 rounded" onClick={() => setMenuOpen(false)} role="menuitem">Kayıt Ol</Link>
+              <Link href="/auth/kayit" className="block bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold px-3 py-2.5 rounded-xl text-sm text-center shadow-sm" onClick={() => setMenuOpen(false)} role="menuitem">Kayıt Ol</Link>
             </>
           )}
         </div>
