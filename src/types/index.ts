@@ -115,6 +115,9 @@ export interface ListingSummary {
   isQuick: boolean;
   expiresAt?: string | null;
   _count: { responses: number };
+  // Fiyat bilgisi (EQUIPMENT ve TRAINER ilanları için)
+  equipmentDetail?: { price: number; isSold: boolean } | null;
+  trainerProfile?: { hourlyRate?: number | null } | null;
   // Feed extras
   isFromFollowing?: boolean;
   isGroup?: boolean;
@@ -141,6 +144,29 @@ export interface ListingDetail {
   responses: ListingResponse[];
   match?: Match | null;
   createdAt: string;
+  // Eğitmen ilanı için ek bilgiler
+  trainerProfile?: {
+    id: string;
+    hourlyRate?: number | null;
+    gymName?: string | null;
+    gymAddress?: string | null;
+    isVerified: boolean;
+    specializations: {
+      id: string;
+      sportName: string;
+      years: number;
+    }[];
+  } | null;
+  // Spor malzemesi ilanı için ek bilgiler
+  equipmentDetail?: {
+    id: string;
+    price: number;
+    condition: "NEW" | "LIKE_NEW" | "GOOD" | "FAIR";
+    brand?: string | null;
+    model?: string | null;
+    images: string[];
+    isSold: boolean;
+  } | null;
 }
 
 // --- API Response Types ---
@@ -225,11 +251,29 @@ export interface CreateListingForm {
   expiresAt: string;
   isRecurring: boolean;
   recurringDays: string[];  // ["MON","WED","FRI"]
+  minAge: number | null;
+  maxAge: number | null;
+  groupId: string | null;
 }
 
 export interface LoginForm {
   email: string;
   password: string;
+}
+
+export interface TrainerSportExperience {
+  sportId: string;
+  sportName: string;
+  years: number;
+  certUrl?: string; // Her spor dalı için ayrı sertifika
+}
+
+export interface VenueFacilityInput {
+  sportId: string;
+  sportName: string;
+  facilityType: string | null; // "saha" | "kort" | "havuz" | "ring" | "salon" | "pist" | null
+  count: number;
+  notes?: string; // Açık alan sporları için serbest metin (Hiking, Koşu vb.)
 }
 
 export interface RegisterForm {
@@ -266,7 +310,15 @@ export type NotificationType =
   | "NEW_RATING"
   | "NEW_FOLLOWER"
   | "NEW_MESSAGE"
-  | "NO_SHOW_WARNING";
+  | "NO_SHOW_WARNING"
+  | "NEW_POST_LIKE"
+  | "NEW_POST_COMMENT"
+  | "TRAINER_VERIFIED"
+  | "MATCH_STATUS_CHANGED"
+  | "STREAK_MILESTONE"
+  | "LEVEL_UP"
+  | "MATCH_OTP_REQUESTED"
+  | "VENUE_VERIFIED";
 
 export interface Notification {
   id: string;
@@ -324,6 +376,8 @@ export interface LeaderboardEntry {
   avgRating: number;
   ratingCount: number;
   totalMatches: number;
+  totalPoints: number;
+  currentStreak: number;
   badges: Badge[];
 }
 
@@ -352,6 +406,8 @@ export interface PublicProfile {
   ratingCount: number;
   totalListings: number;
   totalMatches: number;
+  followersCount: number;
+  followingCount: number;
   activeListings: ListingSummary[];
   isOwnProfile: boolean;
   birthDate?: string | null;

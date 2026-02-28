@@ -1,14 +1,19 @@
 import { Redis } from "@upstash/redis";
 
-// Redis bağlantısı - env yoksa null döner (graceful degradation)
+// Redis bağlantısı - env yoksa veya placeholder ise null döner (graceful degradation)
 function getRedisClient(): Redis | null {
-  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
-    return null; // Redis yoksa cache devre dışı, uygulama çalışmaya devam eder
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  // Placeholder veya eksik değerler varsa Redis'i devre dışı bırak
+  if (
+    !url || !token ||
+    url.startsWith("https://your-") ||
+    token === "your-redis-token" ||
+    url === "https://your-redis.upstash.io"
+  ) {
+    return null;
   }
-  return new Redis({
-    url: process.env.UPSTASH_REDIS_REST_URL,
-    token: process.env.UPSTASH_REDIS_REST_TOKEN,
-  });
+  return new Redis({ url, token });
 }
 
 // Cache TTL değerleri (saniye)

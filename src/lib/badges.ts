@@ -14,6 +14,8 @@ interface UserStats {
   hasBio?: boolean;
   hasCity?: boolean;
   hasSports?: boolean;
+  currentStreak?: number;
+  longestStreak?: number;
 }
 
 export function computeBadges(stats: UserStats): Badge[] {
@@ -105,6 +107,35 @@ export function computeBadges(stats: UserStats): Badge[] {
       icon: "⚠️",
       description: `${stats.noShowCount} kez belirtilen etkinliklere gelmedi`,
       color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+    });
+  }
+
+  // Seri rozetleri
+  if ((stats.currentStreak ?? 0) >= 3) {
+    badges.push({
+      id: "hot_streak",
+      label: "Ateş Hattında",
+      icon: "⚡",
+      description: "3+ günlük aktif seri",
+      color: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
+    });
+  }
+  if ((stats.currentStreak ?? 0) >= 7) {
+    badges.push({
+      id: "weekly_warrior",
+      label: "Haftalık Savaşçı",
+      icon: "🔥",
+      description: "7+ günlük kesintisiz seri",
+      color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+    });
+  }
+  if ((stats.longestStreak ?? 0) >= 30) {
+    badges.push({
+      id: "legend_streak",
+      label: "Efsane Seri",
+      icon: "🌋",
+      description: "En az 30 günlük rekor seri",
+      color: "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400",
     });
   }
 

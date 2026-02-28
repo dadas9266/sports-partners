@@ -38,24 +38,15 @@ export const loginSchema = z.object({
 });
 
 // ========== LISTING ==========
-export const createListingSchema = z.object({
+export const createListingSchema = z
+  .object({
   type: z.enum(["RIVAL", "PARTNER", "TRAINER", "EQUIPMENT"], { message: "İlan tipi seçiniz" }),
   sportId: z.string().min(1, "Spor dalı seçiniz"),
   districtId: z.string().min(1, "İlçe seçiniz"),
   venueId: z.string().optional().nullable(),
-  dateTime: z
-    .string()
-    .min(1, "Tarih ve saat seçiniz")
-    .refine(
-      (val) => {
-        const date = new Date(val);
-        return !isNaN(date.getTime()) && date > new Date();
-      },
-      "Tarih gelecekte olmalıdır"
-    ),
-  level: z.enum(["BEGINNER", "INTERMEDIATE", "ADVANCED"], {
-    message: "Seviye seçiniz",
-  }),
+  // dateTime: RIVAL ve PARTNER için zorunlu ve gelecekte olmalı; TRAINER opsiyonel; EQUIPMENT gerekmez
+  dateTime: z.string().optional().nullable(),
+  level: z.enum(["BEGINNER", "INTERMEDIATE", "ADVANCED"]).optional(),
   description: z.string().max(1000, "Açıklama en fazla 1000 karakter olabilir").optional(),
   maxParticipants: z.number().int().min(2).max(20).optional().default(2),
   allowedGender: z.enum(["ANY", "FEMALE_ONLY", "MALE_ONLY"]).optional().default("ANY"),
@@ -70,6 +61,50 @@ export const createListingSchema = z.object({
     ),
   isRecurring: z.boolean().optional().default(false),
   recurringDays: z.array(z.enum(["MON","TUE","WED","THU","FRI","SAT","SUN"])).optional().default([]),
+  minAge: z.number().int().min(10).max(99).optional().nullable(),
+  maxAge: z.number().int().min(10).max(99).optional().nullable(),
+  groupId: z.string().optional().nullable(),
+  // Eğitmen ilanı için ek alanlar
+  trainerProfile: z.object({
+    hourlyRate: z.number().min(0).optional(),
+    experience: z.number().int().min(0).optional(),
+    specialization: z.string().max(200).optional(),
+    gymName: z.string().max(200).optional(),
+    gymAddress: z.string().max(500).optional(),
+  }).optional(),
+  // Spor malzemesi ilanı için ek alanlar
+  equipmentDetail: z.object({
+    price: z.number().min(0).optional(),
+    condition: z.enum(["NEW", "LIKE_NEW", "GOOD", "FAIR"]).optional(),
+    brand: z.string().max(100).optional(),
+    model: z.string().max(100).optional(),
+    images: z.array(z.string()).optional().default([]),
+  }).optional(),
+})
+.superRefine((data, ctx) => {
+  // RIVAL ve PARTNER için tarih zorunlu ve gelecekte olmalı
+  if (data.type === "RIVAL" || data.type === "PARTNER") {
+    if (!data.dateTime || data.dateTime.trim() === "") {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Tarih ve saat seçiniz", path: ["dateTime"] });
+    } else {
+      const date = new Date(data.dateTime);
+      if (isNaN(date.getTime()) || date <= new Date()) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Tarih gelecekte olmalıdır", path: ["dateTime"] });
+      }
+    }
+    // Seviye de zorunlu
+    if (!data.level) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Seviye seçiniz", path: ["level"] });
+    }
+  }
+  // TRAINER için tarih seçildiyse gelecekte olmalı (opsiyonel)
+  if (data.type === "TRAINER" && data.dateTime && data.dateTime.trim() !== "") {
+    const date = new Date(data.dateTime);
+    if (isNaN(date.getTime()) || date <= new Date()) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Tarih gelecekte olmalıdır", path: ["dateTime"] });
+    }
+  }
+  // EQUIPMENT için herhangi bir tarih/seviye validasyonu yapılmaz
 });
 
 export const updateListingSchema = z.object({
@@ -104,7 +139,7 @@ export const listingFilterSchema = z.object({
   cityId: z.string().optional(),
   countryId: z.string().optional(),
   level: z.enum(["BEGINNER", "INTERMEDIATE", "ADVANCED"]).optional(),
-  type: z.enum(["RIVAL", "PARTNER", "TRAINER", "EQUIPMENT", "TRAINER", "EQUIPMENT"]).optional(),
+  type: z.enum(["RIVAL", "PARTNER", "TRAINER", "EQUIPMENT"]).optional(),
   upcoming: z.string().optional(),
   quickOnly: z.string().optional(),  // "true" for hızlı ilan filter
   page: z.coerce.number().int().min(1).default(1),

@@ -13,10 +13,14 @@ interface RateLimitConfig {
 }
 
 const RATE_LIMIT_CONFIGS: Record<string, RateLimitConfig> = {
-  listing: { maxAttempts: 5, windowMs: 24 * 60 * 60 * 1000 }, // 5/gün
-  auth: { maxAttempts: 10, windowMs: 15 * 60 * 1000 },        // 10/15dk
-  register: { maxAttempts: 5, windowMs: 60 * 60 * 1000 },     // 5/saat
-  response: { maxAttempts: 20, windowMs: 60 * 60 * 1000 },    // 20/saat
+  listing:  { maxAttempts: 5,   windowMs: 24 * 60 * 60 * 1000 }, // 5/gün
+  auth:     { maxAttempts: 10,  windowMs: 15 * 60 * 1000 },       // 10/15dk
+  register: { maxAttempts: 5,   windowMs: 60 * 60 * 1000 },       // 5/saat
+  response: { maxAttempts: 20,  windowMs: 60 * 60 * 1000 },       // 20/saat
+  message:  { maxAttempts: 60,  windowMs: 60 * 1000 },            // 60/dk (spam koruması)
+  post:     { maxAttempts: 10,  windowMs: 60 * 60 * 1000 },       // 10/saat
+  upload:   { maxAttempts: 20,  windowMs: 60 * 60 * 1000 },       // 20/saat
+  rating:   { maxAttempts: 5,   windowMs: 24 * 60 * 60 * 1000 },  // 5/gün
 };
 
 export function checkRateLimit(
@@ -39,6 +43,15 @@ export function checkRateLimit(
 
   entry.count++;
   return { allowed: true, remaining: config.maxAttempts - entry.count };
+}
+
+// Hazır 429 yanıt döndüren yardımcı
+import { NextResponse } from "next/server";
+export function rateLimitResponse(remaining = 0) {
+  return NextResponse.json(
+    { success: false, error: "Çok fazla istek gönderdiniz. Lütfen bekleyin." },
+    { status: 429, headers: { "Retry-After": "60", "X-RateLimit-Remaining": String(remaining) } }
+  );
 }
 
 // IP-based rate limit helper for auth endpoints

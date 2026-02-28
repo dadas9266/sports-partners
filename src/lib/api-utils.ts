@@ -49,3 +49,15 @@ export function serverError(error: string) {
 export function success<T>(data: T, status = 200) {
   return NextResponse.json({ success: true, data }, { status });
 }
+
+/**
+ * Kullanıcı girdisinden basit XSS karakter ve HTML tag temizliği yapar.
+ * Zod max-length doğrulamasından SONRA çağrılmalı.
+ */
+export function sanitizeText(input: string): string {
+  return input
+    .replace(/<[^>]*>/g, "")          // HTML tag'leri kaldır
+    .replace(/javascript:/gi, "")      // javascript: protokolünü kaldır
+    .replace(/on\w+\s*=/gi, "")        // onerror= onclick= vb. kaldır
+    .trim();
+}
