@@ -1,0 +1,38 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Start Next.js Dev Server",
+			"type": "shell",
+			"command": "npx next dev",
+			"args": [],
+			"isBackground": true,
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Start Next.js Dev Server",
+			"type": "shell",
+			"command": "npx next dev",
+			"args": [],
+			"isBackground": true,
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Kill Next.js on 3000/3001 and Restart",
+			"type": "shell",
+			"command": "for /f \"tokens=5\" %a in ('netstat -aon ^| findstr :3000') do taskkill /F /PID %a & for /f \"tokens=5\" %a in ('netstat -aon ^| findstr :3001') do taskkill /F /PID %a; npx next dev",
+			"args": [],
+			"isBackground": true,
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		}
+	]
+}
