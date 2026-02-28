@@ -14,6 +14,8 @@ import type {
   Conversation,
   Message,
   LeaderboardEntry,
+  TrainerSportExperience,
+  VenueFacilityInput,
 } from "@/types";
 
 const BASE_URL = "";
@@ -143,6 +145,7 @@ export async function updateProfile(data: {
   phone?: string | null;
   bio?: string | null;
   cityId?: string | null;
+  districtId?: string | null;
   sportIds?: string[];
   avatarUrl?: string | null;
   gender?: string | null;
@@ -166,9 +169,10 @@ export async function registerUser(data: {
   password: string;
   phone?: string;
   gender?: string;
+  countryId: string;
   cityId: string;
   districtId: string;
-  birthDate: string;
+  birthDate?: string;
 }): Promise<ApiResponse<{ id: string; name: string; email: string }>> {
   return fetchAPI("/api/auth/register", {
     method: "POST",

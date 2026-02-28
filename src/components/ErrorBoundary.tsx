@@ -2,6 +2,7 @@
 
 import { Component, ErrorInfo, ReactNode } from "react";
 import Button from "./ui/Button";
+import { logError } from "@/lib/client-logger";
 
 interface Props {
   children: ReactNode;
@@ -24,7 +25,11 @@ export default class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error("ErrorBoundary caught an error:", error, errorInfo);
+    logError(error, { errorInfo });
+    if (process.env.NODE_ENV === "development") {
+      // eslint-disable-next-line no-console
+      console.error("ErrorBoundary caught an error:", error, errorInfo);
+    }
   }
 
   handleRetry = () => {

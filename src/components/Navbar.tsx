@@ -5,6 +5,9 @@ import { useSession, signOut } from "next-auth/react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { getNotifications, markNotificationsRead } from "@/services/api";
 import type { Notification } from "@/types";
+import Dropdown from "@/components/ui/Dropdown";
+import Badge from "@/components/ui/Badge";
+import Button from "@/components/ui/Button";
 
 export default function Navbar() {
   const { data: session } = useSession();
@@ -29,12 +32,15 @@ export default function Navbar() {
     }
   }, [session]);
 
-  // SSE — gerçek zamanlı bildirimler + mesaj sayısı
+  useEffect(() => {
+    if (!session) return;
+    fetch("/api/streak", { method: "POST" }).catch(() => {});
+  }, [session]);
+
   useEffect(() => {
     if (!session) return;
     const sse = new EventSource("/api/notifications/stream");
     sseRef.current = sse;
-
     sse.addEventListener("notifications", (e) => {
       try {
         const payload = JSON.parse(e.data) as { count: number };
@@ -42,24 +48,16 @@ export default function Navbar() {
           setUnreadCount((prev) => prev + payload.count);
           fetchNotifications();
         }
-      } catch { /* ignore */ }
+      } catch { }
     });
-
     sse.addEventListener("heartbeat", (e) => {
       try {
         const payload = JSON.parse(e.data) as { unreadMessages: number };
         setUnreadMessages(payload.unreadMessages ?? 0);
-      } catch { /* ignore */ }
+      } catch { }
     });
-
-    sse.onerror = () => {
-      sse.close();
-    };
-
-    return () => {
-      sse.close();
-      sseRef.current = null;
-    };
+    sse.onerror = () => { sse.close(); };
+    return () => { sse.close(); sseRef.current = null; };
   }, [session, fetchNotifications]);
 
   useEffect(() => {
@@ -76,7 +74,6 @@ export default function Navbar() {
     }
   }, []);
 
-  // Close mobile menu on outside click
   useEffect(() => {
     if (!menuOpen && !notifOpen) return;
     const handleClick = (e: MouseEvent) => {
@@ -110,230 +107,185 @@ export default function Navbar() {
     }
   };
 
-  const linkClass = "hover:bg-emerald-700 dark:hover:bg-emerald-800 px-3 py-2 rounded transition";
   const mobileLinkClass = "block hover:bg-emerald-700 dark:hover:bg-emerald-800 px-3 py-2 rounded transition";
 
   return (
-    <nav ref={navRef} className="bg-emerald-600 dark:bg-emerald-800 text-white shadow-lg sticky top-0 z-50" role="navigation" aria-label="Ana navigasyon">
+    <nav
+      ref={navRef}
+      className="bg-emerald-600 dark:bg-emerald-800 text-white shadow-lg sticky top-0 z-50"
+      role="navigation"
+      aria-label="Ana navigasyon"
+    >
       <div className="max-w-6xl mx-auto px-4">
-        <div className="flex justify-between items-center h-14">
-          {/* Logo */}
-          <Link href="/" className="text-xl font-bold flex items-center gap-2" aria-label="SporPartner Ana Sayfa">
-            <span role="img" aria-label="kupa">🏆</span>
-            <span>SporPartner</span>
-          </Link>
+        <div className="flex justify-between items-center h-16">
+          <div className="flex items-center gap-2 md:gap-4">
+            <Link href="/" className="text-xl font-bold flex items-center gap-2" aria-label="SporPartner Ana Sayfa">
+              <span role="img" aria-label="kupa">🏆</span>
+              <span className="hidden sm:inline">SporPartner</span>
+            </Link>
+            <Link href="/" className="hover:bg-emerald-700 dark:hover:bg-emerald-800 px-3 py-2 rounded transition" aria-label="İlanlar">
+              <span className="text-lg">📋</span>
+            </Link>
+            <Link href="/harita" className="hover:bg-emerald-700 dark:hover:bg-emerald-800 px-3 py-2 rounded transition" aria-label="Harita">
+              <span className="text-lg">🗺️</span>
+            </Link>
+            <Link href="/sosyal" className="hover:bg-emerald-700 dark:hover:bg-emerald-800 px-3 py-2 rounded transition" aria-label="Sosyal">
+              <span className="text-lg">🌐</span>
+            </Link>
+            <Link href="/kulupler" className="hover:bg-emerald-700 dark:hover:bg-emerald-800 px-3 py-2 rounded transition" aria-label="Kulüpler">
+              <span className="text-lg">🏅</span>
+            </Link>
+            <Link href="/gruplar" className="hover:bg-emerald-700 dark:hover:bg-emerald-800 px-3 py-2 rounded transition" aria-label="Gruplar">
+              <span className="text-lg">👥</span>
+            </Link>
+          </div>
 
-          {/* Desktop menu */}
-          <div className="hidden md:flex items-center gap-3">
-            <Link href="/" className={linkClass}>
-              İlanlar
-            </Link>
-            <Link href="/harita" className={linkClass}>
-              🗺️ Harita
-            </Link>
-            <Link href="/liderlik" className={linkClass}>
-              🏅 Liderlik
-            </Link>
+          <div className="flex-1 flex justify-center">
+            {session && (
+              <Link href="/ilan/olustur" className="group">
+                <Button variant="primary" size="lg" className="shadow-lg px-6 py-2 text-base font-bold tracking-wide relative overflow-hidden transition-all group-hover:scale-105">
+                  <span className="relative z-10">+ İlan Oluştur</span>
+                  <span className="absolute inset-0 bg-emerald-400 opacity-0 group-hover:opacity-10 transition" />
+                </Button>
+              </Link>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 md:gap-3">
             {session ? (
               <>
-                <Link
-                  href="/ilan/olustur"
-                  className="bg-white text-emerald-700 font-semibold px-3 py-2 rounded hover:bg-emerald-50 transition"
-                >
-                  + İlan Oluştur
-                </Link>
-                <Link href="/profil" className={linkClass}>
-                  Profilim
-                </Link>
-                {/* Mesajlar */}
-                <Link href="/mesajlar" className={`relative ${linkClass}`} aria-label="Mesajlar">
-                  💬
+                <Link href="/mesajlar" className="relative p-2 rounded-full hover:bg-emerald-700 dark:hover:bg-emerald-800 transition" aria-label="Mesajlar">
+                  <span className="text-lg">💬</span>
                   {unreadMessages > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
-                      {unreadMessages > 9 ? "9+" : unreadMessages}
-                    </span>
+                    <Badge variant="blue" size="sm">{unreadMessages > 9 ? "9+" : unreadMessages}</Badge>
                   )}
                 </Link>
-                {/* Bildirim Bell */}
                 <div className="relative" ref={notifRef}>
-                  <button
-                    onClick={handleOpenNotif}
-                    className={`relative ${linkClass}`}
-                    aria-label="Bildirimler"
-                  >
-                    🔔
+                  <button onClick={handleOpenNotif} className="relative p-2 rounded-full hover:bg-emerald-700 dark:hover:bg-emerald-800 transition" aria-label="Bildirimler">
+                    <span className="text-lg">🔔</span>
                     {unreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
-                        {unreadCount > 9 ? "9+" : unreadCount}
-                      </span>
+                      <Badge variant="red" size="sm">{unreadCount > 9 ? "9+" : unreadCount}</Badge>
                     )}
                   </button>
-                  {/* Dropdown */}
-                  {notifOpen && (
-                    <div className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 z-50 overflow-hidden">
-                      <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
-                        <span className="font-semibold text-gray-800 dark:text-gray-100">Bildirimler</span>
-                        <button onClick={() => setNotifOpen(false)} className="text-gray-400 hover:text-gray-600 text-lg">×</button>
-                      </div>
-                      <div className="max-h-72 overflow-y-auto">
-                        {notifications.length === 0 ? (
-                          <p className="text-center text-gray-400 dark:text-gray-500 py-6 text-sm">Bildirim yok</p>
-                        ) : (
-                          notifications.slice(0, 10).map((n) => (
-                            <a
-                              key={n.id}
-                              href={n.link ?? "#"}
-                              className={`block px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition border-b border-gray-50 dark:border-gray-700 last:border-0 ${!n.read ? "bg-emerald-50 dark:bg-emerald-900/10" : ""}`}
-                              onClick={() => setNotifOpen(false)}
-                            >
-                              <p className="text-sm font-medium text-gray-800 dark:text-gray-100">{n.title}</p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{n.body}</p>
-                            </a>
-                          ))
-                        )}
-                      </div>
-                    </div>
-                  )}
                 </div>
-                <button
-                  onClick={() => signOut()}
-                  className={linkClass}
-                  aria-label="Çıkış yap"
+                <Dropdown
+                  align="right"
+                  trigger={
+                    <span className="inline-flex items-center gap-2 cursor-pointer p-1.5 rounded-full hover:bg-emerald-700 dark:hover:bg-emerald-800 transition">
+                      <img src={session.user?.image || "/icons/avatar.svg"} alt="Profil" className="w-8 h-8 rounded-full border-2 border-white shadow" />
+                      <span className="hidden md:inline text-sm font-semibold">{session.user?.name}</span>
+                    </span>
+                  }
                 >
-                  Çıkış
+                  <Link href="/profil" className="block px-4 py-2 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/30">Profilim</Link>
+                  <Link href="/mekan-profil" className="block px-4 py-2 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/30">Mekanım</Link>
+                  <Link href="/ayarlar" className="block px-4 py-2 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/30">Ayarlar</Link>
+                  <button onClick={() => signOut()} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30">
+                    Çıkış Yap
+                  </button>
+                </Dropdown>
+                <button onClick={toggleDarkMode} className="ml-1 p-2 rounded-full hover:bg-emerald-700 dark:hover:bg-emerald-800 transition" aria-label="Tema Değiştir">
+                  {darkMode ? <span className="text-lg">🌙</span> : <span className="text-lg">☀️</span>}
                 </button>
               </>
             ) : (
               <>
-                <Link href="/auth/giris" className={linkClass}>
-                  Giriş Yap
-                </Link>
-                <Link
-                  href="/auth/kayit"
-                  className="bg-white text-emerald-700 font-semibold px-3 py-2 rounded hover:bg-emerald-50 transition"
-                >
-                  Kayıt Ol
-                </Link>
+                <Link href="/auth/giris" className="hover:bg-emerald-700 dark:hover:bg-emerald-800 px-3 py-2 rounded transition">Giriş Yap</Link>
+                <Link href="/auth/kayit" className="bg-white text-emerald-700 font-semibold px-3 py-2 rounded hover:bg-emerald-50 transition">Kayıt Ol</Link>
+                <button onClick={toggleDarkMode} className="ml-1 p-2 rounded-full hover:bg-emerald-700 dark:hover:bg-emerald-800 transition" aria-label="Tema Değiştir">
+                  {darkMode ? <span className="text-lg">🌙</span> : <span className="text-lg">☀️</span>}
+                </button>
               </>
             )}
-            {/* Dark Mode Toggle */}
-            <button
-              onClick={toggleDarkMode}
-              className="p-2 rounded hover:bg-emerald-700 dark:hover:bg-emerald-900 transition"
-              aria-label={darkMode ? "Açık tema" : "Koyu tema"}
-              title={darkMode ? "Açık temaya geç" : "Koyu temaya geç"}
-            >
-              {darkMode ? (
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                  <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
-                </svg>
-              ) : (
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                  <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
-                </svg>
-              )}
-            </button>
-          </div>
-
-          {/* Mobile hamburger */}
-          <div className="md:hidden flex items-center gap-2">
-            <button
-              onClick={toggleDarkMode}
-              className="p-2 rounded hover:bg-emerald-700 transition"
-              aria-label={darkMode ? "Açık tema" : "Koyu tema"}
-            >
-              {darkMode ? "☀️" : "🌙"}
-            </button>
-            <button
-              className="p-2"
-              onClick={() => setMenuOpen(!menuOpen)}
-              aria-expanded={menuOpen}
-              aria-controls="mobile-menu"
-              aria-label="Menu"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                {menuOpen ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                )}
-              </svg>
+            <button className="md:hidden p-2 rounded hover:bg-emerald-700 transition" onClick={() => setMenuOpen((v) => !v)} aria-label="Menüyü aç/kapat" aria-expanded={menuOpen} aria-controls="mobile-menu">
+              <span className="text-xl">{menuOpen ? "✕" : "☰"}</span>
             </button>
           </div>
         </div>
+      </div>
 
-        {/* Mobile menu */}
-        {menuOpen && (
-          <div id="mobile-menu" className="md:hidden pb-4 space-y-2" role="menu">
-            <Link href="/" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">
-              İlanlar
-            </Link>
-            <Link href="/harita" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">
-              🗺️ Harita
-            </Link>
-            <Link href="/liderlik" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">
-              🏅 Liderlik Tablosu
-            </Link>
-            {session ? (
-              <>
-                <Link
-                  href="/ilan/olustur"
-                  className="block bg-white text-emerald-700 font-semibold px-3 py-2 rounded"
-                  onClick={() => setMenuOpen(false)}
-                  role="menuitem"
-                >
-                  + İlan Oluştur
-                </Link>
-                <Link href="/profil" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">
-                  Profilim
-                </Link>
-                <Link href="/mesajlar" className="flex items-center gap-2 hover:bg-emerald-700 dark:hover:bg-emerald-800 px-3 py-2 rounded transition" onClick={() => setMenuOpen(false)} role="menuitem">
-                  <span>💬 Mesajlar</span>
-                  {unreadMessages > 0 && (
-                    <span className="bg-blue-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
-                      {unreadMessages > 9 ? "9+" : unreadMessages}
-                    </span>
-                  )}
-                </Link>
-                <button
-                  onClick={() => { setMenuOpen(false); handleOpenNotif(); }}
-                  className="flex items-center gap-2 w-full text-left hover:bg-emerald-700 dark:hover:bg-emerald-800 px-3 py-2 rounded transition"
-                  role="menuitem"
-                  aria-label="Bildirimler"
-                >
-                  <span>🔔 Bildirimler</span>
-                  {unreadCount > 0 && (
-                    <span className="bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
-                      {unreadCount > 9 ? "9+" : unreadCount}
-                    </span>
-                  )}
-                </button>
-                <button
-                  onClick={() => { setMenuOpen(false); signOut(); }}
-                  className="block w-full text-left hover:bg-emerald-700 px-3 py-2 rounded transition"
-                  role="menuitem"
-                >
-                  Çıkış
-                </button>
-              </>
-            ) : (
-              <>
-                <Link href="/auth/giris" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">
-                  Giriş Yap
-                </Link>
-                <Link
-                  href="/auth/kayit"
-                  className="block bg-white text-emerald-700 font-semibold px-3 py-2 rounded"
-                  onClick={() => setMenuOpen(false)}
-                  role="menuitem"
-                >
-                  Kayıt Ol
-                </Link>
-              </>
+      {menuOpen && (
+        <div id="mobile-menu" className="md:hidden pb-4 space-y-2 px-4" role="menu">
+          <Link href="/" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">📋 İlanlar</Link>
+          <Link href="/harita" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">🗺️ Harita</Link>
+          <Link href="/liderlik" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">🏅 Liderlik Tablosu</Link>
+          <Link href="/sosyal" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">🌐 Sosyal Akış</Link>
+          <Link href="/kulupler" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">🏅 Spor Kulüpleri</Link>
+          <Link href="/gruplar" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">👥 Spor Grupları</Link>
+          {session ? (
+            <>
+              <Link href="/ilan/olustur" className="block bg-white text-emerald-700 font-semibold px-3 py-2 rounded" onClick={() => setMenuOpen(false)} role="menuitem">+ İlan Oluştur</Link>
+              <Link href="/profil" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">👤 Profilim</Link>
+              <Link href="/ayarlar" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">⚙️ Ayarlar</Link>
+              <Link href="/mekan-profil" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">🏙️ Mekan Profili</Link>
+              <Link href="/mesajlar" className="flex items-center gap-2 hover:bg-emerald-700 dark:hover:bg-emerald-800 px-3 py-2 rounded transition" onClick={() => setMenuOpen(false)} role="menuitem">
+                <span>💬 Mesajlar</span>
+                {unreadMessages > 0 && <span className="bg-blue-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{unreadMessages > 9 ? "9+" : unreadMessages}</span>}
+              </Link>
+              <button onClick={() => { setMenuOpen(false); handleOpenNotif(); }} className="flex items-center gap-2 w-full text-left hover:bg-emerald-700 dark:hover:bg-emerald-800 px-3 py-2 rounded transition" role="menuitem" aria-label="Bildirimler">
+                <span>🔔 Bildirimler</span>
+                {unreadCount > 0 && <span className="bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{unreadCount > 9 ? "9+" : unreadCount}</span>}
+              </button>
+              <button onClick={() => { setMenuOpen(false); signOut(); }} className="block w-full text-left hover:bg-emerald-700 px-3 py-2 rounded transition" role="menuitem">Çıkış</button>
+            </>
+          ) : (
+            <>
+              <Link href="/auth/giris" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">Giriş Yap</Link>
+              <Link href="/auth/kayit" className="block bg-white text-emerald-700 font-semibold px-3 py-2 rounded" onClick={() => setMenuOpen(false)} role="menuitem">Kayıt Ol</Link>
+            </>
+          )}
+        </div>
+      )}
+
+      {notifOpen && session && (
+        <>
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60]" onClick={() => setNotifOpen(false)} aria-hidden="true" />
+          <div className="fixed top-0 right-0 h-full w-full max-w-sm bg-white dark:bg-gray-900 shadow-2xl z-[70] flex flex-col" role="dialog" aria-label="Bildirimler">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700 shrink-0">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">🔔</span>
+                <span className="font-bold text-gray-800 dark:text-gray-100 text-base">Bildirimler</span>
+                {unreadCount > 0 && <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{unreadCount}</span>}
+              </div>
+              <button onClick={() => setNotifOpen(false)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-gray-600 transition" aria-label="Kapat">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              {notifications.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 gap-3">
+                  <span className="text-5xl">🔕</span>
+                  <p className="text-gray-400 dark:text-gray-500 text-sm font-medium">Bildirim yok</p>
+                </div>
+              ) : (
+                notifications.map((n) => (
+                  <a
+                    key={n.id}
+                    href={n.link ?? "#"}
+                    className={`flex gap-3 px-5 py-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition border-b border-gray-50 dark:border-gray-700/50 last:border-0 ${!n.read ? "bg-emerald-50/70 dark:bg-emerald-900/10" : ""}`}
+                    onClick={() => setNotifOpen(false)}
+                  >
+                    <div className="shrink-0 w-9 h-9 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center text-base">
+                      {n.type === "NEW_MESSAGE" ? "💬" : n.type === "NEW_MATCH" ? "🤝" : n.type === "NEW_RATING" ? "⭐" : n.type === "NEW_FOLLOWER" ? "👤" : n.type === "NO_SHOW_WARNING" ? "⚠️" : n.type === "TRAINER_VERIFIED" ? "✓" : "🔔"}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 leading-snug">{n.title}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">{n.body}</p>
+                      <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">{new Date(n.createdAt).toLocaleDateString("tr-TR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</p>
+                    </div>
+                    {!n.read && <span className="shrink-0 w-2 h-2 bg-emerald-500 rounded-full mt-1.5" />}
+                  </a>
+                ))
+              )}
+            </div>
+            {notifications.length > 0 && (
+              <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-700 shrink-0">
+                <p className="text-xs text-center text-gray-400 dark:text-gray-500">{notifications.length} bildirim gösteriliyor</p>
+              </div>
             )}
           </div>
-        )}
-      </div>
+        </>
+      )}
     </nav>
   );
 }

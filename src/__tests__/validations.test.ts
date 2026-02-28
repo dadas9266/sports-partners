@@ -14,6 +14,10 @@ describe("registerSchema", () => {
     name: "Ahmet Yılmaz",
     email: "ahmet@test.com",
     password: "Test123!",
+    gender: "MALE",
+    birthDate: "1995-06-15",
+    cityId: "city-id-123",
+    districtId: "district-id-456",
   };
 
   it("should accept valid registration data", () => {

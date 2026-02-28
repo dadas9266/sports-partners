@@ -42,11 +42,15 @@ interface Props {
   initialVenue?: MapVenue | null;
 }
 
-// İlçe koordinatı için Nominatim'e sor
+// İlçe koordinatı için Nominatim'e sor — şehir adı eklenerek daha isabetli sonuç alınır
 async function geocodeDistrict(district: string): Promise<[number, number] | null> {
   try {
+    // Statik lookup'tan şehir adını al — daha spesifik sorgu için
+    const { getCityForDistrict } = await import("@/lib/district-city-map");
+    const city = getCityForDistrict(district);
+    const query = city ? `${district} ${city}, Türkiye` : `${district}, Türkiye`;
     const r = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(district + ", Türkiye")}&format=json&limit=1&countrycodes=tr`,
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=tr`,
       { headers: { "User-Agent": "SportsPartnerApp/1.0 (sportspartner@example.com)" } }
     );
     const data = await r.json();

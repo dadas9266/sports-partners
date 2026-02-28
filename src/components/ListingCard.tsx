@@ -72,7 +72,7 @@ export default function ListingCard({
     <article
       onClick={() => router.push(`/ilan/${listing.id}`)}
       onKeyDown={(e) => e.key === "Enter" && router.push(`/ilan/${listing.id}`)}
-      className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 hover:shadow-md transition cursor-pointer h-full relative"
+      className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 hover:shadow-md transition cursor-pointer h-full relative card-hover"
       role="button"
       tabIndex={0}
       aria-label={`${listing.sport.name} ilanı detayı`}
@@ -215,7 +215,7 @@ export default function ListingCard({
       <div className="mt-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-xs text-gray-400 dark:text-gray-500">
-            💬 {listing._count.responses} karşılık
+            💬 {listing._count.responses} {listing.type === "TRAINER" ? "başvuru" : "karşılık"}
           </span>
           {listing.maxParticipants > 2 && (
             <span className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-1.5 py-0.5 rounded-full font-medium">
@@ -223,9 +223,21 @@ export default function ListingCard({
             </span>
           )}
         </div>
-        <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-          Detay →
-        </span>
+        <div className="flex items-center gap-2">
+          {listing.type === "EQUIPMENT" && listing.equipmentDetail && (
+            <span className="text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full font-semibold">
+              💰 {listing.equipmentDetail.price.toLocaleString("tr-TR")} ₺
+            </span>
+          )}
+          {listing.type === "TRAINER" && listing.trainerProfile?.hourlyRate && (
+            <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-2 py-0.5 rounded-full font-semibold">
+              ⏱️ {listing.trainerProfile.hourlyRate.toLocaleString("tr-TR")} ₺/saat
+            </span>
+          )}
+          <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+            Detay →
+          </span>
+        </div>
       </div>
     </article>
   );
