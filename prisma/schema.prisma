@@ -9,6 +9,19 @@ datasource db {
 }
 
 // ========== KULLANICI ==========
+enum UserType {
+  INDIVIDUAL  // Bireysel Sporcu
+  TRAINER     // Profesyonel Eğitmen
+  VENUE       // Mekan / Kurumsal
+}
+
+enum UserLevel {
+  BEGINNER   // Acemi
+  AMATEUR    // Amatör
+  SEMI_PRO   // Yarı Profesyonel
+  PRO        // Profesyonel
+}
+
 enum Gender {
   MALE
   FEMALE
@@ -30,13 +43,22 @@ model User {
   district     District? @relation(fields: [districtId], references: [id])
   gender       Gender?                          // Cinsiyet
   birthDate    DateTime?                        // Doğum Tarihi
-  noShowCount  Int       @default(0)            // Gelmedi sayacı
-  warnCount    Int       @default(0)            // Uyarı sayacı
-  isBanned     Boolean   @default(false)        // Geçici kısıtlama
+  userType     UserType  @default(INDIVIDUAL)        // Kullanıcı tipi
+  userLevel    UserLevel @default(BEGINNER)          // Sporcu seviyesi
+  noShowCount  Int       @default(0)                 // Gelmedi sayacı
+  warnCount    Int       @default(0)                 // Uyarı sayacı
+  isBanned     Boolean   @default(false)             // Geçici kısıtlama
+  // Gamification
+  currentStreak  Int     @default(0)                 // Günlük seri (aktif gün sayısı)
+  longestStreak  Int     @default(0)                 // Rekor seri
+  lastActiveDate DateTime?                           // Seri hesabı için son aktif tarih
+  totalMatches   Int     @default(0)                 // Cache: toplam maç sayısı
+  totalPoints    Int     @default(0)                 // Cache: birikmiş puan
   // Onboarding tercihleri
-  preferredTime  String?                        // "morning" | "evening" | "anytime"
-  preferredStyle String?                        // "competitive" | "casual" | "both"
+  preferredTime  String?                             // "morning" | "evening" | "anytime"
+  preferredStyle String?                             // "competitive" | "casual" | "both"
   onboardingDone Boolean @default(false)
+  isAdmin        Boolean   @default(false)             // Yönetici yetkisi
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
@@ -57,9 +79,16 @@ model User {
   noShowsReported   NoShowReport[]  @relation("NoShowReporter")
   noShowsReceived   NoShowReport[]  @relation("NoShowReceived")
   trainerProfile    TrainerProfile?
+  venueProfile      VenueProfile?
   posts             Post[]
   postLikes         PostLike[]
   postComments      PostComment[]
+  matchesApproved   Match[]         @relation("MatchApprover")
+  clubMemberships    UserClubMembership[]
+  challengesSent     DirectChallenge[] @relation("ChallengesSent")
+  challengesReceived DirectChallenge[] @relation("ChallengesReceived")
+  groupMemberships   GroupMembership[]
+  groupsCreated      Group[]           @relation("GroupCreator")
 }
 
 // ========== SPOR ==========
@@ -70,6 +99,9 @@ model Sport {
   listings Listing[]
   venues   Venue[]
   users    User[]    @relation("UserSports")
+  clubs    Club[]
+  challenges DirectChallenge[]
+  groups     Group[]
 }
 
 // ========== KONUM ==========
@@ -87,6 +119,8 @@ model City {
   country   Country    @relation(fields: [countryId], references: [id])
   districts District[]
   users     User[]
+  clubs     Club[]
+  groups    Group[]
 
   @@unique([name, countryId])
 }
@@ -99,6 +133,7 @@ model District {
   venues   Venue[]
   listings Listing[]
   users    User[]
+  challenges DirectChallenge[]
 
   @@unique([name, cityId])
 }
@@ -165,6 +200,10 @@ model Listing {
   expiresAt       DateTime?                       // Hızlı ilan bitiş zamanı
   isRecurring     Boolean       @default(false)   // Tekrarlayan etkinlik
   recurringDays   String?                         // "MON,WED,FRI" formatında
+  minAge          Int?                            // Başvuru için minimum yaş (opsiyonel)
+  maxAge          Int?                            // Başvuru için maksimum yaş (opsiyonel)
+  groupId         String?                         // Bağlı grup (opsiyonel)
+  group           Group?        @relation(fields: [groupId], references: [id])
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
@@ -208,24 +247,49 @@ model Response {
 }
 
 // ========== EŞLEŞME ==========
+enum MatchStatus {
+  SCHEDULED   // Planlandı (henüz yapılmadı)
+  ONGOING     // Devam ediyor
+  COMPLETED   // Tamamlandı ve doğrulandı
+  DISPUTED    // İtiraz var
+}
+
 model Match {
-  id         String   @id @default(cuid())
-  listingId  String   @unique
-  listing    Listing  @relation(fields: [listingId], references: [id])
-  responseId String   @unique
-  response   Response @relation(fields: [responseId], references: [id])
+  id         String      @id @default(cuid())
+  listingId  String      @unique
+  listing    Listing     @relation(fields: [listingId], references: [id])
+  responseId String      @unique
+  response   Response    @relation(fields: [responseId], references: [id])
   user1Id    String
-  user1      User     @relation("MatchUser1", fields: [user1Id], references: [id])
+  user1      User        @relation("MatchUser1", fields: [user1Id], references: [id])
   user2Id    String
-  user2      User     @relation("MatchUser2", fields: [user2Id], references: [id])
-  createdAt  DateTime @default(now())
+  user2      User        @relation("MatchUser2", fields: [user2Id], references: [id])
+  status     MatchStatus @default(SCHEDULED)
+  scheduledAt DateTime?                           // Maç zamanı (listing.dateTime kopyası)
+  completedAt DateTime?                           // Tamamlanma zamanı
+  // --- Güven Skoru (0-100) ---
+  trustScore    Int     @default(0)               // Composite: OTP+Geo+ThirdParty
+  // --- Geofencing (Pasif) ---
+  lat1          Float?                            // user1 koordinat
+  lng1          Float?
+  lat2          Float?                            // user2 koordinat
+  lng2          Float?
+  locationVerifiedAt DateTime?                    // Koordinatlar eşleştiğinde
+  // --- Üçüncü Taraf Onayı ---
+  approvedById  String?                           // Onaylayan VENUE/TRAINER userId
+  approvedBy    User?   @relation("MatchApprover", fields: [approvedById], references: [id])
+  approvedAt    DateTime?
+  createdAt     DateTime @default(now())
 
   ratings      Rating[]
   messages     Message[]
   noShowReports NoShowReport[]
+  otps         MatchOtp[]
 
   @@index([user1Id])
   @@index([user2Id])
+  @@index([status])
+  @@index([approvedById])
 }
 
 // ========== DEĞERLENDİRME ==========
@@ -253,11 +317,19 @@ enum NotificationType {
   NEW_MATCH
   NEW_RATING
   NEW_FOLLOWER
+  FOLLOW_REQUEST       // Takip isteği geldi
+  FOLLOW_ACCEPTED      // Takip isteği kabul edildi
   NEW_MESSAGE
   NO_SHOW_WARNING
-  NEW_POST_LIKE      // Gönderi beğenildi
-  NEW_POST_COMMENT   // Gönderiye yorum yapıldı
-  TRAINER_VERIFIED   // Eğitmen profili onaylandı
+  NEW_POST_LIKE         // Gönderi beğenildi
+  NEW_POST_COMMENT      // Gönderiye yorum yapıldı
+  TRAINER_VERIFIED      // Eğitmen profili onaylandı
+  MATCH_STATUS_CHANGED  // Maç durumu değişti
+  STREAK_MILESTONE      // Seri rekoru kırıldı
+  LEVEL_UP              // Seviye atlandı
+  MATCH_OTP_REQUESTED   // OTP doğrulama talebi
+  VENUE_VERIFIED        // Mekan profili onaylandı
+  DIRECT_CHALLENGE      // Doğrudan maç teklifi
 }
 
 model Notification {
@@ -303,17 +375,26 @@ model PasswordResetToken {
 }
 
 // ========== TAKİP ==========
+enum FollowStatus {
+  PENDING   // İstek bekleniyor
+  ACCEPTED  // Kabul edildi
+  REJECTED  // Reddedildi
+}
+
 model Follow {
-  id          String   @id @default(cuid())
-  followerId  String   // takip eden
-  follower    User     @relation("FollowSource", fields: [followerId], references: [id])
-  followingId String   // takip edilen
-  following   User     @relation("FollowTarget", fields: [followingId], references: [id])
-  createdAt   DateTime @default(now())
+  id          String       @id @default(cuid())
+  followerId  String       // takip eden
+  follower    User         @relation("FollowSource", fields: [followerId], references: [id])
+  followingId String       // takip edilen
+  following   User         @relation("FollowTarget", fields: [followingId], references: [id])
+  status      FollowStatus @default(PENDING)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 
   @@unique([followerId, followingId])
   @@index([followerId])
   @@index([followingId])
+  @@index([followingId, status])
 }
 
 // ========== NO-SHOW RAPORU ==========
@@ -359,10 +440,8 @@ model TrainerProfile {
   user            User     @relation(fields: [userId], references: [id])
   listingId       String?  @unique
   listing         Listing? @relation(fields: [listingId], references: [id])
-  hourlyRate      Float?                       // Saatlik ücret
-  experience      Int?                         // Deneyim yılı
-  specialization  String?                      // "Çocuklar" | "Yetişkinler" | "Her Yaş"
-  gymName         String?                      // Çalıştığı salon
+  hourlyRate      Float?                          // Saatlik ücret (₺)
+  gymName         String?                         // Çalıştığı salon
   gymAddress      String?
   certificates    String[] @default([])        // Sertifika URL'leri (Supabase Storage)
   isVerified      Boolean  @default(false)     // Admin onayı
@@ -370,7 +449,78 @@ model TrainerProfile {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
+  specializations TrainerSpecialization[]
+
   @@index([userId])
+}
+
+// Eğitmenin branş + deneyim çiftleri (birden fazla olabilir)
+model TrainerSpecialization {
+  id        String         @id @default(cuid())
+  profileId String
+  profile   TrainerProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  sportName String         // Örn: "Futbol", "Fitness", "Yüzme"
+  years     Int            @default(0)  // Deneyim yılı
+  createdAt DateTime       @default(now())
+
+  @@index([profileId])
+  @@index([sportName])
+}
+
+// ========== OTP DOĞRULAMA ==========
+model MatchOtp {
+  id        String   @id @default(cuid())
+  matchId   String
+  match     Match    @relation(fields: [matchId], references: [id])
+  userId    String                               // OTP'yi isteyen kullanıcı
+  code      String                               // 6 haneli kod
+  expiresAt DateTime                             // 15 dk sonra
+  usedAt    DateTime?                            // Kullanıldıysa
+  createdAt DateTime @default(now())
+
+  @@index([matchId])
+  @@index([userId])
+  @@index([code, expiresAt])
+}
+
+// ========== MEKAN PROFİLİ ==========
+model VenueProfile {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id])
+  businessName String                            // Tesis / Kurum adı
+  address      String?                           // Tam adres
+  description  String?                           // Açıklama
+  phone        String?                           // İletişim
+  website      String?                           // Web sitesi
+  capacity     Int?                              // Toplam kişi kapasitesi
+  sports       String[] @default([])             // Faaliyet gösterilen sporlar (hızlı filtre)
+  equipment    String[] @default([])             // Mevcut spor malzemeleri
+  images       String[] @default([])             // Tesis görselleri
+  openingHours String?                           // "09:00-22:00" formatı
+  isVerified   Boolean  @default(false)          // Admin onayı
+  verifiedAt   DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  facilities   VenueFacility[]
+
+  @@index([userId])
+}
+
+// Tesis bünyesindeki alan/kort/saha bilgileri (spor başına)
+model VenueFacility {
+  id           String       @id @default(cuid())
+  profileId    String
+  profile      VenueProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  sportName    String       // Örn: "Futbol", "Tenis"
+  facilityType String       // "saha" | "kort" | "havuz" | "ring" | "salon"
+  count        Int          @default(1)  // Kaç adet
+  equipment    String[]     @default([]) // Bu spor için ekipman listesi
+  createdAt    DateTime     @default(now())
+
+  @@index([profileId])
+  @@index([sportName])
 }
 
 // ========== SATILIK MALZEME DETAYI ==========
@@ -397,7 +547,115 @@ model EquipmentDetail {
   @@index([listingId])
 }
 
-// ========== SOSYAL PAYLAŞIMLAR ==========
+// ========== KULÜP ==========
+model Club {
+  id          String   @id @default(cuid())
+  name        String
+  sportId     String?
+  sport       Sport?   @relation(fields: [sportId], references: [id])
+  cityId      String?
+  city        City?    @relation(fields: [cityId], references: [id])
+  website     String?
+  logoUrl     String?
+  description String?
+  createdAt   DateTime @default(now())
+
+  members     UserClubMembership[]
+
+  @@unique([name, cityId])
+  @@index([sportId])
+  @@index([cityId])
+}
+
+model UserClubMembership {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  clubId    String
+  club      Club     @relation(fields: [clubId], references: [id])
+  role      String   @default("MEMBER") // "MEMBER" | "CAPTAIN"
+  joinedAt  DateTime @default(now())
+
+  @@unique([userId, clubId])
+  @@index([userId])
+  @@index([clubId])
+}
+
+// ========== GRUP ==========
+enum GroupMemberRole {
+  MEMBER
+  ADMIN
+}
+
+model Group {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  sportId     String?
+  sport       Sport?   @relation(fields: [sportId], references: [id])
+  cityId      String?
+  city        City?    @relation(fields: [cityId], references: [id])
+  creatorId   String
+  creator     User     @relation("GroupCreator", fields: [creatorId], references: [id])
+  isPublic    Boolean  @default(true)
+  avatarUrl   String?
+  createdAt   DateTime @default(now())
+
+  members  GroupMembership[]
+  listings Listing[]
+
+  @@unique([name, cityId])
+  @@index([sportId])
+  @@index([cityId])
+  @@index([creatorId])
+}
+
+model GroupMembership {
+  id       String          @id @default(cuid())
+  userId   String
+  user     User            @relation(fields: [userId], references: [id])
+  groupId  String
+  group    Group           @relation(fields: [groupId], references: [id])
+  role     GroupMemberRole @default(MEMBER)
+  joinedAt DateTime        @default(now())
+
+  @@unique([userId, groupId])
+  @@index([userId])
+  @@index([groupId])
+}
+
+// ========== DOĞRUDAN TEKLIF ==========
+enum DirectChallengeStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+model DirectChallenge {
+  id               String                 @id @default(cuid())
+  challengerId     String
+  challenger       User                   @relation("ChallengesSent", fields: [challengerId], references: [id])
+  targetId         String
+  target           User                   @relation("ChallengesReceived", fields: [targetId], references: [id])
+  sportId          String
+  sport            Sport                  @relation(fields: [sportId], references: [id])
+  message          String?
+  proposedDateTime DateTime?
+  districtId       String?
+  district         District?              @relation(fields: [districtId], references: [id])
+  challengeType    String                 @default("RIVAL") // "RIVAL" | "PARTNER"
+  status           DirectChallengeStatus  @default(PENDING)
+  expiresAt        DateTime               // 48 saat sonra otomatik EXPIRED
+  createdAt        DateTime               @default(now())
+
+  @@index([challengerId])
+  @@index([targetId])
+  @@index([status])
+  @@index([expiresAt])
+}
+
+// ========== DOĞRUDAN TEKLIF SONU ==========
 model Post {
   id        String    @id @default(cuid())
   userId    String

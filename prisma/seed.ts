@@ -47,76 +47,126 @@ async function main() {
     create: { name: "Türkiye", code: "TR" },
   });
 
-  // Şehirler
-  const manisa = await prisma.city.upsert({
-    where: { name_countryId: { name: "Manisa", countryId: turkiye.id } },
-    update: {},
-    create: { name: "Manisa", countryId: turkiye.id },
-  });
-  const istanbul = await prisma.city.upsert({
-    where: { name_countryId: { name: "İstanbul", countryId: turkiye.id } },
-    update: {},
-    create: { name: "İstanbul", countryId: turkiye.id },
-  });
-  const ankara = await prisma.city.upsert({
-    where: { name_countryId: { name: "Ankara", countryId: turkiye.id } },
-    update: {},
-    create: { name: "Ankara", countryId: turkiye.id },
-  });
-  const izmir = await prisma.city.upsert({
-    where: { name_countryId: { name: "İzmir", countryId: turkiye.id } },
-    update: {},
-    create: { name: "İzmir", countryId: turkiye.id },
-  });
+  // ─── 81 İL VERİSİ ────────────────────────────────────────────────────────
+  const illerData: Record<string, string[]> = {
+    "Adana": ["Seyhan", "Yüreğir", "Çukurova", "Sarıçam", "Ceyhan", "Kozan"],
+    "Adıyaman": ["Merkez", "Besni", "Kahta", "Gölbaşı"],
+    "Afyonkarahisar": ["Merkez", "Sandıklı", "Dinar", "Bolvadin"],
+    "Ağrı": ["Merkez", "Doğubayazıt", "Patnos"],
+    "Aksaray": ["Merkez", "Ortaköy"],
+    "Amasya": ["Merkez", "Merzifon", "Suluova"],
+    "Ankara": ["Çankaya", "Keçiören", "Mamak", "Yenimahalle", "Altındağ", "Sincan", "Etimesgut", "Pursaklar", "Beypazarı"],
+    "Antalya": ["Muratpaşa", "Kepez", "Konyaaltı", "Alanya", "Manavgat", "Serik", "Aksu"],
+    "Ardahan": ["Merkez"],
+    "Artvin": ["Merkez", "Hopa"],
+    "Aydın": ["Efeler", "Nazilli", "Söke", "Kuşadası", "Didim"],
+    "Balıkesir": ["Altıeylül", "Karesi", "Bandırma", "Edremit", "Ayvalık"],
+    "Bartın": ["Merkez"],
+    "Batman": ["Merkez"],
+    "Bayburt": ["Merkez"],
+    "Bilecik": ["Merkez", "Bozüyük"],
+    "Bingöl": ["Merkez"],
+    "Bitlis": ["Merkez", "Tatvan"],
+    "Bolu": ["Merkez", "Gerede"],
+    "Burdur": ["Merkez", "Bucak"],
+    "Bursa": ["Osmangazi", "Yıldırım", "Nilüfer", "Gemlik", "İnegöl", "Mudanya", "Gürsu"],
+    "Çanakkale": ["Merkez", "Biga", "Gelibolu", "Çan"],
+    "Çankırı": ["Merkez"],
+    "Çorum": ["Merkez", "Alaca"],
+    "Denizli": ["Pamukkale", "Merkezefendi", "Acıpayam"],
+    "Diyarbakır": ["Bağlar", "Kayapınar", "Sur", "Yenişehir"],
+    "Düzce": ["Merkez"],
+    "Edirne": ["Merkez", "Keşan", "Uzunköprü"],
+    "Elazığ": ["Merkez"],
+    "Erzincan": ["Merkez"],
+    "Erzurum": ["Yakutiye", "Palandöken", "Aziziye"],
+    "Eskişehir": ["Odunpazarı", "Tepebaşı"],
+    "Gaziantep": ["Şahinbey", "Şehitkamil", "Nizip", "İslahiye"],
+    "Giresun": ["Merkez"],
+    "Gümüşhane": ["Merkez"],
+    "Hakkari": ["Merkez"],
+    "Hatay": ["Antakya", "İskenderun", "Defne", "Dörtyol", "Kırıkhan"],
+    "Iğdır": ["Merkez"],
+    "Isparta": ["Merkez", "Yalvaç"],
+    "İstanbul": ["Kadıköy", "Beşiktaş", "Üsküdar", "Şişli", "Bakırköy", "Fatih", "Beyoğlu", "Sarıyer", "Maltepe", "Pendik", "Ümraniye", "Bağcılar", "Bahçelievler", "Bayrampaşa", "Beylikdüzü", "Büyükçekmece", "Çekmeköy", "Esenler", "Esenyurt", "Eyüpsultan", "Gaziosmanpaşa", "Güngören", "Kağıthane", "Kartal", "Küçükçekmece", "Silivri", "Sultanbeyli", "Sultangazi", "Tuzla", "Zeytinburnu", "Arnavutköy", "Avcılar"],
+    "İzmir": ["Konak", "Karşıyaka", "Bornova", "Buca", "Çiğli", "Gaziemir", "Balçova", "Karabağlar", "Bayraklı", "Narlıdere", "Güzelbahçe", "Urla", "Çeşme", "Torbalı"],
+    "Kahramanmaraş": ["Dulkadiroğlu", "Onikişubat"],
+    "Karabük": ["Merkez"],
+    "Karaman": ["Merkez"],
+    "Kars": ["Merkez"],
+    "Kastamonu": ["Merkez"],
+    "Kayseri": ["Kocasinan", "Melikgazi", "Talas", "Develi"],
+    "Kırıkkale": ["Merkez"],
+    "Kırklareli": ["Merkez", "Lüleburgaz"],
+    "Kırşehir": ["Merkez"],
+    "Kilis": ["Merkez"],
+    "Kocaeli": ["İzmit", "Gebze", "Körfez", "Darıca", "Çayırova", "Başiskele"],
+    "Konya": ["Meram", "Selçuklu", "Karatay", "Ereğli", "Akşehir"],
+    "Kütahya": ["Merkez", "Tavşanlı"],
+    "Malatya": ["Battalgazi", "Yeşilyurt"],
+    "Manisa": ["Yunusemre", "Şehzadeler", "Akhisar", "Turgutlu", "Salihli"],
+    "Mardin": ["Artuklu", "Kızıltepe", "Nusaybin"],
+    "Mersin": ["Yenişehir", "Mezitli", "Toroslar", "Akdeniz", "Tarsus", "Erdemli"],
+    "Muğla": ["Menteşe", "Bodrum", "Fethiye", "Marmaris", "Milas"],
+    "Muş": ["Merkez"],
+    "Nevşehir": ["Merkez", "Ürgüp"],
+    "Niğde": ["Merkez", "Bor"],
+    "Ordu": ["Altınordu", "Ünye", "Fatsa"],
+    "Osmaniye": ["Merkez"],
+    "Rize": ["Merkez", "Ardeşen"],
+    "Sakarya": ["Adapazarı", "Serdivan", "Erenler", "Arifiye"],
+    "Samsun": ["Atakum", "Canik", "İlkadım", "Tekkeköy"],
+    "Siirt": ["Merkez"],
+    "Sinop": ["Merkez"],
+    "Sivas": ["Merkez"],
+    "Şanlıurfa": ["Karaköprü", "Eyyübiye", "Haliliye", "Suruç", "Viranşehir"],
+    "Şırnak": ["Merkez", "Cizre", "Silopi"],
+    "Tekirdağ": ["Süleymanpaşa", "Çorlu", "Çerkezköy"],
+    "Tokat": ["Merkez", "Erbaa", "Niksar"],
+    "Trabzon": ["Ortahisar", "Akçaabat", "Arsin"],
+    "Tunceli": ["Merkez"],
+    "Uşak": ["Merkez"],
+    "Van": ["İpekyolu", "Tuşba", "Edremit"],
+    "Yalova": ["Merkez", "Çınarcık"],
+    "Yozgat": ["Merkez", "Sorgun"],
+    "Zonguldak": ["Merkez", "Ereğli", "Karadeniz Ereğlisi"],
+  };
 
-  // İlçeler - Manisa
-  await prisma.district.upsert({
-    where: { name_cityId: { name: "Yunusemre", cityId: manisa.id } },
-    update: {},
-    create: { name: "Yunusemre", cityId: manisa.id },
-  });
-  await prisma.district.upsert({
-    where: { name_cityId: { name: "Şehzadeler", cityId: manisa.id } },
-    update: {},
-    create: { name: "Şehzadeler", cityId: manisa.id },
-  });
+  const cityMap: Record<string, { id: string }> = {};
+  const districtMap: Record<string, { id: string }> = {};
 
-  // İlçeler - İstanbul
-  const kadikoy = await prisma.district.upsert({
-    where: { name_cityId: { name: "Kadıköy", cityId: istanbul.id } },
-    update: {},
-    create: { name: "Kadıköy", cityId: istanbul.id },
-  });
-  const besiktas = await prisma.district.create({
-    data: { name: "Beşiktaş", cityId: istanbul.id },
-  });
-  const uskudar = await prisma.district.create({
-    data: { name: "Üsküdar", cityId: istanbul.id },
-  });
-  const sisli = await prisma.district.create({
-    data: { name: "Şişli", cityId: istanbul.id },
-  });
-  const bakirkoy = await prisma.district.create({
-    data: { name: "Bakırköy", cityId: istanbul.id },
-  });
+  for (const [ilAdi, ilceler] of Object.entries(illerData)) {
+    const city = await prisma.city.upsert({
+      where: { name_countryId: { name: ilAdi, countryId: turkiye.id } },
+      update: {},
+      create: { name: ilAdi, countryId: turkiye.id },
+    });
+    cityMap[ilAdi] = city;
+    for (const ilce of ilceler) {
+      const district = await prisma.district.upsert({
+        where: { name_cityId: { name: ilce, cityId: city.id } },
+        update: {},
+        create: { name: ilce, cityId: city.id },
+      });
+      districtMap[`${ilAdi}:${ilce}`] = district;
+    }
+  }
 
-  // İlçeler - Ankara
-  const cankaya = await prisma.district.create({
-    data: { name: "Çankaya", cityId: ankara.id },
-  });
-  const kecioren = await prisma.district.create({
-    data: { name: "Keçiören", cityId: ankara.id },
-  });
+  // Mevcut kodla uyumluluk için değişken takma adları
+  const istanbul = cityMap["İstanbul"];
+  const ankara = cityMap["Ankara"];
+  const izmir = cityMap["İzmir"];
+  const kadikoy = districtMap["İstanbul:Kadıköy"];
+  const besiktas = districtMap["İstanbul:Beşiktaş"];
+  const uskudar = districtMap["İstanbul:Üsküdar"];
+  const sisli = districtMap["İstanbul:Şişli"];
+  const bakirkoy = districtMap["İstanbul:Bakırköy"];
+  const cankaya = districtMap["Ankara:Çankaya"];
+  const kecioren = districtMap["Ankara:Keçiören"];
+  const karsiyaka = districtMap["İzmir:Karşıyaka"];
+  const bornova = districtMap["İzmir:Bornova"];
 
-  // İlçeler - İzmir
-  const karsiyaka = await prisma.district.create({
-    data: { name: "Karşıyaka", cityId: izmir.id },
-  });
-  const bornova = await prisma.district.create({
-    data: { name: "Bornova", cityId: izmir.id },
-  });
-
-  console.log("✅ Ülke, şehirler ve ilçeler oluşturuldu");
+  console.log(`✅ 81 il ve ${Object.keys(districtMap).length} ilçe oluşturuldu`);
 
   // Mekanlar
   const mekanlar = await Promise.all([
