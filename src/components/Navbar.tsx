@@ -2,9 +2,8 @@
 
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
-import { useState, useEffect, useRef, useCallback } from "react";
-import { getNotifications, markNotificationsRead } from "@/services/api";
-import type { Notification } from "@/types";
+import { useState, useEffect, useRef } from "react";
+import { useNotifications } from "@/hooks/useNotifications";
 import Dropdown from "@/components/ui/Dropdown";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
@@ -14,57 +13,16 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [unreadMessages, setUnreadMessages] = useState(0);
   const navRef = useRef<HTMLElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
-  const sseRef = useRef<EventSource | null>(null);
 
-  const fetchNotifications = useCallback(async () => {
-    if (!session) return;
-    try {
-      const data = await getNotifications();
-      setNotifications(data.data ?? []);
-      setUnreadCount(data.unreadCount ?? 0);
-    } catch {
-      // sessiz hata
-    }
-  }, [session]);
+  // Gerçek zamanlı bildirimler — NotificationContext'ten (SSE Providers.tsx'de açık)
+  const { notifications, unreadCount, unreadMessages, markAllRead } = useNotifications();
 
   useEffect(() => {
     if (!session) return;
     fetch("/api/streak", { method: "POST" }).catch(() => {});
   }, [session]);
-
-  useEffect(() => {
-    if (!session) return;
-    const sse = new EventSource("/api/notifications/stream");
-    sseRef.current = sse;
-    sse.addEventListener("notifications", (e) => {
-      try {
-        const payload = JSON.parse(e.data) as { count: number };
-        if (payload.count > 0) {
-          setUnreadCount((prev) => prev + payload.count);
-          fetchNotifications();
-        }
-      } catch { }
-    });
-    sse.addEventListener("heartbeat", (e) => {
-      try {
-        const payload = JSON.parse(e.data) as { unreadMessages: number };
-        setUnreadMessages(payload.unreadMessages ?? 0);
-      } catch { }
-    });
-    sse.onerror = () => { sse.close(); };
-    return () => { sse.close(); sseRef.current = null; };
-  }, [session, fetchNotifications]);
-
-  useEffect(() => {
-    fetchNotifications();
-    const interval = setInterval(fetchNotifications, 60_000);
-    return () => clearInterval(interval);
-  }, [fetchNotifications]);
 
   useEffect(() => {
     const stored = localStorage.getItem("theme");
@@ -89,9 +47,7 @@ export default function Navbar() {
   const handleOpenNotif = async () => {
     setNotifOpen((v) => !v);
     if (!notifOpen && unreadCount > 0) {
-      await markNotificationsRead();
-      setUnreadCount(0);
-      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+      await markAllRead();
     }
   };
 

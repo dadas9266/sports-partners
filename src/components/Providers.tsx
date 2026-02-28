@@ -3,36 +3,39 @@
 import { SessionProvider } from "next-auth/react";
 import { Toaster } from "react-hot-toast";
 import ErrorBoundary from "./ErrorBoundary";
-import { useWebSocket } from '@/lib/ws-client';
-import { useEffect } from 'react';
+import { NotificationContext, useNotificationState } from "@/hooks/useNotifications";
+
+/** NotificationProvider: Oturum açılınca SSE bağlantısını kurar ve
+ *  bildirimleri tüm uygulamaya açar. SessionProvider'ın içinde olmalı. */
+function NotificationProvider({ children }: { children: React.ReactNode }) {
+  const value = useNotificationState();
+  return (
+    <NotificationContext.Provider value={value}>
+      {children}
+    </NotificationContext.Provider>
+  );
+}
 
 export default function Providers({ children }: { children: React.ReactNode }) {
-  // WebSocket ile gerçek zamanlı bildirim örneği
-  useWebSocket(
-    typeof window !== 'undefined' ? `ws://${window.location.host}/api/ws` : '',
-    (data) => {
-      if (data && data.type === 'notification') {
-        // Burada react-hot-toast veya özel bir bildirim sistemi ile gösterilebilir
-        // toast.success(data.message);
-        // TODO: Bildirim state'ine ekle
-      }
-    }
-  );
   return (
     <SessionProvider>
-      <ErrorBoundary>
-        {children}
-      </ErrorBoundary>
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          duration: 3000,
-          style: {
-            background: "#333",
-            color: "#fff",
-          },
-        }}
-      />
+      <NotificationProvider>
+        <ErrorBoundary>
+          {children}
+        </ErrorBoundary>
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 4000,
+            style: {
+              background: "#1f2937",
+              color: "#f9fafb",
+              borderRadius: "0.75rem",
+              fontSize: "0.875rem",
+            },
+          }}
+        />
+      </NotificationProvider>
     </SessionProvider>
   );
 }

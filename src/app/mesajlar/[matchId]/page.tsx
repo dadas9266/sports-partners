@@ -8,6 +8,7 @@ import { format } from "date-fns";
 import { tr } from "date-fns/locale";
 import toast from "react-hot-toast";
 import { getMessages, sendMessage, getConversations } from "@/services/api";
+import { useNotifications } from "@/hooks/useNotifications";
 import type { Message, Conversation } from "@/types";
 
 export default function ChatPage({ params }: { params: Promise<{ matchId: string }> }) {
@@ -22,6 +23,10 @@ export default function ChatPage({ params }: { params: Promise<{ matchId: string
   const [loading, setLoading] = useState(true);
   const bottomRef = useRef<HTMLDivElement>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isVisibleRef = useRef(true);
+
+  // SSE heartbeat: yeni mesaj bildirimlerini dinle
+  const { unreadMessages } = useNotifications();
 
   const loadMessages = useCallback(async () => {
     try {
@@ -33,6 +38,12 @@ export default function ChatPage({ params }: { params: Promise<{ matchId: string
       // sessiz
     }
   }, [matchId]);
+
+  // SSE heartbeat'ten unreadMessages değişince mesajları tazele
+  useEffect(() => {
+    if (!loading) loadMessages();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unreadMessages]);
 
   useEffect(() => {
     if (status === "unauthenticated") { router.push("/auth/giris"); return; }
@@ -51,10 +62,21 @@ export default function ChatPage({ params }: { params: Promise<{ matchId: string
     }).catch(() => toast.error("Sohbet yüklenemedi"))
       .finally(() => setLoading(false));
 
-    // 3 saniyede bir polling
-    pollingRef.current = setInterval(loadMessages, 3000);
+    // Page Visibility API — sekme arkaplanda iken polling durdur
+    const handleVisibility = () => {
+      isVisibleRef.current = document.visibilityState === "visible";
+      if (isVisibleRef.current) loadMessages();
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    // Yedek polling: 10 saniyede bir (SSE yoksa devreye girer)
+    pollingRef.current = setInterval(() => {
+      if (isVisibleRef.current) loadMessages();
+    }, 10_000);
+
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current);
+      document.removeEventListener("visibilitychange", handleVisibility);
     };
   }, [status, router, matchId, loadMessages]);
 

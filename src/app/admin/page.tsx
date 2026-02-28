@@ -19,6 +19,20 @@ interface AdminUser {
   createdAt: string;
 }
 
+interface VenueProfileAdmin {
+  id: string;
+  businessName: string;
+  address: string | null;
+  phone: string | null;
+  website: string | null;
+  sports: string[];
+  isVerified: boolean;
+  verifiedAt: string | null;
+  createdAt: string;
+  images: string[];
+  user: { id: string; name: string; email: string; avatarUrl: string | null };
+}
+
 interface Pagination {
   page: number;
   limit: number;
@@ -42,6 +56,9 @@ export default function AdminPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"users" | "venues">("users");
+  const [venueProfiles, setVenueProfiles] = useState<VenueProfileAdmin[]>([]);
+  const [venueLoading, setVenueLoading] = useState(false);
   const [dbStats, setDbStats] = useState<{
     users: { total: number; new30d: number; new7d: number; banned: number };
     listings: { total: number; open: number };
@@ -60,6 +77,44 @@ export default function AdminPage() {
       }
     } catch { /* ignore */ }
   }, []);
+
+  const fetchVenues = useCallback(async (filterStatus = "PENDING") => {
+    setVenueLoading(true);
+    try {
+      const res = await fetch(`/api/admin/venues?status=${filterStatus}&limit=50`);
+      if (res.ok) {
+        const data = await res.json();
+        setVenueProfiles(data.data ?? []);
+      }
+    } catch {
+      toast.error("Mekan profilleri yüklenemedi");
+    } finally {
+      setVenueLoading(false);
+    }
+  }, []);
+
+  const handleVenueAction = async (profileId: string, action: "approve" | "reject") => {
+    setActionLoading(`venue-${profileId}`);
+    try {
+      const res = await fetch("/api/admin/venues", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ profileId, action }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "İşlem başarısız");
+      toast.success(action === "approve" ? "Mekan onaylandı ✅" : "Mekan reddedildi");
+      setVenueProfiles((prev) =>
+        prev.map((p) =>
+          p.id === profileId ? { ...p, isVerified: action === "approve" } : p
+        )
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Hata");
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   // Admin değilse yönlendir
   useEffect(() => {
@@ -91,6 +146,10 @@ export default function AdminPage() {
   useEffect(() => {
     if (session?.user?.isAdmin) fetchStats();
   }, [session, fetchStats]);
+
+  useEffect(() => {
+    if (session?.user?.isAdmin && activeTab === "venues") fetchVenues();
+  }, [session, activeTab, fetchVenues]);
 
   const handleAction = async (
     userId: string,
@@ -194,6 +253,114 @@ export default function AdminPage() {
         <StatCard label="Tamamlanan" value={dbStats?.matches.completed ?? 0} color="emerald" icon="✅" />
         <StatCard label="Kulüpler / Gruplar" value={(dbStats?.clubs.total ?? 0) + (dbStats?.groups.total ?? 0)} color="purple" icon="🏛️" />
       </div>
+
+      {/* Sekme Butonları */}
+      <div className="flex gap-2 mb-6 border-b border-gray-200 dark:border-gray-700">
+        {([["users", "👥 Kullanıcılar"], ["venues", "🏙️ Mekan Onayları"]] as const).map(([tab, label]) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-4 py-2.5 text-sm font-semibold rounded-t-lg border-b-2 transition-colors ${
+              activeTab === tab
+                ? "border-emerald-500 text-emerald-600 dark:text-emerald-400"
+                : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+            }`}
+          >
+            {label}
+            {tab === "venues" && venueProfiles.filter(v => !v.isVerified).length > 0 && (
+              <span className="ml-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                {venueProfiles.filter(v => !v.isVerified).length}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Mekan Onayları Sekmesi ─────────────────────────────────────── */}
+      {activeTab === "venues" && (
+        <div>
+          <div className="flex gap-2 mb-4">
+            {(["PENDING", "ALL"] as const).map((s) => (
+              <button key={s} onClick={() => fetchVenues(s)}
+                className="text-xs px-3 py-1.5 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                {s === "PENDING" ? "⏳ Bekleyenler" : "📋 Tümü"}
+              </button>
+            ))}
+          </div>
+          {venueLoading ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full" />
+            </div>
+          ) : venueProfiles.length === 0 ? (
+            <div className="text-center py-16 text-gray-400 dark:text-gray-500">
+              <span className="text-4xl">🏙️</span>
+              <p className="mt-3 text-sm">Bekleyen mekan başvurusu yok</p>
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              {venueProfiles.map((venue) => (
+                <div key={venue.id} className={`bg-white dark:bg-gray-800 rounded-2xl border p-5 shadow-sm ${
+                  venue.isVerified ? "border-emerald-200 dark:border-emerald-800" : "border-orange-200 dark:border-orange-800/50"
+                }`}>
+                  <div className="flex items-start justify-between gap-4 flex-wrap">
+                    <div className="flex gap-3 items-start">
+                      {venue.user.avatarUrl ? (
+                        <img src={venue.user.avatarUrl} className="w-10 h-10 rounded-full object-cover border" alt={venue.user.name} />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-sm font-bold text-emerald-600">
+                          {venue.user.name.charAt(0)}
+                        </div>
+                      )}
+                      <div>
+                        <p className="font-bold text-gray-900 dark:text-white text-sm">{venue.businessName}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{venue.user.name} — {venue.user.email}</p>
+                        {venue.address && <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">📍 {venue.address}</p>}
+                        {venue.sports.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {venue.sports.map((s) => (
+                              <span key={s} className="text-[10px] bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded-full">{s}</span>
+                            ))}
+                          </div>
+                        )}
+                        <p className="text-[11px] text-gray-400 mt-2">
+                          Başvuru: {format(new Date(venue.createdAt), "d MMM yyyy HH:mm", { locale: tr })}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {venue.isVerified ? (
+                        <span className="text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 px-3 py-1.5 rounded-lg font-medium">
+                          ✅ Onaylı
+                        </span>
+                      ) : (
+                        <>
+                          <button
+                            disabled={actionLoading === `venue-${venue.id}`}
+                            onClick={() => handleVenueAction(venue.id, "approve")}
+                            className="text-xs px-3 py-1.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 hover:bg-emerald-200 dark:hover:bg-emerald-800/40 rounded-lg font-medium transition disabled:opacity-50"
+                          >
+                            {actionLoading === `venue-${venue.id}` ? "..." : "✅ Onayla"}
+                          </button>
+                          <button
+                            disabled={actionLoading === `venue-${venue.id}`}
+                            onClick={() => handleVenueAction(venue.id, "reject")}
+                            className="text-xs px-3 py-1.5 bg-red-100 dark:bg-red-900/30 text-red-600 hover:bg-red-200 dark:hover:bg-red-800/40 rounded-lg font-medium transition disabled:opacity-50"
+                          >
+                            {actionLoading === `venue-${venue.id}` ? "..." : "❌ Reddet"}
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Kullanıcı Yönetimi Sekmesi ────────────────────────────────── */}
+      {activeTab === "users" && <>
       {/* Arama */}
       <div className="mb-5">
         <input
@@ -380,6 +547,8 @@ export default function AdminPage() {
           </button>
         </div>
       )}
+      {/* ── Kullanıcı sekmesi sonu ── */}
+      </>}
     </div>
   );
 }
