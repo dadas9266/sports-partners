@@ -6,344 +6,415 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { registerUser } from "@/services/api";
-import type { RegisterForm } from "@/types";
 import Button from "@/components/ui/Button";
 import { useLocations } from "@/hooks/useLocations";
 
-export default function RegisterPage() {
+// ─── Adım göstergesi ────────────────────────────────────────────────────────
+function StepBar({ current, total }: { current: number; total: number }) {
+  return (
+    <div className="flex items-center justify-center gap-2 mb-6">
+      {Array.from({ length: total }, (_, i) => {
+        const stepNum = i + 1;
+        const done = stepNum < current;
+        const active = stepNum === current;
+        return (
+          <div
+            key={i}
+            className={`h-2 rounded-full transition-all duration-300 ${
+              active
+                ? "w-8 bg-emerald-500"
+                : done
+                ? "w-8 bg-emerald-300"
+                : "w-8 bg-gray-200 dark:bg-gray-600"
+            }`}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+export default function KayitPage() {
   const router = useRouter();
   const { status } = useSession();
-  const { locations } = useLocations();
+  const { locations, loading: locLoading } = useLocations();
+
+  const [step, setStep] = useState(1); // 1: Temel Bilgiler, 2: Konum/Profil
   const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState<RegisterForm>({
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Form state — sadece bireysel bilgiler
+  const [form, setForm] = useState({
     name: "",
     email: "",
     password: "",
     passwordConfirm: "",
     phone: "",
-    gender: "",
+    gender: "" as "" | "MALE" | "FEMALE" | "PREFER_NOT_TO_SAY",
+    birthDate: "",
+    countryId: "",
     cityId: "",
     districtId: "",
-    birthDate: "",
   });
-  const [selectedCountryId, setSelectedCountryId] = useState<string>("");
-  const [selectedCityId, setSelectedCityId] = useState<string>("");
 
   useEffect(() => {
-    // Türkiye'yi varsayılan seç
-    if (locations.length > 0 && !selectedCountryId) {
-      const trCountry = locations.find(l => l.code === "TR");
-      if (trCountry) setSelectedCountryId(trCountry.id);
-    }
-  }, [locations, selectedCountryId]);
-
-  const filteredCities = (
-    selectedCountryId 
-      ? locations.find((l) => l.id === selectedCountryId)?.cities ?? []
-      : []
-  ).sort((a, b) => a.name.localeCompare(b.name));
-
-  const filteredDistricts = (
-    selectedCityId
-      ? filteredCities.find((c) => c.id === selectedCityId)?.districts ?? []
-      : []
-  ).sort((a, b) => a.name.localeCompare(b.name));
-
-  useEffect(() => {
-    if (status === "authenticated") {
-      router.push("/");
-    }
+    if (status === "authenticated") router.push("/");
   }, [status, router]);
 
-  const passwordErrors = form.password
-    ? [
-        form.password.length < 8 && "En az 8 karakter",
-        !/[A-Z]/.test(form.password) && "Büyük harf",
-        !/[a-z]/.test(form.password) && "Küçük harf",
-        !/[0-9]/.test(form.password) && "Rakam",
-        !/[^A-Za-z0-9]/.test(form.password) && "Özel karakter",
-      ].filter(Boolean) as string[]
-    : [];
+  // ─── Konum yardımcıları ──────────────────────────────────────────────
+  const countries = locations;
+  const cities = countries.find((c) => c.id === form.countryId)?.cities || [];
+  const selectedCity = cities.find((c) => c.id === form.cityId);
+  const districts = selectedCity?.districts || [];
+
+  // ─── Validasyon ──────────────────────────────────────────────────────
+  const validateStep1 = (): boolean => {
+    if (form.name.trim().length < 2) { toast.error("İsim en az 2 karakter olmalı"); return false; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) { toast.error("Geçerli bir e-posta giriniz"); return false; }
+    if (form.password.length < 8) { toast.error("Şifre en az 8 karakter olmalı"); return false; }
+    if (!/[A-Z]/.test(form.password)) { toast.error("Şifre en az bir büyük harf içermeli"); return false; }
+    if (!/[a-z]/.test(form.password)) { toast.error("Şifre en az bir küçük harf içermeli"); return false; }
+    if (!/[0-9]/.test(form.password)) { toast.error("Şifre en az bir rakam içermeli"); return false; }
+    if (!/[^A-Za-z0-9]/.test(form.password)) { toast.error("Şifre en az bir özel karakter içermeli (!@#$%^&*)"); return false; }
+    if (form.password !== form.passwordConfirm) { toast.error("Şifreler eşleşmiyor"); return false; }
+    return true;
+  };
+
+  const validateStep2 = (): boolean => {
+    if (!form.gender) { toast.error("Lütfen cinsiyet seçiniz"); return false; }
+    if (!form.birthDate) { toast.error("Doğum tarihi gereklidir"); return false; }
+    if (!form.countryId) { toast.error("Lütfen ülke seçiniz"); return false; }
+    if (!form.cityId) { toast.error("Lütfen şehir seçiniz"); return false; }
+    if (!form.districtId) { toast.error("Lütfen ilçe seçiniz"); return false; }
+    return true;
+  };
+
+  const handleNext = () => {
+    if (step === 1 && validateStep1()) setStep(2);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (form.password !== form.passwordConfirm) {
-      toast.error("Şifreler eşleşmiyor");
-      return;
-    }
-    if (passwordErrors.length > 0) {
-      toast.error("Şifre gereksinimleri karşılanmıyor");
-      return;
-    }
-    if (!form.cityId) {
-      toast.error("Lütfen şehir seçiniz");
-      return;
-    }
-    if (!form.districtId) {
-      toast.error("Lütfen ilçe seçiniz");
-      return;
-    }
-    if (!form.birthDate) {
-      toast.error("Lütfen doğum tarihinizi giriniz");
-      return;
-    }
-    if (!form.gender) {
-      toast.error("Lütfen cinsiyet seçiniz");
-      return;
-    }
+    if (!validateStep2()) return;
 
     setLoading(true);
     try {
-      await registerUser({
-        name: form.name,
-        email: form.email,
+      const res = await registerUser({
+        name: form.name.trim(),
+        email: form.email.trim().toLowerCase(),
         password: form.password,
         phone: form.phone || undefined,
-        gender: form.gender as any,
+        gender: form.gender || undefined,
+        birthDate: form.birthDate || undefined,
+        countryId: form.countryId,
         cityId: form.cityId,
         districtId: form.districtId,
-        birthDate: form.birthDate,
+        // userType gönderilmiyor — backend INDIVIDUAL olarak kaydedecek
       });
-      // Auto sign-in and redirect to onboarding
-      const res = await signIn("credentials", {
-        email: form.email,
+
+      if (!res.success) {
+        toast.error(res.error || "Kayıt başarısız");
+        return;
+      }
+
+      toast.success("Kayıt başarılı! Giriş yapılıyor...");
+
+      // Otomatik giriş yap
+      const signInRes = await signIn("credentials", {
+        email: form.email.trim().toLowerCase(),
         password: form.password,
         redirect: false,
       });
-      if (res?.error) {
-        toast.success("Kayıt başarılı! Giriş yapabilirsiniz.");
+
+      if (signInRes?.error) {
+        toast.error("Giriş yapılamadı, lütfen manuel giriş yapınız");
         router.push("/auth/giris");
       } else {
-        toast.success("Hoş geldin! Önce birkaç tercihini ayarlıyalım.");
+        // Onboarding'e yönlendir
         router.push("/onboarding");
+        router.refresh();
       }
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Bir hata oluştu");
+    } catch {
+      toast.error("Bir hata oluştu, tekrar deneyiniz");
     } finally {
       setLoading(false);
     }
   };
 
-  const inputClass = "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition shadow-sm";
+  const inputClass =
+    "w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition";
+  const labelClass =
+    "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1";
 
   return (
-    <div className="min-h-[90vh] flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 md:p-10 w-full max-w-2xl border border-gray-100 dark:border-gray-700">
-        <div className="text-center mb-10">
-          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">
-            Yeni Hesap Oluştur
+    <div className="min-h-[80vh] flex items-center justify-center px-4 py-8">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 w-full max-w-md">
+        {/* Başlık */}
+        <div className="text-center mb-6">
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
+            Hesap Oluştur
           </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-2">Spor topluluğumuza katılarak yeni partnerler bul.</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            {step === 1 ? "Temel bilgilerini gir" : "Konum ve profil bilgilerin"}
+          </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Konum Bölümü */}
-          <div className="bg-emerald-50/50 dark:bg-emerald-900/10 p-5 rounded-2xl border border-emerald-100 dark:border-emerald-800/50">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="bg-emerald-500 text-white p-1 rounded-md">📍</span>
-              <p className="text-sm font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-widest">Konum Detayları</p>
-            </div>
-            
-            <div className="space-y-4">
+        <StepBar current={step} total={2} />
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* ─── ADIM 1: Temel Bilgiler ──────────────────────────────── */}
+          {step === 1 && (
+            <>
               <div>
-                <label htmlFor="country" className="block text-xs font-semibold text-gray-400 dark:text-gray-500 mb-1 uppercase">
+                <label htmlFor="name" className={labelClass}>
+                  Ad Soyad
+                </label>
+                <input
+                  id="name"
+                  type="text"
+                  required
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  className={inputClass}
+                  placeholder="Adınız Soyadınız"
+                  autoComplete="name"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="email" className={labelClass}>
+                  E-posta
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  required
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  className={inputClass}
+                  placeholder="ornek@email.com"
+                  autoComplete="email"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="password" className={labelClass}>
+                  Şifre
+                </label>
+                <div className="relative">
+                  <input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    required
+                    value={form.password}
+                    onChange={(e) => setForm({ ...form, password: e.target.value })}
+                    className={inputClass}
+                    placeholder="En az 8 karakter"
+                    autoComplete="new-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm"
+                  >
+                    {showPassword ? "Gizle" : "Göster"}
+                  </button>
+                </div>
+                {/* Şifre gücü göstergesi */}
+                {form.password && (
+                  <div className="mt-2 space-y-1">
+                    {[
+                      { test: form.password.length >= 8, label: "En az 8 karakter" },
+                      { test: /[A-Z]/.test(form.password), label: "Büyük harf" },
+                      { test: /[a-z]/.test(form.password), label: "Küçük harf" },
+                      { test: /[0-9]/.test(form.password), label: "Rakam" },
+                      { test: /[^A-Za-z0-9]/.test(form.password), label: "Özel karakter" },
+                    ].map((rule) => (
+                      <div key={rule.label} className="flex items-center gap-1.5">
+                        <span className={`text-xs ${rule.test ? "text-emerald-500" : "text-gray-400"}`}>
+                          {rule.test ? "✓" : "○"}
+                        </span>
+                        <span className={`text-xs ${rule.test ? "text-emerald-600 dark:text-emerald-400" : "text-gray-400"}`}>
+                          {rule.label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="passwordConfirm" className={labelClass}>
+                  Şifre Tekrar
+                </label>
+                <input
+                  id="passwordConfirm"
+                  type="password"
+                  required
+                  value={form.passwordConfirm}
+                  onChange={(e) => setForm({ ...form, passwordConfirm: e.target.value })}
+                  className={inputClass}
+                  placeholder="Şifrenizi tekrar giriniz"
+                  autoComplete="new-password"
+                />
+                {form.passwordConfirm && form.password !== form.passwordConfirm && (
+                  <p className="text-xs text-red-500 mt-1">Şifreler eşleşmiyor</p>
+                )}
+              </div>
+
+              <Button
+                type="button"
+                onClick={handleNext}
+                className="w-full"
+              >
+                Devam Et →
+              </Button>
+            </>
+          )}
+
+          {/* ─── ADIM 2: Konum & Profil ──────────────────────────────── */}
+          {step === 2 && (
+            <>
+              <div>
+                <label htmlFor="gender" className={labelClass}>
+                  Cinsiyet
+                </label>
+                <select
+                  id="gender"
+                  required
+                  value={form.gender}
+                  onChange={(e) => setForm({ ...form, gender: e.target.value as typeof form.gender })}
+                  className={inputClass}
+                >
+                  <option value="">Seçiniz</option>
+                  <option value="MALE">Erkek</option>
+                  <option value="FEMALE">Kadın</option>
+                  <option value="PREFER_NOT_TO_SAY">Belirtmek istemiyorum</option>
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="birthDate" className={labelClass}>
+                  Doğum Tarihi
+                </label>
+                <input
+                  id="birthDate"
+                  type="date"
+                  required
+                  value={form.birthDate}
+                  onChange={(e) => setForm({ ...form, birthDate: e.target.value })}
+                  className={inputClass}
+                  max={new Date().toISOString().split("T")[0]}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="phone" className={labelClass}>
+                  Telefon <span className="text-gray-400 font-normal">(opsiyonel)</span>
+                </label>
+                <input
+                  id="phone"
+                  type="tel"
+                  value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  className={inputClass}
+                  placeholder="05XX XXX XX XX"
+                  autoComplete="tel"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="country" className={labelClass}>
                   Ülke
                 </label>
                 <select
                   id="country"
+                  required
+                  value={form.countryId}
+                  onChange={(e) => setForm({ ...form, countryId: e.target.value, cityId: "", districtId: "" })}
                   className={inputClass}
-                  value={selectedCountryId}
-                  onChange={(e) => {
-                    setSelectedCountryId(e.target.value);
-                    setSelectedCityId("");
-                    setForm({ ...form, cityId: "", districtId: "" });
-                  }}
+                  disabled={locLoading}
                 >
-                  <option value="">Ülke Seçiniz...</option>
-                  {locations.sort((a,b) => a.code === "TR" ? -1 : b.code === "TR" ? 1 : a.name.localeCompare(b.name)).map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
+                  <option value="">{locLoading ? "Yükleniyor..." : "Ülke seçiniz"}</option>
+                  {countries.map((country) => (
+                    <option key={country.id} value={country.id}>
+                      {country.name}
+                    </option>
                   ))}
                 </select>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {form.countryId && (
                 <div>
-                  <label htmlFor="city" className="block text-xs font-semibold text-gray-400 dark:text-gray-500 mb-1 uppercase">
+                  <label htmlFor="city" className={labelClass}>
                     Şehir
                   </label>
                   <select
                     id="city"
-                    value={selectedCityId}
                     required
-                    onChange={(e) => {
-                      setSelectedCityId(e.target.value);
-                      setForm({ ...form, cityId: e.target.value, districtId: "" });
-                    }}
+                    value={form.cityId}
+                    onChange={(e) => setForm({ ...form, cityId: e.target.value, districtId: "" })}
                     className={inputClass}
-                    disabled={!selectedCountryId}
+                    disabled={!form.countryId || locLoading}
                   >
-                    <option value="">Şehir Seçiniz...</option>
-                    {filteredCities.map((c) => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
+                    <option value="">{locLoading ? "Yükleniyor..." : "Şehir seçiniz"}</option>
+                    {cities.map((city) => (
+                      <option key={city.id} value={city.id}>
+                        {city.name}
+                      </option>
                     ))}
                   </select>
                 </div>
+              )}
+
+              {form.cityId && (
                 <div>
-                  <label htmlFor="district" className="block text-xs font-semibold text-gray-400 dark:text-gray-500 mb-1 uppercase">
+                  <label htmlFor="district" className={labelClass}>
                     İlçe
                   </label>
                   <select
                     id="district"
-                    value={form.districtId}
                     required
+                    value={form.districtId}
                     onChange={(e) => setForm({ ...form, districtId: e.target.value })}
                     className={inputClass}
-                    disabled={!selectedCityId}
+                    disabled={!form.cityId}
                   >
-                    <option value="">İlçe Seçiniz...</option>
-                    {filteredDistricts.map((d) => (
-                      <option key={d.id} value={d.id}>{d.name}</option>
+                    <option value="">İlçe seçiniz</option>
+                    {districts.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.name}
+                      </option>
                     ))}
                   </select>
                 </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Kişisel Bilgiler */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="md:col-span-2">
-              <label htmlFor="name" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                Ad Soyad
-              </label>
-              <input
-                id="name"
-                type="text"
-                required
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className={inputClass}
-                placeholder="Örn: Mehmet Öz"
-                autoComplete="name"
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="email" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                E-posta
-              </label>
-              <input
-                id="email"
-                type="email"
-                required
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                className={inputClass}
-                placeholder="mehmet@spor.com"
-                autoComplete="email"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="phone" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                Telefon <span className="text-xs text-gray-400 font-normal">(opsiyonel)</span>
-              </label>
-              <input
-                id="phone"
-                type="tel"
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                className={inputClass}
-                placeholder="05XX XXX XX XX"
-                autoComplete="tel"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="gender" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                Cinsiyet
-              </label>
-              <select
-                id="gender"
-                value={form.gender}
-                onChange={(e) => setForm({ ...form, gender: e.target.value as any })}
-                className={inputClass}
-                required
-              >
-                <option value="">Seçiniz...</option>
-                <option value="MALE">Erkek</option>
-                <option value="FEMALE">Kadın</option>
-                <option value="PREFER_NOT_TO_SAY">Belirtmek İstemiyorum</option>
-              </select>
-            </div>
-
-            <div>
-              <label htmlFor="birthDate" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                Doğum Tarihi
-              </label>
-              <input
-                id="birthDate"
-                type="date"
-                required
-                value={form.birthDate}
-                onChange={(e) => setForm({ ...form, birthDate: e.target.value })}
-                className={inputClass}
-              />
-            </div>
-          </div>
-
-          {/* Şifre Bölümü */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-            <div>
-              <label htmlFor="password" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                Şifre
-              </label>
-              <input
-                id="password"
-                type="password"
-                required
-                minLength={8}
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                className={inputClass}
-                placeholder="••••••••"
-                autoComplete="new-password"
-              />
-              <p className="text-[10px] text-gray-400 mt-1">Gereksinimler: 8+ krk, A, a, 1, !</p>
-            </div>
-            <div>
-              <label htmlFor="passwordConfirm" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                Şifre Tekrar
-              </label>
-              <input
-                id="passwordConfirm"
-                type="password"
-                required
-                value={form.passwordConfirm}
-                onChange={(e) => setForm({ ...form, passwordConfirm: e.target.value })}
-                className={inputClass}
-                placeholder="••••••••"
-                autoComplete="new-password"
-              />
-              {form.passwordConfirm && form.password !== form.passwordConfirm && (
-                <p className="text-xs text-red-500 mt-1">Şifreler eşleşmiyor</p>
               )}
-            </div>
-          </div>
 
-          <Button type="submit" loading={loading} className="w-full py-4 text-lg font-bold shadow-emerald-200 dark:shadow-none transition-transform hover:scale-[1.01] active:scale-[0.99]">
-            Hemen Katıl
-          </Button>
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="flex-1 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                >
+                  ← Geri
+                </button>
+                <Button type="submit" loading={loading} className="flex-1">
+                  Kayıt Ol
+                </Button>
+              </div>
+            </>
+          )}
         </form>
 
-        <div className="mt-8 pt-6 text-center border-t border-gray-100 dark:border-gray-700">
-          <p className="text-gray-600 dark:text-gray-400">
-            Zaten hesabınız var mı?{" "}
-            <Link href="/auth/giris" className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline">
-              Giriş Yap
-            </Link>
-          </p>
-        </div>
+        <p className="text-center text-gray-600 dark:text-gray-400 mt-6 text-sm">
+          Zaten hesabınız var mı?{" "}
+          <Link
+            href="/auth/giris"
+            className="text-emerald-600 dark:text-emerald-400 font-semibold hover:underline"
+          >
+            Giriş Yap
+          </Link>
+        </p>
       </div>
     </div>
   );

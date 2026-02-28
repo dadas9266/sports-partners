@@ -9,9 +9,9 @@ import type { Sport } from "@/types";
 import Button from "@/components/ui/Button";
 
 const STEPS = [
+  { id: "sports", title: "Hangi sporları yapıyorsun?", emoji: "🏅" },
   { id: "time", title: "Ne zaman spor yapmayı seversin?", emoji: "⏰" },
   { id: "style", title: "Nasıl spor yaparsın?", emoji: "🎯" },
-  { id: "sports", title: "Hangi sporları yapıyorsun?", emoji: "🏅" },
 ];
 
 export default function OnboardingPage() {
@@ -45,7 +45,6 @@ export default function OnboardingPage() {
         sportIds: prefs.sportIds.length > 0 ? prefs.sportIds : undefined,
         onboardingDone: true,
       } as Parameters<typeof updateProfile>[0]);
-      // Mark onboardingDone — saved via profile PUT (the field itself needs explicit update)
       toast.success("Profil tercihlerin kaydedildi! 🎉");
       router.push("/");
     } catch {
@@ -57,9 +56,9 @@ export default function OnboardingPage() {
   };
 
   const canProceed = () => {
-    if (step === 0) return !!prefs.preferredTime;
-    if (step === 1) return !!prefs.preferredStyle;
-    if (step === 2) return prefs.sportIds.length > 0;
+    if (step === 0) return prefs.sportIds.length > 0;
+    if (step === 1) return !!prefs.preferredTime;
+    if (step === 2) return !!prefs.preferredStyle;
     return false;
   };
 
@@ -67,19 +66,19 @@ export default function OnboardingPage() {
   if (!session) return null;
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 w-full max-w-lg">
+    <div className="min-h-[80vh] flex items-center justify-center px-4">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 w-full max-w-lg">
         {/* Progress dots */}
         <div className="flex justify-center gap-2 mb-8">
           {STEPS.map((s, i) => (
             <div
               key={s.id}
-              className={`w-3 h-3 rounded-full transition-all ${
+              className={`h-2 rounded-full transition-all duration-300 ${
                 i === step
-                  ? "bg-emerald-500 scale-125"
+                  ? "w-10 bg-emerald-500"
                   : i < step
-                  ? "bg-emerald-300"
-                  : "bg-gray-200 dark:bg-gray-600"
+                  ? "w-10 bg-emerald-300"
+                  : "w-10 bg-gray-200 dark:bg-gray-600"
               }`}
             />
           ))}
@@ -97,58 +96,8 @@ export default function OnboardingPage() {
           </p>
         </div>
 
-        {/* Step 0 — Tercih Zamanı */}
+        {/* Step 0 — Sporlar */}
         {step === 0 && (
-          <div className="grid grid-cols-1 gap-3">
-            {[
-              { value: "morning", label: "🌅 Sabah", desc: "Güne erken başlarım" },
-              { value: "evening", label: "🌆 Akşam", desc: "Günün yorgunluğunu çıkarırım" },
-              { value: "anytime", label: "🕐 Fark Etmez", desc: "Her zaman uygunum" },
-            ].map((opt) => (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => setPrefs({ ...prefs, preferredTime: opt.value })}
-                className={`p-4 rounded-xl border-2 text-left transition ${
-                  prefs.preferredTime === opt.value
-                    ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20"
-                    : "border-gray-200 dark:border-gray-600 hover:border-emerald-300"
-                }`}
-              >
-                <span className="font-medium text-gray-800 dark:text-gray-100">{opt.label}</span>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{opt.desc}</p>
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Step 1 — Tarz */}
-        {step === 1 && (
-          <div className="grid grid-cols-1 gap-3">
-            {[
-              { value: "competitive", label: "🏆 Rekabetçi", desc: "Kazanmayı severim" },
-              { value: "casual", label: "😎 Eğlenceli", desc: "Keyif için oynarım" },
-              { value: "both", label: "⚡ Her İkisi", desc: "Duruma göre değişir" },
-            ].map((opt) => (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => setPrefs({ ...prefs, preferredStyle: opt.value })}
-                className={`p-4 rounded-xl border-2 text-left transition ${
-                  prefs.preferredStyle === opt.value
-                    ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20"
-                    : "border-gray-200 dark:border-gray-600 hover:border-emerald-300"
-                }`}
-              >
-                <span className="font-medium text-gray-800 dark:text-gray-100">{opt.label}</span>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{opt.desc}</p>
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Step 2 — Sporlar */}
-        {step === 2 && (
           <div>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-3 text-center">
               En fazla 5 spor seçebilirsin
@@ -183,6 +132,56 @@ export default function OnboardingPage() {
           </div>
         )}
 
+        {/* Step 1 — Tercih Zamanı */}
+        {step === 1 && (
+          <div className="grid grid-cols-1 gap-3">
+            {[
+              { value: "morning", label: "🌅 Sabah", desc: "Güne erken başlarım" },
+              { value: "evening", label: "🌆 Akşam", desc: "Günün yorgunluğunu çıkarırım" },
+              { value: "anytime", label: "🕐 Fark Etmez", desc: "Her zaman uygunum" },
+            ].map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setPrefs({ ...prefs, preferredTime: opt.value })}
+                className={`p-4 rounded-xl border-2 text-left transition ${
+                  prefs.preferredTime === opt.value
+                    ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20"
+                    : "border-gray-200 dark:border-gray-600 hover:border-emerald-300"
+                }`}
+              >
+                <span className="font-medium text-gray-800 dark:text-gray-100">{opt.label}</span>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{opt.desc}</p>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Step 2 — Tarz */}
+        {step === 2 && (
+          <div className="grid grid-cols-1 gap-3">
+            {[
+              { value: "competitive", label: "🏆 Rekabetçi", desc: "Kazanmayı severim" },
+              { value: "casual", label: "😎 Eğlenceli", desc: "Keyif için oynarım" },
+              { value: "both", label: "⚡ Her İkisi", desc: "Duruma göre değişir" },
+            ].map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setPrefs({ ...prefs, preferredStyle: opt.value })}
+                className={`p-4 rounded-xl border-2 text-left transition ${
+                  prefs.preferredStyle === opt.value
+                    ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20"
+                    : "border-gray-200 dark:border-gray-600 hover:border-emerald-300"
+                }`}
+              >
+                <span className="font-medium text-gray-800 dark:text-gray-100">{opt.label}</span>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{opt.desc}</p>
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="mt-8 flex items-center justify-between">
           {step > 0 ? (
             <button
@@ -193,13 +192,7 @@ export default function OnboardingPage() {
               ← Geri
             </button>
           ) : (
-            <button
-              type="button"
-              onClick={() => router.push("/")}
-              className="text-sm text-gray-400 hover:underline"
-            >
-              Atla
-            </button>
+            <div />
           )}
           {step < STEPS.length - 1 ? (
             <Button

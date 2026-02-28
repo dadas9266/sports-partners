@@ -38,7 +38,23 @@ export default function CreateListingPage() {
     expiresAt: "",
     isRecurring: false,
     recurringDays: [],
+    minAge: null,
+    maxAge: null,
+    groupId: null,
   });
+
+  const [myGroups, setMyGroups] = useState<{ id: string; name: string; _count: { members: number } }[]>([]);
+
+  useEffect(() => {
+    if (!session) return;
+    fetch("/api/groups?limit=50")
+      .then((r) => r.json())
+      .then((j) => {
+        if (j.success) setMyGroups(j.groups ?? []);
+      })
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session]);
 
   // Trainer extra fields
   const [trainerForm, setTrainerForm] = useState({ hourlyRate: "", experience: "", specialization: "", gymName: "", gymAddress: "" });
@@ -98,7 +114,9 @@ export default function CreateListingPage() {
         sportId: form.sportId,
         districtId: form.districtId,
         venueId: form.venueId || null,
-        dateTime: form.type === "EQUIPMENT" ? new Date().toISOString() : form.dateTime,
+        // EQUIPMENT için tarih gönderilmez; TRAINER için opsiyonel (dolu ise gönderilir); diğerleri zorunlu
+        ...(form.type !== "EQUIPMENT" && form.type !== "TRAINER" && { dateTime: form.dateTime }),
+        ...(form.type === "TRAINER" && form.dateTime ? { dateTime: form.dateTime } : {}),
         level: form.type === "EQUIPMENT" ? "BEGINNER" : form.level as string,
         description: form.description || undefined,
         maxParticipants: form.maxParticipants,
@@ -106,6 +124,9 @@ export default function CreateListingPage() {
         isQuick: false,
         isRecurring: false,
         recurringDays: [],
+        minAge: form.minAge ?? undefined,
+        maxAge: form.maxAge ?? undefined,
+        groupId: form.groupId ?? undefined,
       };
       if (form.type === "TRAINER") {
         payload.trainerProfile = {
@@ -529,6 +550,70 @@ export default function CreateListingPage() {
               </button>
             ))}
           </div>
+        </div>
+        )}
+
+        {/* Yaş Aralığı Kısıtlaması (EQUIPMENT dışındaki ilanlar için) */}
+        {form.type !== "EQUIPMENT" && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Başvuru Yaş Aralığı <span className="text-gray-400 font-normal">(opsiyonel)</span>
+          </label>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Minimum Yaş</label>
+              <input
+                type="number"
+                min="10"
+                max="99"
+                value={form.minAge ?? ""}
+                onChange={(e) => setForm({ ...form, minAge: e.target.value ? Number(e.target.value) : null })}
+                className={selectClass}
+                placeholder="Örn: 18"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Maksimum Yaş</label>
+              <input
+                type="number"
+                min="10"
+                max="99"
+                value={form.maxAge ?? ""}
+                onChange={(e) => setForm({ ...form, maxAge: e.target.value ? Number(e.target.value) : null })}
+                className={selectClass}
+                placeholder="Örn: 40"
+              />
+            </div>
+          </div>
+          {(form.minAge || form.maxAge) && (
+            <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">
+              👤 {form.minAge && form.maxAge
+                ? `${form.minAge}-${form.maxAge} yaş arası başvurabilir`
+                : form.minAge
+                ? `${form.minAge} yaş ve üstü başvurabilir`
+                : `${form.maxAge} yaş ve altı başvurabilir`}
+            </p>
+          )}
+        </div>
+        )}
+
+        {/* Grup Seçimi */}
+        {myGroups.length > 0 && (
+        <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4">
+          <p className="font-medium text-purple-800 dark:text-purple-200 mb-2">👥 Grup İlanı (Opsiyonel)</p>
+          <p className="text-xs text-purple-600 dark:text-purple-400 mb-3">Bu ilanı bir grubunuzla ilişkilendirebilirsiniz.</p>
+          <select
+            value={form.groupId ?? ""}
+            onChange={(e) => setForm({ ...form, groupId: e.target.value || null })}
+            className="w-full border border-purple-300 dark:border-purple-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-purple-500 outline-none"
+          >
+            <option value="">Grup seçme (bireysel ilan)</option>
+            {myGroups.map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.name} ({g._count.members} üye)
+              </option>
+            ))}
+          </select>
         </div>
         )}
 

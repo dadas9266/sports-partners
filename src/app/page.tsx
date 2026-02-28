@@ -49,13 +49,29 @@ export default function HomePage() {
   return (
     <div>
       {/* Hero */}
-      <div className="text-center mb-8">
-        <h1 className="text-3xl md:text-4xl font-bold text-gray-800 dark:text-gray-100">
-          <span role="img" aria-label="kupa">🏆</span> Spor Partneri &amp; Rakip Bul
-        </h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-2">
-          Spor yapmak için birini mi arıyorsun? Doğru yerdesin!
-        </p>
+      <div className="relative overflow-hidden bg-gradient-to-br from-emerald-600 via-teal-600 to-emerald-700 dark:from-emerald-800 dark:via-teal-900 dark:to-emerald-900 rounded-2xl mb-8 p-8 md:p-10 text-white shadow-lg">
+        {/* Dekoratif arka plan halkaları */}
+        <div className="absolute -top-10 -right-10 w-48 h-48 bg-white/5 rounded-full" aria-hidden="true" />
+        <div className="absolute -bottom-8 -left-8 w-36 h-36 bg-white/5 rounded-full" aria-hidden="true" />
+        <div className="relative text-center">
+          <div className="text-4xl mb-3" role="img" aria-label="kupa">🏆</div>
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-2">
+            Spor Partneri &amp; Rakip Bul
+          </h1>
+          <p className="text-emerald-100 text-base md:text-lg max-w-xl mx-auto">
+            Spor yapmak için birini mi arıyorsun? Doğru yerdesin!
+          </p>
+          {!session && (
+            <div className="flex justify-center gap-3 mt-5">
+              <a href="/auth/kayit" className="bg-white text-emerald-700 font-bold px-5 py-2.5 rounded-xl hover:bg-emerald-50 transition shadow text-sm">
+                Hemen Başla
+              </a>
+              <a href="/auth/giris" className="border border-white/50 text-white font-semibold px-5 py-2.5 rounded-xl hover:bg-white/10 transition text-sm">
+                Giriş Yap
+              </a>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Öneri bölümü */}

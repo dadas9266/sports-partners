@@ -260,6 +260,101 @@ export default function ListingDetailPage({
             <p className="text-gray-700 dark:text-gray-300">{listing.description}</p>
           </div>
         )}
+
+        {/* ── Eğitmen Bilgileri ── */}
+        {listing.type === "TRAINER" && listing.trainerProfile && (
+          <div className="mt-5 p-5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+            <h2 className="font-bold text-blue-800 dark:text-blue-200 mb-3 text-base flex items-center gap-2">
+              🎓 Eğitmen Bilgileri
+              {listing.trainerProfile.isVerified && (
+                <span className="text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full">✓ Onaylı</span>
+              )}
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {listing.trainerProfile.hourlyRate != null && (
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-3 text-center sm:col-span-2">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Saatlik Ücret</p>
+                  <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">
+                    {listing.trainerProfile.hourlyRate.toLocaleString("tr-TR")} ₺
+                    <span className="text-sm font-normal text-gray-500 dark:text-gray-400"> / saat</span>
+                  </p>
+                </div>
+              )}
+              {listing.trainerProfile.specializations?.map((s) => (
+                <div key={s.id} className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+                  <span>🏅</span>
+                  <span className="font-medium">{s.sportName}</span>
+                  {s.years > 0 && <span className="text-sm text-blue-500 dark:text-blue-400">({s.years} yıl)</span>}
+                </div>
+              ))}
+              {listing.trainerProfile.gymName && (
+                <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300 sm:col-span-2">
+                  <span>🏢</span>
+                  <span className="font-medium">{listing.trainerProfile.gymName}</span>
+                </div>
+              )}
+              {listing.trainerProfile.gymAddress && (
+                <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 sm:col-span-2">
+                  <span>📍</span>
+                  <span className="text-sm">{listing.trainerProfile.gymAddress}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── Spor Malzemesi Bilgileri ── */}
+        {listing.type === "EQUIPMENT" && listing.equipmentDetail && (
+          <div className="mt-5 p-5 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl">
+            <h2 className="font-bold text-purple-800 dark:text-purple-200 mb-3 text-base">🛒 Ürün Detayları</h2>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-3 text-center">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Fiyat</p>
+                <p className="text-xl font-bold text-purple-700 dark:text-purple-300">
+                  {listing.equipmentDetail.price.toLocaleString("tr-TR")} ₺
+                </p>
+              </div>
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-3 text-center">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Durum</p>
+                <p className="font-semibold text-purple-700 dark:text-purple-300">
+                  {listing.equipmentDetail.condition === "NEW" ? "✨ Sıfır"
+                    : listing.equipmentDetail.condition === "LIKE_NEW" ? "🌟 Sıfır Gibi"
+                    : listing.equipmentDetail.condition === "GOOD" ? "👍 İyi"
+                    : "🔧 Orta"}
+                </p>
+              </div>
+              {listing.equipmentDetail.brand && (
+                <div className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
+                  <span>🏷️</span>
+                  <span><span className="text-gray-500 dark:text-gray-400 text-sm">Marka: </span>{listing.equipmentDetail.brand}</span>
+                </div>
+              )}
+              {listing.equipmentDetail.model && (
+                <div className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
+                  <span>📋</span>
+                  <span><span className="text-gray-500 dark:text-gray-400 text-sm">Model: </span>{listing.equipmentDetail.model}</span>
+                </div>
+              )}
+            </div>
+            {listing.equipmentDetail.images?.length > 0 && (
+              <div className="mt-3 flex gap-2 flex-wrap">
+                {listing.equipmentDetail.images.map((img, i) => (
+                  <img
+                    key={i}
+                    src={img}
+                    alt={`Ürün görseli ${i + 1}`}
+                    className="h-24 w-24 object-cover rounded-lg border border-purple-200 dark:border-purple-700"
+                  />
+                ))}
+              </div>
+            )}
+            {listing.equipmentDetail.isSold && (
+              <div className="mt-3 text-center text-sm font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg py-2">
+                🔴 Bu ürün satılmıştır
+              </div>
+            )}
+          </div>
+        )}
       </article>
 
       {/* Match bilgisi */}

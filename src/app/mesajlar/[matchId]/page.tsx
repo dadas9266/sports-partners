@@ -107,9 +107,12 @@ export default function ChatPage({ params }: { params: Promise<{ matchId: string
               )}
             </div>
             <div>
-              <Link href={`/profil/${conversation.partner.id}`} className="font-semibold text-gray-800 dark:text-gray-100 hover:underline">
-                {conversation.partner.name}
-              </Link>
+              <div className="flex items-center gap-1">
+                <Link href={`/profil/${conversation.partner.id}`} className="font-semibold text-gray-800 dark:text-gray-100 hover:underline">
+                  {conversation.partner.name}
+                </Link>
+                {/* Puan rozeti kaldırıldı - API tarafında henüz desteklenmiyor */}
+              </div>
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 {conversation.listing.sport.icon} {conversation.listing.sport.name} — {format(new Date(conversation.listing.dateTime), "d MMM HH:mm", { locale: tr })}
               </p>

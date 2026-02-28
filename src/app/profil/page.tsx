@@ -16,9 +16,26 @@ const GENDER_ICONS: Record<string, string> = {
   MALE: "♂️",
   FEMALE: "♀️",
 };
+
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import Modal from "@/components/ui/Modal";
+
+// Eksik alanları tespit eden fonksiyon
+function getMissingProfileFields(user: any) {
+  const missing: string[] = [];
+  if (!user.avatarUrl) missing.push("Profil fotoğrafı");
+  if (!user.phone) missing.push("Telefon numarası");
+  if (!user.birthDate) missing.push("Doğum tarihi");
+  if (user.userType === "VENUE") {
+    if (!user.venueName) missing.push("Tesis adı");
+    if (!user.venueAddress) missing.push("Tesis adresi");
+  }
+  if (user.userType === "TRAINER" && (!user.trainerBranches || user.trainerBranches.length === 0)) {
+    missing.push("Branş ve/veya sertifika");
+  }
+  return missing;
+}
 
 export default function ProfilePage() {
   const { data, loading, error, status, session, refresh, setData } = useProfile();
@@ -38,8 +55,50 @@ export default function ProfilePage() {
   const [deleting, setDeleting] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
+  const [ratingModal, setRatingModal] = useState<{ matchId: string; partnerName: string } | null>(null);
+  const [ratingScore, setRatingScore] = useState(0);
+  const [ratingComment, setRatingComment] = useState("");
+  const [submittingRating, setSubmittingRating] = useState(false);
   const [posts, setPosts] = useState<any[]>([]);
   const [postsLoading, setPostsLoading] = useState(false);
+  const [postsView, setPostsView] = useState<"grid" | "list">("grid");
+  const [otpFlow, setOtpFlow] = useState<Record<string, { step: "idle" | "requested" | "verifying"; code: string; generated?: string; loading: boolean }>>({});
+
+  const requestOtp = async (matchId: string) => {
+    setOtpFlow(p => ({ ...p, [matchId]: { step: "requested", code: "", loading: true } }));
+    try {
+      const res = await fetch(`/api/matches/${matchId}/otp`, { method: "POST" });
+      const json = await res.json();
+      if (json.code) {
+        setOtpFlow(p => ({ ...p, [matchId]: { step: "requested", code: "", generated: json.code, loading: false } }));
+      } else {
+        toast.error(json.error || "OTP oluşturulamadı");
+        setOtpFlow(p => ({ ...p, [matchId]: { step: "idle", code: "", loading: false } }));
+      }
+    } catch { setOtpFlow(p => ({ ...p, [matchId]: { step: "idle", code: "", loading: false } })); }
+  };
+
+  const verifyOtp = async (matchId: string) => {
+    const flow = otpFlow[matchId];
+    if (!flow) return;
+    setOtpFlow(p => ({ ...p, [matchId]: { ...flow, loading: true } }));
+    try {
+      const res = await fetch(`/api/matches/${matchId}/otp`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: flow.code }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        toast.success("Maç doğrulandı! ✓");
+        setOtpFlow(p => ({ ...p, [matchId]: { step: "idle", code: "", loading: false } }));
+        refresh();
+      } else {
+        toast.error(json.error || "Geçersiz kod");
+        setOtpFlow(p => ({ ...p, [matchId]: { ...flow, loading: false } }));
+      }
+    } catch { setOtpFlow(p => ({ ...p, [matchId]: { ...flow, loading: false } })); }
+  };
 
   // Profile edit states
   const [editMode, setEditMode] = useState(false);
@@ -103,29 +162,24 @@ export default function ProfilePage() {
     try {
       await deleteListing(deleteModal);
       toast.success("İlan silindi");
-      setData((prev) => prev ? {
-        ...prev,
-        myListings: prev.myListings.filter((l) => l.id !== deleteModal),
-      } : prev);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Hata oluştu");
+      setData((prev) => prev ? { ...prev, myListings: prev.myListings?.filter((l: any) => l.id !== deleteModal) } : prev);
     } finally {
       setDeleting(false);
       setDeleteModal(null);
     }
   };
 
+  // Handler to enter edit mode and populate the edit form
   const handleEditProfile = () => {
-    const profileUser = data.user as typeof data.user & { 
-      bio?: string | null; 
-      cityId?: string | null; 
+    const profileUser = data.user as typeof data.user & {
+      bio?: string | null;
+      cityId?: string | null;
       districtId?: string | null;
-      gender?: string | null; 
+      gender?: string | null;
       birthDate?: string | null;
     };
-    const sports = (data as typeof data & { sports?: Array<{ id: string }> }).sports ?? [];
     setEditForm({
-      name: data.user.name,
+      name: data.user.name || "",
       phone: data.user.phone || "",
       currentPassword: "",
       newPassword: "",
@@ -217,17 +271,34 @@ export default function ProfilePage() {
     }
   };
 
+  const missingFields = getMissingProfileFields(data.user);
+
+  // Eksik alan tamamlandığında güven puanı artır
+  async function handleFieldCompleted(field: string) {
+    try {
+      await fetch("/api/profile/trust", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ field }),
+      });
+      // refresh(); // Gerekirse puan güncellemesi için
+    } catch {}
+  }
+
   return (
     <div className="max-w-4xl mx-auto">
-      {/* Onboarding banner */}
-      {data.user && !(data.user as typeof data.user & { onboardingDone?: boolean }).onboardingDone && (
-        <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 rounded-xl p-4 mb-4 flex items-center justify-between">
+      {/* Eksik profil alanı bannerı */}
+      {missingFields.length > 0 && (
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-xl p-4 mb-4 flex items-center justify-between">
           <div>
-            <p className="font-semibold text-emerald-800 dark:text-emerald-200">👋 Profilini tamamla!</p>
-            <p className="text-sm text-emerald-600 dark:text-emerald-400">Tercihlerini ayarlayarak daha iyi eşleşmeler bul.</p>
+            <p className="font-semibold text-yellow-800 dark:text-yellow-200">⚠️ Profilin eksik!</p>
+            <p className="text-sm text-yellow-700 dark:text-yellow-300">Aşağıdaki alanları tamamlayarak güven puanını artırabilirsin:</p>
+            <ul className="mt-1 ml-4 list-disc text-yellow-700 dark:text-yellow-200 text-sm">
+              {missingFields.map((f) => <li key={f}>{f}</li>)}
+            </ul>
           </div>
-          <Link href="/onboarding" className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
-            Hemen Tamamla
+          <Link href="#profile-edit" className="bg-yellow-600 hover:bg-yellow-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
+            Profilini Tamamla
           </Link>
         </div>
       )}
@@ -303,8 +374,25 @@ export default function ProfilePage() {
                 </label>
               </div>
               <div className="flex-1">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{data.user?.name}</h1>
+                  {(data.user as any).trainerProfile?.isVerified && (
+                    <span className="inline-flex items-center gap-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-xs font-bold px-2.5 py-1 rounded-full border border-blue-200 dark:border-blue-700 whitespace-nowrap">
+                      ✓ Verified Pro
+                    </span>
+                  )}
+                  {/* Seviye Rozeti */}
+                  {(() => {
+                    const lvl = (data.user as any).userLevel || "BEGINNER";
+                    const cfg: Record<string, { label: string; cls: string }> = {
+                      BEGINNER: { label: "Acemi", cls: "bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-700 dark:text-gray-300" },
+                      AMATEUR: { label: "Amatör", cls: "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/40 dark:text-green-300" },
+                      SEMI_PRO: { label: "Yarı Pro", cls: "bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/40 dark:text-purple-300" },
+                      PRO: { label: "⚡ Pro", cls: "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/40 dark:text-amber-300" },
+                    };
+                    const c = cfg[lvl] || cfg.BEGINNER;
+                    return <span className={`inline-flex items-center text-xs font-bold px-2.5 py-1 rounded-full border whitespace-nowrap ${c.cls}`}>{c.label}</span>;
+                  })()}
                   <div className="flex items-center gap-1.5 text-sm">
                     {(() => {
                       const u = data.user as any;
@@ -347,6 +435,30 @@ export default function ProfilePage() {
                     <span className="text-gray-500 dark:text-gray-400 ml-1">Takip Edilen</span>
                   </div>
                 </div>
+                {/* Bio */}
+                {(data.user as any).bio && (
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 leading-relaxed line-clamp-3">{(data.user as any).bio}</p>
+                )}
+                {/* Trainer Badges */}
+                {(data.user as any).trainerProfile?.isVerified && (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {(data.user as any).trainerProfile?.specialization && (
+                      <span className="inline-flex items-center bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 text-xs font-semibold px-2.5 py-1 rounded-full">
+                        🎯 {(data.user as any).trainerProfile.specialization}
+                      </span>
+                    )}
+                    {(data.user as any).trainerProfile?.experience && (
+                      <span className="inline-flex items-center bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-xs font-semibold px-2.5 py-1 rounded-full">
+                        🏆 {(data.user as any).trainerProfile.experience} Yıl Deneyim
+                      </span>
+                    )}
+                    {(data.user as any).trainerProfile?.hourlyRate && (
+                      <span className="inline-flex items-center bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-xs font-semibold px-2.5 py-1 rounded-full">
+                        💰 {(data.user as any).trainerProfile.hourlyRate}₺/sa
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
               <Button variant="secondary" size="sm" onClick={handleEditProfile}>
                 Düzenle
@@ -512,22 +624,130 @@ export default function ProfilePage() {
             </div>
           </div>
         )}
-        <div className="flex gap-4 mt-4">
-          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 text-center flex-1">
-            <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{data.myListings?.length || 0}</p>
-            <p className="text-xs text-blue-600 dark:text-blue-400">İlanlarım</p>
+        {/* Athlete Stats */}
+        <div className="flex gap-3 mt-4">
+          <div className="flex-1 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-xl p-3 text-center border border-emerald-100 dark:border-emerald-800">
+            <p className="text-2xl font-black text-emerald-700 dark:text-emerald-300">{data.myMatches?.length || 0}</p>
+            <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400 mt-0.5">Maç</p>
           </div>
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-3 text-center flex-1">
-            <p className="text-2xl font-bold text-yellow-700 dark:text-yellow-300">{pendingResponsesCount}</p>
-            <p className="text-xs text-yellow-600 dark:text-yellow-400">Bekleyen Karşılık</p>
+          <div className="flex-1 bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 rounded-xl p-3 text-center border border-amber-100 dark:border-amber-800">
+            <p className="text-2xl font-black text-amber-700 dark:text-amber-300">
+              {(data.user as any).avgRating ? `${(data.user as any).avgRating} ⭐` : "—"}
+            </p>
+            <p className="text-xs font-medium text-amber-600 dark:text-amber-400 mt-0.5">Puan</p>
           </div>
-          <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 text-center flex-1">
-            <p className="text-2xl font-bold text-green-700 dark:text-green-300">{data.myMatches?.length || 0}</p>
-            <p className="text-xs text-green-600 dark:text-green-400">Eşleşmeler</p>
+          <div className="flex-1 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-3 text-center border border-blue-100 dark:border-blue-800">
+            <p className="text-2xl font-black text-blue-700 dark:text-blue-300">{(data.user as any)._count?.followers || 0}</p>
+            <p className="text-xs font-medium text-blue-600 dark:text-blue-400 mt-0.5">Takipçi</p>
+          </div>
+          <div className="flex-1 bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20 rounded-xl p-3 text-center border border-violet-100 dark:border-violet-800">
+            {(() => {
+              const xp = (data.user as any).totalPoints || 0;
+              const tiers = [
+                { icon: "🔒", label: "Başlangıç", min: 0, max: 50 },
+                { icon: "🥉", label: "Bronz", min: 50, max: 100 },
+                { icon: "🥈", label: "Gümüş", min: 100, max: 200 },
+                { icon: "🥇", label: "Altın", min: 200, max: 400 },
+                { icon: "💎", label: "Diamond", min: 400, max: null },
+              ];
+              const tier = tiers.slice().reverse().find(t => xp >= t.min) || tiers[0];
+              const pct = tier.max !== null ? Math.min(100, Math.round(((xp - tier.min) / (tier.max - tier.min)) * 100)) : 100;
+              return (
+                <>
+                  <div className="flex items-center justify-center gap-1">
+                    <span className="text-lg">{tier.icon}</span>
+                    <p className="text-xl font-black text-violet-700 dark:text-violet-300">{xp}</p>
+                  </div>
+                  <p className="text-xs font-medium text-violet-600 dark:text-violet-400 mt-0.5">XP · {tier.label}</p>
+                  <div className="mt-1 h-1.5 bg-violet-200 dark:bg-violet-900 rounded-full overflow-hidden">
+                    <div className="h-full bg-violet-500 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+                  </div>
+                  {tier.max !== null && (
+                    <p className="text-[10px] text-violet-500 dark:text-violet-400 mt-0.5">{tier.max - xp} XP kaldı</p>
+                  )}
+                </>
+              );
+            })()}
           </div>
         </div>
+        {/* Streak Kartı */}
+        {(() => {
+          const streak = (data.user as any).currentStreak || 0;
+          const longest = (data.user as any).longestStreak || 0;
+          const streakEmoji = streak >= 7 ? "🔥" : streak >= 3 ? "⚡" : "✨";
+          const weekProgress = streak % 7;
+          const filledDots = streak > 0 && weekProgress === 0 ? 7 : weekProgress;
+          const nextMilestone = streak < 3 ? 3 : streak < 7 ? 7 : streak < 14 ? 14 : streak < 30 ? 30 : null;
+          const toNext = nextMilestone !== null ? nextMilestone - streak : 0;
+          return (
+            <div className="mt-3 bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 border border-orange-200 dark:border-orange-800 rounded-xl p-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className={`text-2xl select-none ${streak >= 7 ? "animate-bounce" : ""}`}>{streakEmoji}</span>
+                  <div>
+                    <p className="text-sm font-bold text-orange-800 dark:text-orange-200">{streak} Günlük Seri</p>
+                    <p className="text-xs text-orange-600 dark:text-orange-400">Rekor: {longest} gün</p>
+                  </div>
+                </div>
+                <div className="flex gap-1">
+                  {[1,2,3,4,5,6,7].map(d => (
+                    <div key={d} className={`w-5 h-5 rounded-full border-2 transition-colors duration-300 ${d <= filledDots ? "bg-orange-500 border-orange-600 shadow-sm shadow-orange-300 dark:shadow-orange-800" : "bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600"}`} />
+                  ))}
+                </div>
+              </div>
+              {nextMilestone !== null && (
+                <div className="mt-2">
+                  <div className="flex justify-between text-[10px] text-orange-600 dark:text-orange-400 mb-1">
+                    <span>{streak} / {nextMilestone} gün</span>
+                    <span>🎯 {toNext} gün kaldı</span>
+                  </div>
+                  <div className="h-1.5 bg-orange-200 dark:bg-orange-900/50 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-orange-400 to-red-500 rounded-full transition-all duration-700"
+                      style={{ width: `${Math.min(100, (streak / nextMilestone) * 100)}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+              {nextMilestone === null && (
+                <p className="mt-1.5 text-xs font-semibold text-orange-700 dark:text-orange-300 text-center">🌋 Efsane Seri! {streak} gün kesintisiz!</p>
+              )}
+            </div>
+          );
+        })()}
         </div>
       </div>
+
+      {/* Sporlar + Hedefler / Tercihler Şeridi */}
+      {(() => {
+        const u = data.user as any;
+        const userSports = (data.user as any).sports ?? [];
+        const timeLabels: Record<string, string> = { morning: "🌅 Sabah", evening: "🌙 Akşam", anytime: "⏰ Her Zaman" };
+        const styleLabels: Record<string, string> = { competitive: "🏆 Rekabetçi", casual: "😊 Eğlenceli", both: "⚡ Her İkisi" };
+        const hasPrefs = u.preferredTime || u.preferredStyle || userSports.length > 0;
+        if (!hasPrefs) return null;
+        return (
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 px-5 py-4 mb-4 shadow-sm">
+            <div className="flex flex-wrap gap-2 items-center">
+              {userSports.map((s: any) => (
+                <span key={s.id} className="inline-flex items-center gap-1 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-xs font-semibold px-3 py-1.5 rounded-full border border-emerald-100 dark:border-emerald-800">
+                  {s.icon} {s.name}
+                </span>
+              ))}
+              {u.preferredTime && (
+                <span className="inline-flex items-center gap-1 bg-sky-50 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300 text-xs font-semibold px-3 py-1.5 rounded-full border border-sky-100 dark:border-sky-800">
+                  {timeLabels[u.preferredTime] ?? u.preferredTime}
+                </span>
+              )}
+              {u.preferredStyle && (
+                <span className="inline-flex items-center gap-1 bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 text-xs font-semibold px-3 py-1.5 rounded-full border border-violet-100 dark:border-violet-800">
+                  {styleLabels[u.preferredStyle] ?? u.preferredStyle}
+                </span>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Tabs */}
       <div className="flex flex-wrap border-b border-gray-200 dark:border-gray-700 mb-4" role="tablist">
@@ -726,6 +946,66 @@ export default function ProfilePage() {
                       🏟️ {match.listing.venue.name}
                     </p>
                   )}
+                  {/* Trust Score + OTP Doğrulama */}
+                  <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 space-y-2">
+                    {typeof (match as any).trustScore === "number" && (
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+                          <div
+                            className={`h-1.5 rounded-full transition-all ${
+                              (match as any).trustScore >= 70 ? "bg-emerald-500" :
+                              (match as any).trustScore >= 40 ? "bg-amber-500" : "bg-red-400"
+                            }`}
+                            style={{ width: `${Math.min((match as any).trustScore, 100)}%` }}
+                          />
+                        </div>
+                        <span className="text-xs font-bold text-gray-500 dark:text-gray-400 w-16 text-right">
+                          {(match as any).trustScore}% güven
+                        </span>
+                      </div>
+                    )}
+                    {((match as any).status === "SCHEDULED" || (match as any).status === "ONGOING") && (() => {
+                      const flow = otpFlow[match.id] || { step: "idle", code: "", loading: false };
+                      if (flow.step === "idle") return (
+                        <button onClick={() => requestOtp(match.id)} disabled={flow.loading}
+                          className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 transition flex items-center gap-1">
+                          {flow.loading ? "..." : "🔐 OTP Doğrulama Başlat"}
+                        </button>
+                      );
+                      return (
+                        <div className="space-y-1.5">
+                          {flow.generated && (
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              Kodun: <span className="font-mono font-bold text-indigo-700 dark:text-indigo-300">{flow.generated}</span> — Rakibine ver
+                            </p>
+                          )}
+                          <div className="flex gap-2">
+                            <input type="text" maxLength={6} placeholder="Rakibin kodunu gir" value={flow.code}
+                              onChange={e => setOtpFlow(p => ({ ...p, [match.id]: { ...flow, code: e.target.value } }))}
+                              className="flex-1 text-xs px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 outline-none focus:ring-1 focus:ring-indigo-500 font-mono"
+                            />
+                            <button onClick={() => verifyOtp(match.id)} disabled={flow.loading || flow.code.length < 6}
+                              className="text-xs bg-indigo-600 text-white px-3 py-1.5 rounded-lg font-bold hover:bg-indigo-700 disabled:opacity-50 transition">
+                              {flow.loading ? "..." : "Onayla"}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                    {!((data as any).ratedMatchIds ?? []).includes(match.id) && (
+                      <button
+                        onClick={() => {
+                          const partner = match.user1Id === session?.user?.id ? match.user2 : match.user1;
+                          setRatingModal({ matchId: match.id, partnerName: partner?.name ?? "Partner" });
+                          setRatingScore(0);
+                          setRatingComment("");
+                        }}
+                        className="text-xs font-semibold text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 transition flex items-center gap-1"
+                      >
+                        ⭐ Puan Ver
+                      </button>
+                    )}
+                  </div>
                 </div>
               );
             })
@@ -870,6 +1150,29 @@ export default function ProfilePage() {
         <div className="space-y-4" role="tabpanel">
           {/* Yeni Gönderi Oluştur */}
           <CreatePostBox onCreated={(post) => setPosts((prev) => [post, ...prev])} />
+          {/* View Toggle */}
+          {posts.length > 0 && (
+            <div className="flex justify-end gap-1 -mt-2">
+              <button
+                onClick={() => setPostsView("grid")}
+                title="Grid Görünüm"
+                className={`p-2 rounded-lg text-lg leading-none transition ${
+                  postsView === "grid"
+                    ? "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300"
+                    : "text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
+                }`}
+              >⊞</button>
+              <button
+                onClick={() => setPostsView("list")}
+                title="Liste Görünüm"
+                className={`p-2 rounded-lg text-lg leading-none transition ${
+                  postsView === "list"
+                    ? "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300"
+                    : "text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
+                }`}
+              >☰</button>
+            </div>
+          )}
           {postsLoading ? (
             <div className="flex justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
@@ -879,6 +1182,34 @@ export default function ProfilePage() {
               <p className="text-4xl mb-2">📸</p>
               <p className="text-lg font-medium">Henüz gönderi yok</p>
               <p className="text-sm mt-1">İlk gönderini oluştur!</p>
+            </div>
+          ) : postsView === "grid" ? (
+            <div className="grid grid-cols-3 gap-0.5 rounded-lg overflow-hidden">
+              {posts.map((post) => (
+                <button
+                  key={post.id}
+                  onClick={() => setPostsView("list")}
+                  className="relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-700 group"
+                >
+                  {post.images?.[0] ? (
+                    <img
+                      src={post.images[0]}
+                      alt=""
+                      className="w-full h-full object-cover group-hover:opacity-80 transition duration-200"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center p-2 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20">
+                      <p className="text-[11px] text-gray-600 dark:text-gray-300 line-clamp-5 text-center leading-relaxed font-medium">
+                        {post.content}
+                      </p>
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition duration-200 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100">
+                    <span className="text-white text-xs font-bold drop-shadow">❤️ {post._count?.likes ?? 0}</span>
+                    <span className="text-white text-xs font-bold drop-shadow">💬 {post._count?.comments ?? 0}</span>
+                  </div>
+                </button>
+              ))}
             </div>
           ) : (
             posts.map((post) => (
@@ -901,6 +1232,69 @@ export default function ProfilePage() {
         variant="danger"
         loading={deleting}
       />
+
+      {/* Rating Modal */}
+      {ratingModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm p-6">
+            <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-1">Maçı Değerlendir</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
+              <span className="font-semibold text-emerald-600 dark:text-emerald-400">{ratingModal.partnerName}</span> ile oynadığın maça puan ver
+            </p>
+            {/* Star Picker */}
+            <div className="flex justify-center gap-2 mb-5">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  onClick={() => setRatingScore(star)}
+                  className={`text-4xl transition-transform hover:scale-110 ${
+                    star <= ratingScore ? "text-amber-400" : "text-gray-200 dark:text-gray-600"
+                  }`}
+                  aria-label={`${star} yıldız`}
+                >
+                  ★
+                </button>
+              ))}
+            </div>
+            <textarea
+              value={ratingComment}
+              onChange={(e) => setRatingComment(e.target.value)}
+              placeholder="Yorum ekle (isteğe bağlı)..."
+              rows={3}
+              maxLength={300}
+              className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-transparent text-gray-800 dark:text-gray-100 placeholder-gray-400 outline-none focus:ring-2 focus:ring-emerald-500 resize-none mb-4"
+            />
+            <div className="flex gap-2">
+              <Button
+                onClick={async () => {
+                  if (!ratingScore) { toast.error("Lütfen puan seç"); return; }
+                  setSubmittingRating(true);
+                  try {
+                    const res = await fetch("/api/ratings", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ matchId: ratingModal.matchId, score: ratingScore, comment: ratingComment || undefined }),
+                    });
+                    const json = await res.json();
+                    if (json.success || res.ok) {
+                      toast.success("Değerlendirme kaydedildi!");
+                      setRatingModal(null);
+                      setRatingScore(0);
+                      setRatingComment("");
+                    } else {
+                      toast.error(json.error || "Kaydedilemedi");
+                    }
+                  } catch { toast.error("Bağlantı hatası"); }
+                  finally { setSubmittingRating(false); }
+                }}
+                loading={submittingRating}
+                disabled={!ratingScore}
+              >Gönder</Button>
+              <Button variant="secondary" onClick={() => { setRatingModal(null); setRatingScore(0); setRatingComment(""); }}>Vazgeç</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
