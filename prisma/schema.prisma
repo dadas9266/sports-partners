@@ -95,6 +95,9 @@ model User {
   clubsCreated       Club[]            @relation("ClubCreator")
   communityMemberships CommunityMembership[]
   communitiesCreated   Community[]       @relation("CommunityCreator")
+  pushSubscriptions    PushSubscription[]
+  createdTournaments   Tournament[]      @relation("CreatedTournaments")
+  tournamentParticipations TournamentParticipant[] @relation("TournamentParticipations")
 }
 
 // ========== SPOR ==========
@@ -109,6 +112,7 @@ model Sport {
   challenges  DirectChallenge[]
   groups      Group[]
   communities Community[]
+  tournaments Tournament[]
 }
 
 // ========== KONUM ==========
@@ -156,6 +160,7 @@ model Venue {
   sportId    String?
   sport      Sport?    @relation(fields: [sportId], references: [id])
   listings   Listing[]
+  tournaments Tournament[]
 
   @@unique([name, districtId])
 }
@@ -340,6 +345,8 @@ enum NotificationType {
   DIRECT_CHALLENGE      // Doğrudan maç teklifi
   COMMUNITY_JOIN_REQUEST // Topluluk katılma talebi
   COMMUNITY_UPDATE      // Topluluk üyelik güncellemesi
+  TOURNAMENT_INVITE     // Turnuvaya davet
+  TOURNAMENT_RESULT     // Turnuva sonucu açıklandı
 }
 
 model Notification {
@@ -810,6 +817,19 @@ model VenueCache {
   @@index([query])
 }
 
+// ========== WEB PUSH ABONELİĞİ ==========
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique          // Push endpoint URL
+  p256dh    String                    // Şifreleme anahtarı
+  auth      String                    // Auth token
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
 // ========== TOPLULUK (Group + Club birleşimi) ==========
 enum CommunityType {
   GROUP  // Spor grubu (herkes katılabilir / onay gerektirir)
@@ -846,6 +866,73 @@ model Community {
   @@index([cityId])
   @@index([creatorId])
   @@index([type])
+}
+
+// ──────────────── TURNUVA ────────────────
+
+enum TournamentStatus {
+  DRAFT       // Yayınlanmadı
+  OPEN        // Kayıt açık
+  ONGOING     // Devam ediyor
+  COMPLETED   // Tamamlandı
+  CANCELLED   // İptal edildi
+}
+
+enum TournamentFormat {
+  SINGLE_ELIMINATION // Tek eleme
+  ROUND_ROBIN        // Herkes herkesle
+  SWISS              // İsviçre sistemi
+}
+
+enum ParticipantStatus {
+  PENDING   // Onay bekliyor
+  APPROVED  // Onaylandı
+  REJECTED  // Reddedildi
+  WITHDRAWN // Ayrıldı
+}
+
+model Tournament {
+  id           String             @id @default(cuid())
+  creatorId    String
+  creator      User               @relation("CreatedTournaments", fields: [creatorId], references: [id])
+  title        String
+  description  String?            @db.Text
+  sportId      String?
+  sport        Sport?             @relation(fields: [sportId], references: [id])
+  format       TournamentFormat   @default(SINGLE_ELIMINATION)
+  status       TournamentStatus   @default(DRAFT)
+  maxParticipants Int             @default(16)
+  prizeInfo    String?            @db.Text
+  startsAt     DateTime?
+  endsAt       DateTime?
+  location     String?
+  venueId      String?
+  venue        Venue?             @relation(fields: [venueId], references: [id])
+  coverImage   String?
+  isPublic     Boolean            @default(true)
+  participants TournamentParticipant[]
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  @@index([creatorId])
+  @@index([sportId])
+  @@index([status])
+  @@index([startsAt])
+}
+
+model TournamentParticipant {
+  id           String            @id @default(cuid())
+  tournamentId String
+  tournament   Tournament        @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User              @relation("TournamentParticipations", fields: [userId], references: [id])
+  status       ParticipantStatus @default(PENDING)
+  rank         Int?              // Final sıralama
+  joinedAt     DateTime          @default(now())
+
+  @@unique([tournamentId, userId])
+  @@index([tournamentId])
+  @@index([userId])
 }
 
 model CommunityMembership {
