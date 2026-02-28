@@ -1,0 +1,101 @@
+{
+  "nav": {
+    "listings": "Listings",
+    "map": "Map",
+    "leaderboard": "Leaderboard",
+    "social": "Social Feed",
+    "communities": "Communities",
+    "tournaments": "Tournaments",
+    "search": "Search",
+    "messages": "Messages",
+    "notifications": "Notifications",
+    "profile": "My Profile",
+    "venue": "My Venue",
+    "myCommunities": "My Communities",
+    "settings": "Settings",
+    "signOut": "Sign Out",
+    "signIn": "Sign In",
+    "register": "Register",
+    "createListing": "+ Create Listing"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "notFound": "Not found",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "confirm": "Confirm",
+    "reject": "Reject",
+    "approve": "Approve",
+    "close": "Close",
+    "submit": "Submit",
+    "search": "Search",
+    "all": "All",
+    "back": "Back"
+  },
+  "listings": {
+    "title": "Sports Listings",
+    "empty": "No listings found",
+    "create": "Create Listing",
+    "types": {
+      "RIVAL": "Rival",
+      "PARTNER": "Partner",
+      "TRAINER": "Trainer",
+      "EQUIPMENT": "Equipment"
+    },
+    "levels": {
+      "BEGINNER": "Beginner",
+      "INTERMEDIATE": "Intermediate",
+      "ADVANCED": "Advanced"
+    }
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot password",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "continueWith": "or continue with"
+  },
+  "tournaments": {
+    "title": "Tournaments",
+    "subtitle": "Discover sports tournaments and register",
+    "create": "Create Tournament",
+    "empty": "No tournaments yet.",
+    "join": "Join",
+    "leave": "Leave",
+    "status": {
+      "DRAFT": "Draft",
+      "OPEN": "Registration Open",
+      "ONGOING": "In Progress",
+      "COMPLETED": "Completed",
+      "CANCELLED": "Cancelled"
+    },
+    "format": {
+      "SINGLE_ELIMINATION": "Single Elimination",
+      "ROUND_ROBIN": "Round Robin",
+      "SWISS": "Swiss System"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "profile": "Edit Profile",
+    "security": "Account Security",
+    "professional": "Professional Account",
+    "privacy": "Privacy",
+    "notifications": "Notifications",
+    "pushNotifications": {
+      "title": "Push Notifications",
+      "enable": "Enable",
+      "disable": "Disable",
+      "denied": "Notification permission denied. Enable it in browser settings.",
+      "unsupported": "Your browser does not support push notifications.",
+      "active": "Push notifications are active.",
+      "description": "Receive match requests, messages, and pairing notifications."
+    }
+  }
+}

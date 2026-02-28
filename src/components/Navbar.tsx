@@ -7,6 +7,7 @@ import { useNotifications } from "@/hooks/useNotifications";
 import Dropdown from "@/components/ui/Dropdown";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export default function Navbar() {
   const { data: session } = useSession();
@@ -159,6 +160,9 @@ export default function Navbar() {
             <button className="md:hidden p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition" onClick={() => setMenuOpen((v) => !v)} aria-label="Menüyü aç/kapat" aria-expanded={menuOpen} aria-controls="mobile-menu">
               <span className="text-xl text-gray-600 dark:text-gray-300">{menuOpen ? "✕" : "☰"}</span>
             </button>
+            <div className="hidden md:flex">
+              <LanguageSwitcher />
+            </div>
           </div>
         </div>
       </div>

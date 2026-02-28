@@ -1,0 +1,101 @@
+{
+  "nav": {
+    "listings": "İlanlar",
+    "map": "Harita",
+    "leaderboard": "Liderlik Tablosu",
+    "social": "Sosyal Akış",
+    "communities": "Topluluklar",
+    "tournaments": "Turnuvalar",
+    "search": "Ara",
+    "messages": "Mesajlar",
+    "notifications": "Bildirimler",
+    "profile": "Profilim",
+    "venue": "Mekanım",
+    "myCommunities": "Topluluklarım",
+    "settings": "Ayarlar",
+    "signOut": "Çıkış Yap",
+    "signIn": "Giriş Yap",
+    "register": "Kayıt Ol",
+    "createListing": "+ İlan Oluştur"
+  },
+  "common": {
+    "loading": "Yükleniyor...",
+    "error": "Bir hata oluştu",
+    "notFound": "Bulunamadı",
+    "save": "Kaydet",
+    "cancel": "İptal",
+    "delete": "Sil",
+    "edit": "Düzenle",
+    "confirm": "Onayla",
+    "reject": "Reddet",
+    "approve": "Onayla",
+    "close": "Kapat",
+    "submit": "Gönder",
+    "search": "Ara",
+    "all": "Tümü",
+    "back": "Geri"
+  },
+  "listings": {
+    "title": "Spor İlanları",
+    "empty": "İlan bulunamadı",
+    "create": "İlan Oluştur",
+    "types": {
+      "RIVAL": "Rakip",
+      "PARTNER": "Partner",
+      "TRAINER": "Antrenör",
+      "EQUIPMENT": "Malzeme"
+    },
+    "levels": {
+      "BEGINNER": "Başlangıç",
+      "INTERMEDIATE": "Orta",
+      "ADVANCED": "İleri"
+    }
+  },
+  "auth": {
+    "signIn": "Giriş Yap",
+    "signUp": "Kayıt Ol",
+    "email": "E-posta",
+    "password": "Şifre",
+    "forgotPassword": "Şifremi unuttum",
+    "noAccount": "Hesabınız yok mu?",
+    "hasAccount": "Zaten hesabınız var mı?",
+    "continueWith": "veya şununla devam et"
+  },
+  "tournaments": {
+    "title": "Turnuvalar",
+    "subtitle": "Spor turnuvalarını keşfet ve kayıt ol",
+    "create": "Turnuva Oluştur",
+    "empty": "Henüz turnuva yok.",
+    "join": "Katıl",
+    "leave": "Ayrıl",
+    "status": {
+      "DRAFT": "Taslak",
+      "OPEN": "Kayıt Açık",
+      "ONGOING": "Devam Ediyor",
+      "COMPLETED": "Tamamlandı",
+      "CANCELLED": "İptal"
+    },
+    "format": {
+      "SINGLE_ELIMINATION": "Tek Eleme",
+      "ROUND_ROBIN": "Herkes Herkesle",
+      "SWISS": "İsviçre Sistemi"
+    }
+  },
+  "settings": {
+    "title": "Ayarlar",
+    "profile": "Profili Düzenle",
+    "security": "Hesap Güvenliği",
+    "professional": "Profesyonel Hesap",
+    "privacy": "Gizlilik",
+    "notifications": "Bildirimler",
+    "pushNotifications": {
+      "title": "Push Bildirimleri",
+      "enable": "Etkinleştir",
+      "disable": "Devre Dışı Bırak",
+      "denied": "Bildirim izni reddedildi. Tarayıcı ayarlarından izin verin.",
+      "unsupported": "Tarayıcınız push bildirimleri desteklemiyor.",
+      "active": "Push bildirimleri aktif.",
+      "description": "Maç istekleri, mesajlar ve eşleşme bildirimleri alın."
+    }
+  }
+}
