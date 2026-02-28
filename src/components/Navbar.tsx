@@ -97,6 +97,9 @@ export default function Navbar() {
             <Link href="/topluluklar" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-2.5 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label="Topluluklar">
               <span className="text-base">🏛️</span>
             </Link>
+            <Link href="/mekanlar" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-2.5 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label="Mekanlar">
+              <span className="text-base">🏟️</span>
+            </Link>
             <Link href="/turnuvalar" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-2.5 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label="Turnuvalar">
               <span className="text-base">🏆</span>
             </Link>
@@ -184,6 +187,7 @@ export default function Navbar() {
           <Link href="/liderlik" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">🏅 Liderlik Tablosu</Link>
           <Link href="/sosyal" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">🌐 Sosyal Akış</Link>
           <Link href="/topluluklar" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">🏛️ Topluluklar</Link>
+          <Link href="/mekanlar" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">🏟️ Mekanlar</Link>
           <Link href="/turnuvalar" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">🏆 Turnuvalar</Link>
           <Link href="/arama" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">🔍 Ara</Link>
           {session ? (

@@ -53,7 +53,10 @@ export default function ToplulukPage() {
   // Fetch sports + cities once
   useEffect(() => {
     fetch("/api/sports").then(r => r.json()).then(d => setSports(d.sports ?? d.data ?? [])).catch(() => {});
-    fetch("/api/locations").then(r => r.json()).then(d => setCities(d.cities ?? d.data ?? [])).catch(() => {});
+    fetch("/api/locations").then(r => r.json()).then(d => {
+      const allCities = (d.data ?? []).flatMap((country: any) => country.cities ?? []);
+      setCities(allCities);
+    }).catch(() => {});
   }, []);
 
   const fetchCommunities = useCallback(async () => {
