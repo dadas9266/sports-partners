@@ -1,0 +1,75 @@
+name: Deploy to Vercel
+
+on:
+  push:
+    branches: [main]
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+jobs:
+  # ───────────────────────────────────────────────
+  # Production deploy (main branch)
+  # ───────────────────────────────────────────────
+  deploy-production:
+    name: Production Deploy
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ steps.deploy.outputs.url }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Node.js kurulum
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Vercel CLI yükle
+        run: npm install -g vercel@latest
+
+      - name: Bağımlılıkları yükle
+        run: npm ci
+
+      - name: Prisma migrasyonlarını uygula
+        run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Vercel production deploy
+        id: deploy
+        run: |
+          URL=$(vercel --prod --token=${{ secrets.VERCEL_TOKEN }} --yes)
+          echo "url=${URL}" >> "$GITHUB_OUTPUT"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+  # ───────────────────────────────────────────────
+  # Preview deploy (PR'lar için)
+  # ───────────────────────────────────────────────
+  deploy-preview:
+    name: Preview Deploy
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Node.js kurulum
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Vercel CLI yükle
+        run: npm install -g vercel@latest
+
+      - name: Preview deploy
+        run: vercel --token=${{ secrets.VERCEL_TOKEN }} --yes
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}

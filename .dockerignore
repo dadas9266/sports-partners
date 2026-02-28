@@ -1,0 +1,33 @@
+Dockerfile
+.dockerignore
+.git
+.github
+.gitignore
+
+# Next.js
+.next/
+out/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Tests
+coverage/
+playwright-report/
+test-results/
+tests/
+
+# Environment files (use Docker secrets or env vars instead)
+.env
+.env.*
+!.env.example
+
+# Editor / OS
+.DS_Store
+*.swp
+*.swo
+Thumbs.db
+
+# Prisma (migrations will be run at deploy time)
+# Keep schema.prisma and migrations!
