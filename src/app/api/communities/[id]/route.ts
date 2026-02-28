@@ -26,7 +26,7 @@ const communitySelect = {
 export async function GET(_req: NextRequest, { params }: Params) {
   try {
     const { id } = await params;
-    const community = await prisma.community.findUnique({
+    const community = await (prisma as any).community.findUnique({
       where: { id },
       select: communitySelect,
     });
@@ -54,7 +54,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
     const { id } = await params;
 
-    const membership = await prisma.communityMembership.findUnique({
+    const membership = await (prisma as any).communityMembership.findUnique({
       where: { userId_communityId: { userId, communityId: id } },
       select: { role: true, status: true },
     });
@@ -74,7 +74,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     if (website !== undefined) data.website = website || null;
     if (isPrivate !== undefined) data.isPrivate = isPrivate;
 
-    const community = await prisma.community.update({
+    const community = await (prisma as any).community.update({
       where: { id },
       data,
       select: communitySelect,
@@ -95,7 +95,7 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
 
     const { id } = await params;
 
-    const community = await prisma.community.findUnique({
+    const community = await (prisma as any).community.findUnique({
       where: { id },
       select: { creatorId: true },
     });
@@ -104,7 +104,7 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
       return NextResponse.json({ error: "Sadece kurucu silebilir" }, { status: 403 });
     }
 
-    await prisma.community.delete({ where: { id } });
+    await (prisma as any).community.delete({ where: { id } });
     logger.info("Community deleted", { id, userId });
     return NextResponse.json({ success: true });
   } catch (err) {

@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
     // When myMemberships=true — return communities the current user belongs to
     if (myMemberships) {
       if (!userId) return NextResponse.json({ error: "Yetkisiz" }, { status: 401 });
-      const memberships = await prisma.communityMembership.findMany({
+      const memberships = await (prisma as any).communityMembership.findMany({
         where: { userId },
         select: {
           role: true,
@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
         orderBy: { joinedAt: "desc" },
       });
 
-      const data = memberships.map(m => ({
+      const data = memberships.map((m: any) => ({
         ...m.community,
         role: m.role,
         myStatus: m.status as "APPROVED" | "PENDING" | "REJECTED",
@@ -75,25 +75,25 @@ export async function GET(req: NextRequest) {
     };
 
     const [communities, total] = await Promise.all([
-      prisma.community.findMany({
+      (prisma as any).community.findMany({
         where,
         select: communitySelect,
         orderBy: { createdAt: "desc" },
         skip: (page - 1) * limit,
         take: limit,
       }),
-      prisma.community.count({ where }),
+      (prisma as any).community.count({ where }),
     ]);
 
     // Attach myStatus for authenticated users
-    let data: Array<typeof communities[0] & { myStatus?: string | null }> = communities;
+    let data: Array<any> = communities;
     if (userId) {
-      const myMems = await prisma.communityMembership.findMany({
-        where: { userId, communityId: { in: communities.map(c => c.id) } },
+      const myMems = await (prisma as any).communityMembership.findMany({
+        where: { userId, communityId: { in: communities.map((c: any) => c.id) } },
         select: { communityId: true, status: true },
       });
-      const statusMap = Object.fromEntries(myMems.map(m => [m.communityId, m.status]));
-      data = communities.map(c => ({ ...c, myStatus: statusMap[c.id] ?? null }));
+      const statusMap = Object.fromEntries(myMems.map((m: any) => [m.communityId, m.status]));
+      data = communities.map((c: any) => ({ ...c, myStatus: statusMap[c.id] ?? null }));
     }
 
     return NextResponse.json({ success: true, data, total, page, limit });
@@ -117,7 +117,7 @@ export async function POST(req: NextRequest) {
 
     const { type, name, description, avatarUrl, website, isPrivate, sportId, cityId } = parsed.data;
 
-    const community = await prisma.community.create({
+    const community = await (prisma as any).community.create({
       data: {
         type,
         name,

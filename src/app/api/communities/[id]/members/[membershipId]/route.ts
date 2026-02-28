@@ -23,7 +23,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     const { id: communityId, membershipId } = await params;
 
     // Verify caller is an approved admin
-    const caller = await prisma.communityMembership.findUnique({
+    const caller = await (prisma as any).communityMembership.findUnique({
       where: { userId_communityId: { userId, communityId } },
       select: { role: true, status: true },
     });
@@ -31,7 +31,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       return NextResponse.json({ error: "Yetki gerekli" }, { status: 403 });
     }
 
-    const target = await prisma.communityMembership.findUnique({
+    const target = await (prisma as any).communityMembership.findUnique({
       where: { id: membershipId, communityId },
       select: { id: true, userId: true, status: true, role: true },
     });
@@ -50,7 +50,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       return NextResponse.json({ error: "Güncelleme alanı yok" }, { status: 400 });
     }
 
-    const updated = await prisma.communityMembership.update({
+    const updated = await (prisma as any).communityMembership.update({
       where: { id: membershipId },
       data,
       select: {
@@ -63,24 +63,24 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     });
 
     // Notify the affected user
-    const community = await prisma.community.findUnique({
+    const community = await (prisma as any).community.findUnique({
       where: { id: communityId },
       select: { name: true },
     });
 
     if (community) {
-      let body = "";
-      if (status === "APPROVED") body = `"${community.name}" topluluğuna katılım isteğiniz onaylandı.`;
-      else if (status === "REJECTED") body = `"${community.name}" topluluğuna katılım isteğiniz reddedildi.`;
-      else if (role === "ADMIN") body = `"${community.name}" topluluğunda admin yapıldınız.`;
-      else if (role === "MEMBER") body = `"${community.name}" topluluğundaki admin rolünüz kaldırıldı.`;
+      let bodyText = "";
+      if (status === "APPROVED") bodyText = `"${community.name}" topluluğuna katılım isteğiniz onaylandı.`;
+      else if (status === "REJECTED") bodyText = `"${community.name}" topluluğuna katılım isteğiniz reddedildi.`;
+      else if (role === "ADMIN") bodyText = `"${community.name}" topluluğunda admin yapıldınız.`;
+      else if (role === "MEMBER") bodyText = `"${community.name}" topluluğundaki admin rolünüz kaldırıldı.`;
 
-      if (body) {
+      if (bodyText) {
         await createNotification({
           userId: target.userId,
-          type: "COMMUNITY_UPDATE",
+          type: "COMMUNITY_UPDATE" as any,
           title: "Topluluk Güncellemesi",
-          body,
+          body: bodyText,
           link: `/topluluklar/${communityId}`,
         }).catch(() => {});
       }
@@ -101,7 +101,7 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
 
     const { id: communityId, membershipId } = await params;
 
-    const caller = await prisma.communityMembership.findUnique({
+    const caller = await (prisma as any).communityMembership.findUnique({
       where: { userId_communityId: { userId, communityId } },
       select: { role: true, status: true },
     });
@@ -109,7 +109,7 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
       return NextResponse.json({ error: "Yetki gerekli" }, { status: 403 });
     }
 
-    const target = await prisma.communityMembership.findUnique({
+    const target = await (prisma as any).communityMembership.findUnique({
       where: { id: membershipId, communityId },
       select: { id: true, userId: true },
     });
@@ -120,16 +120,16 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
       return NextResponse.json({ error: "Kendinizi bu yoldan çıkaramazsınız" }, { status: 400 });
     }
 
-    await prisma.communityMembership.delete({ where: { id: membershipId } });
+    await (prisma as any).communityMembership.delete({ where: { id: membershipId } });
 
-    const community = await prisma.community.findUnique({
+    const community = await (prisma as any).community.findUnique({
       where: { id: communityId },
       select: { name: true },
     });
     if (community) {
       await createNotification({
         userId: target.userId,
-        type: "COMMUNITY_UPDATE",
+        type: "COMMUNITY_UPDATE" as any,
         title: "Topluluk Güncellemesi",
         body: `"${community.name}" topluluğundan çıkarıldınız.`,
         link: `/topluluklar/${communityId}`,
