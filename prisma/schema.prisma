@@ -83,6 +83,9 @@ model User {
   posts             Post[]
   postLikes         PostLike[]
   postComments      PostComment[]
+  stories           Story[]
+  storyViews        StoryView[]
+  storyHighlights   StoryHighlight[]
   matchesApproved   Match[]         @relation("MatchApprover")
   clubMemberships    UserClubMembership[]
   challengesSent     DirectChallenge[] @relation("ChallengesSent")
@@ -713,6 +716,78 @@ model PostComment {
 
   @@index([postId])
   @@index([userId])
+}
+
+// ========== STORY / HİKAYE ==========
+
+enum StoryType {
+  MEDIA        // klasik fotoğraf/video
+  MATCH        // ilan ile bağlantılı
+  RESULT       // maç sonucu paylaşımı
+  ACHIEVEMENT  // gamification rozeti
+}
+
+model Story {
+  id             String      @id @default(cuid())
+  userId         String
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type           StoryType   @default(MEDIA)
+  mediaUrl       String?                         // fotoğraf veya video URL
+  mediaType      String?                         // "image" | "video"
+  caption        String?     @db.VarChar(300)
+  // Contextual bağlantılar (nullable)
+  linkedListingId String?
+  linkedMatchId   String?
+  linkedMatchResult String?                      // "3-1", "Kazandım" vb.
+  linkedBadgeKey  String?                        // gamification badge key
+  // Zamanlama
+  expiresAt      DateTime                        // createdAt + 24h
+  createdAt      DateTime    @default(now())
+  // İlişkiler
+  views          StoryView[]
+  highlights     StoryHighlightItem[]
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model StoryView {
+  id        String   @id @default(cuid())
+  storyId   String
+  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  viewedAt  DateTime @default(now())
+
+  @@unique([storyId, userId])
+  @@index([storyId])
+  @@index([userId])
+}
+
+// Highlight = kullanıcının öne çıkardığı hikaye koleksiyonu
+model StoryHighlight {
+  id        String               @id @default(cuid())
+  userId    String
+  user      User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String               @db.VarChar(50)
+  coverUrl  String?              // highlight kapak resmi
+  order     Int                  @default(0)
+  createdAt DateTime             @default(now())
+  items     StoryHighlightItem[]
+
+  @@index([userId])
+}
+
+model StoryHighlightItem {
+  id          String         @id @default(cuid())
+  highlightId String
+  highlight   StoryHighlight @relation(fields: [highlightId], references: [id], onDelete: Cascade)
+  storyId     String
+  story       Story          @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  addedAt     DateTime       @default(now())
+
+  @@unique([highlightId, storyId])
+  @@index([highlightId])
 }
 
 // ========== MEKAN CACHE (Google Places) ==========

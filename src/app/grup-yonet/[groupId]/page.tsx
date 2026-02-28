@@ -42,7 +42,7 @@ export default function GroupManagePage() {
   const [actionId, setActionId] = useState<string | null>(null);
 
   // Settings form state
-  const [form, setForm] = useState({ name: "", description: "", isPublic: true });
+  const [form, setForm] = useState({ name: "", description: "", isPublic: true, avatarUrl: "" });
   const [saving, setSaving] = useState(false);
 
   const fetchGroup = useCallback(async () => {
@@ -55,6 +55,7 @@ export default function GroupManagePage() {
           name: json.data.name ?? "",
           description: json.data.description ?? "",
           isPublic: json.data.isPublic ?? true,
+          avatarUrl: json.data.avatarUrl ?? "",
         });
       } else {
         toast.error("Grup bulunamadı");
@@ -296,6 +297,19 @@ export default function GroupManagePage() {
                 rows={3}
                 className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1">Profil Resmi (URL)</label>
+              <input
+                type="url"
+                value={form.avatarUrl ?? ""}
+                onChange={e => setForm(f => ({ ...f, avatarUrl: e.target.value }))}
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="https://..."
+              />
+              {form.avatarUrl && (
+                <img src={form.avatarUrl} alt="Grup Avatar" className="w-16 h-16 rounded-full mt-2 object-cover border" />
+              )}
             </div>
             <div className="flex items-center gap-3">
               <button

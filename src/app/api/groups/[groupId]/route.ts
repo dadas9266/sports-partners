@@ -40,6 +40,7 @@ const updateGroupSchema = z.object({
   name: z.string().min(2).max(80).optional(),
   description: z.string().max(500).optional(),
   isPublic: z.boolean().optional(),
+  avatarUrl: z.string().url().or(z.literal("")).optional().nullable(),
 });
 
 export async function PATCH(req: NextRequest, { params }: Params) {
@@ -70,6 +71,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     if (data.name !== undefined) updateData.name = data.name;
     if (data.description !== undefined) updateData.description = data.description || null;
     if (data.isPublic !== undefined) updateData.isPublic = data.isPublic;
+    if (data.avatarUrl !== undefined) updateData.avatarUrl = data.avatarUrl || null;
 
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json({ error: "Değiştirilecek alan belirtilmedi" }, { status: 400 });

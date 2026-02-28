@@ -7,6 +7,9 @@ import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
 import toast from "react-hot-toast";
+import StoryBubbles from "@/components/StoryBubbles";
+import StoryAddModal from "@/components/StoryAddModal";
+import { UserStoryGroup, Story } from "@/types";
 
 interface PostUser {
   id: string;
@@ -48,6 +51,18 @@ export default function SosyalPage() {
   const [submittingComment, setSubmittingComment] = useState<string | null>(null);
   const [commentsLoading, setCommentsLoading] = useState<Record<string, boolean>>({});
 
+  // Story feed
+  const [storyGroups, setStoryGroups] = useState<UserStoryGroup[]>([]);
+  const [showStoryModal, setShowStoryModal] = useState(false);
+
+  const fetchStories = useCallback(async () => {
+    try {
+      const res = await fetch("/api/stories?feed=true");
+      const json = await res.json();
+      if (json.success) setStoryGroups(json.groups ?? []);
+    } catch { /* ignore */ }
+  }, []);
+
   const fetchPosts = useCallback(async (cursor?: string) => {
     try {
       const url = cursor ? `/api/posts?cursor=${cursor}&limit=10` : `/api/posts?limit=10`;
@@ -67,7 +82,7 @@ export default function SosyalPage() {
     }
   }, []);
 
-  // IntersectionObserver ile sonsuz kaydırma
+  // Posts + Stories ilk yükleme
   useEffect(() => {
     if (!nextCursor || loadingMore) return;
     const node = loadMoreRef.current;
@@ -87,8 +102,9 @@ export default function SosyalPage() {
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/auth/giris");
-    if (status === "authenticated") fetchPosts();
-  }, [status, router, fetchPosts]);
+    if (status === "authenticated") { fetchPosts(); fetchStories(); }
+    if (status === "unauthenticated") fetchPosts();
+  }, [status, router, fetchPosts, fetchStories]);
 
   const handleUploadImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -258,6 +274,17 @@ export default function SosyalPage() {
         </Link>
       </div>
 
+      {/* Story Bandı */}
+      {(storyGroups.length > 0 || session) && (
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 px-4 py-3 mb-4">
+          <StoryBubbles
+            groups={storyGroups}
+            showAddButton={!!session}
+            onAddStory={() => setShowStoryModal(true)}
+          />
+        </div>
+      )}
+
       {/* Gönderi Oluştur */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 mb-6">
         <div className="flex gap-3">
@@ -354,6 +381,17 @@ export default function SosyalPage() {
             </div>
           )}
         </div>
+      )}
+
+      {/* Story Ekleme Modalı */}
+      {showStoryModal && (
+        <StoryAddModal
+          onClose={() => setShowStoryModal(false)}
+          onCreated={(_story: Story) => {
+            fetchStories();
+            setShowStoryModal(false);
+          }}
+        />
       )}
     </div>
   );

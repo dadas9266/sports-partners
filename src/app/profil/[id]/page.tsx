@@ -7,11 +7,11 @@ import { tr } from "date-fns/locale";
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
 import { getPublicProfile, submitRating, getUserRatings, toggleFollow, getFollowStats, getLeaderboard } from "@/services/api";
-import type { PublicProfile, Rating, Badge } from "@/types";
+import type { PublicProfile, Rating, Badge, UserStoryGroup } from "@/types";
 import { LEVEL_LABELS, LEVEL_COLORS } from "@/types";
 import BadgeComp from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
-
+import StoryViewer from "@/components/StoryViewer";
 function StarRating({ value, onChange }: { value: number; onChange?: (v: number) => void }) {
   return (
     <div className="flex gap-1">
@@ -58,6 +58,10 @@ export default function PublicProfilePage({
   const [postsLoading, setPostsLoading] = useState(false);
   const [postsView, setPostsView] = useState<"grid" | "list">("grid");
 
+  // Story state
+  const [storyGroups, setStoryGroups] = useState<UserStoryGroup[]>([]);
+  const [storyViewerOpen, setStoryViewerOpen] = useState(false);
+
   // Follow state
   const [isFollowing, setIsFollowing] = useState(false);
   const [followerCount, setFollowerCount] = useState(0);
@@ -102,6 +106,22 @@ export default function PublicProfilePage({
       .finally(() => setLoading(false));
 
     loadFollowStats();
+
+    // Hikayeleri yükle
+    fetch(`/api/stories?userId=${id}`)
+      .then(r => r.json())
+      .then(json => {
+        if (json.success && json.stories.length > 0) {
+          setStoryGroups([{
+            userId: id,
+            userName: null,
+            userAvatar: null,
+            stories: json.stories,
+            hasUnread: json.stories.some((s: { viewedByMe: boolean }) => !s.viewedByMe),
+          }]);
+        }
+      })
+      .catch(() => {});
   }, [id, loadFollowStats]);
 
   // Sporları yükle (teklif modalı için)
@@ -210,21 +230,39 @@ export default function PublicProfilePage({
       {/* Profil Kartı */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
         {/* Cover */}
-        <div className="relative h-32 bg-gradient-to-r from-emerald-400 to-teal-500">
+        <div className="relative h-44 bg-gradient-to-r from-emerald-400 to-teal-500">
           {(profile as any).coverUrl && (
-            <img src={(profile as any).coverUrl} alt="Kapık" className="w-full h-full object-cover" />
+            <img src={(profile as any).coverUrl} alt="Kapak" className="w-full h-full object-cover" />
           )}
         </div>
         <div className="p-6">
         <div className="flex items-start gap-5 flex-wrap">
-          {/* Avatar */}
-          <div className="w-20 h-20 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-3xl font-bold text-emerald-600 dark:text-emerald-400 shrink-0 overflow-hidden -mt-10 border-4 border-white dark:border-gray-800 shadow">
-            {profile.avatarUrl ? (
-              <img src={profile.avatarUrl} alt={profile.name} className="w-full h-full object-cover" />
-            ) : (
-              profile.name.charAt(0).toUpperCase()
+          {/* Avatar — story varsa halkali, tıklanabilir */}
+          <button
+            onClick={() => storyGroups.length > 0 ? setStoryViewerOpen(true) : undefined}
+            className={`relative w-20 h-20 rounded-full shrink-0 -mt-10 border-4 border-white dark:border-gray-800 shadow overflow-visible ${
+              storyGroups.length > 0 ? "cursor-pointer" : "cursor-default"
+            }`}
+            disabled={storyGroups.length === 0}
+            aria-label={storyGroups.length > 0 ? "Hikayeleri görüntüle" : undefined}
+          >
+            {/* Gradient ring (hikaye varsa) */}
+            {storyGroups.length > 0 && (
+              <span className={`absolute inset-[-4px] rounded-full ${
+                storyGroups[0].hasUnread
+                  ? "bg-gradient-to-br from-pink-500 via-orange-400 to-yellow-300"
+                  : "bg-gray-400"
+              }`} />
             )}
-          </div>
+            <span className="absolute inset-[2px] rounded-full bg-white dark:bg-gray-800 z-[1]" />
+            <span className="absolute inset-[4px] rounded-full overflow-hidden z-[2] bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-3xl font-bold text-emerald-600 dark:text-emerald-400">
+              {profile.avatarUrl ? (
+                <img src={profile.avatarUrl} alt={profile.name} className="w-full h-full object-cover" />
+              ) : (
+                profile.name.charAt(0).toUpperCase()
+              )}
+            </span>
+          </button>
 
           {/* Bilgiler */}
           <div className="flex-1 min-w-0">
@@ -580,9 +618,17 @@ export default function PublicProfilePage({
         </div>
       )}
 
+      {/* Story Viewer */}
+      {storyViewerOpen && storyGroups.length > 0 && (
+        <StoryViewer
+          groups={storyGroups}
+          initialGroupIndex={0}
+          onClose={() => setStoryViewerOpen(false)}
+        />
+      )}
+
       {/* Değerlendirme Modal */}
-      {ratingModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setRatingModal(false)}>
+      {ratingModal && (        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setRatingModal(false)}>
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">Kullanıcıyı Değerlendir</h2>
             <div className="space-y-4">
