@@ -1,0 +1,91 @@
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { getCurrentUserId } from "@/lib/api-utils";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("venue-profile");
+
+// Kendi Venue Profilini Al — GET /api/venue-profile
+export async function GET() {
+  try {
+    const userId = await getCurrentUserId();
+    if (!userId)
+      return NextResponse.json({ error: "Giriş yapmanız gerekiyor" }, { status: 401 });
+
+    const profile = await prisma.venueProfile.findUnique({
+      where: { userId },
+      include: { user: { select: { name: true, avatarUrl: true, coverUrl: true, email: true } } },
+    });
+
+    // Mekan istatistikleri
+    let stats = null;
+    if (profile) {
+      const approvedMatches = await prisma.match.count({
+        where: { approvedById: userId },
+      });
+      stats = { approvedMatches };
+    }
+
+    return NextResponse.json({ profile, stats });
+  } catch (err) {
+    log.error("Venue GET hatası", err);
+    return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
+  }
+}
+
+// Venue Profili Oluştur / Güncelle — PUT /api/venue-profile
+export async function PUT(request: NextRequest) {
+  try {
+    const userId = await getCurrentUserId();
+    if (!userId)
+      return NextResponse.json({ error: "Giriş yapmanız gerekiyor" }, { status: 401 });
+
+    // Kullanıcı VENUE tipinde mi?
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { userType: true },
+    });
+
+    if (!user)
+      return NextResponse.json({ error: "Kullanıcı bulunamadı" }, { status: 404 });
+
+    // VENUE tipi değilse, tipi güncelle
+    if (user.userType !== "VENUE") {
+      await prisma.user.update({ where: { id: userId }, data: { userType: "VENUE" } });
+    }
+
+    const body = await request.json();
+    const {
+      businessName, address, description, phone, website,
+      capacity, sports, images, openingHours,
+    } = body;
+
+    if (!businessName?.trim())
+      return NextResponse.json({ error: "İşletme adı zorunlu" }, { status: 400 });
+
+    const profile = await prisma.venueProfile.upsert({
+      where: { userId },
+      update: {
+        businessName, address, description, phone, website,
+        capacity: capacity ? Number(capacity) : null,
+        sports: sports ?? [],
+        images: images ?? [],
+        openingHours,
+      },
+      create: {
+        userId,
+        businessName, address, description, phone, website,
+        capacity: capacity ? Number(capacity) : null,
+        sports: sports ?? [],
+        images: images ?? [],
+        openingHours,
+      },
+    });
+
+    log.info("Venue profili güncellendi", { userId });
+    return NextResponse.json({ profile });
+  } catch (err) {
+    log.error("Venue PUT hatası", err);
+    return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
+  }
+}
