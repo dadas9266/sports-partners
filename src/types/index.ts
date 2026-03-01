@@ -254,6 +254,8 @@ export interface CreateListingForm {
   minAge: number | null;
   maxAge: number | null;
   groupId: string | null;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 export interface LoginForm {

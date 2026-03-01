@@ -74,6 +74,11 @@ export async function createListing(data: {
   expiresAt?: string;
   isRecurring?: boolean;
   recurringDays?: string[];
+  minAge?: number | null;
+  maxAge?: number | null;
+  groupId?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
 }): Promise<ApiResponse<ListingDetail>> {
   return fetchAPI("/api/listings", {
     method: "POST",

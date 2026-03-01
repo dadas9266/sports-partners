@@ -42,7 +42,11 @@ export default function CreateListingPage() {
     minAge: null,
     maxAge: null,
     groupId: null,
+    latitude: null,
+    longitude: null,
   });
+
+  const [gpsStatus, setGpsStatus] = useState<"idle" | "loading" | "ok" | "denied">("idle");
 
   const [myGroups, setMyGroups] = useState<{ id: string; name: string; _count: { members: number } }[]>([]);
 
@@ -116,6 +120,8 @@ export default function CreateListingPage() {
         cityId: form.cityId,
         districtId: form.districtId || undefined,
         venueId: form.venueId || null,
+        latitude: form.latitude ?? undefined,
+        longitude: form.longitude ?? undefined,
         // EQUIPMENT için tarih gönderilmez; TRAINER için opsiyonel (dolu ise gönderilir); diğerleri zorunlu
         ...(form.type !== "EQUIPMENT" && form.type !== "TRAINER" && { dateTime: form.dateTime }),
         ...(form.type === "TRAINER" && form.dateTime ? { dateTime: form.dateTime } : {}),
@@ -240,6 +246,54 @@ export default function CreateListingPage() {
           districtId={form.districtId}
           onChange={(updates) => setForm({ ...form, ...updates, venueId: "" })}
         />
+
+        {/* GPS Konum Paylaşımı */}
+        <div className="flex items-center gap-3 p-3 rounded-xl border border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40">
+          {gpsStatus === "ok" ? (
+            <span className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400 font-medium">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              📍 GPS konumu alındı — yakın kullanıcılara görünürsün
+            </span>
+          ) : gpsStatus === "denied" ? (
+            <span className="text-sm text-amber-600 dark:text-amber-400">⚠️ Konum izni verilmedi — yakın ilan özelliği çalışmaz</span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                if (!navigator.geolocation) {
+                  setGpsStatus("denied");
+                  return;
+                }
+                setGpsStatus("loading");
+                navigator.geolocation.getCurrentPosition(
+                  (pos) => {
+                    setForm(f => ({ ...f, latitude: pos.coords.latitude, longitude: pos.coords.longitude }));
+                    setGpsStatus("ok");
+                  },
+                  () => setGpsStatus("denied"),
+                  { timeout: 8000 }
+                );
+              }}
+              disabled={gpsStatus === "loading"}
+              className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium disabled:opacity-50 transition-colors"
+            >
+              {gpsStatus === "loading" ? (
+                <><span className="w-3.5 h-3.5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /> Konum alınıyor...</>
+              ) : (
+                <>📍 GPS konumumu paylaş <span className="text-xs text-gray-400 font-normal">(opsiyonel — yakın ilanlar için)</span></>
+              )}
+            </button>
+          )}
+          {gpsStatus === "ok" && (
+            <button
+              type="button"
+              onClick={() => { setForm(f => ({ ...f, latitude: null, longitude: null })); setGpsStatus("idle"); }}
+              className="ml-auto text-xs text-gray-400 hover:text-red-400 transition-colors"
+            >
+              ✕ Kaldır
+            </button>
+          )}
+        </div>
 
         {/* Mekan */}
         <div>

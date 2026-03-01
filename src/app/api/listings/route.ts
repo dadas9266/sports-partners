@@ -320,6 +320,8 @@ export async function POST(request: Request) {
         districtId: parsed.data.districtId || null,
         venueId: parsed.data.venueId || null,
         userId,
+        latitude: parsed.data.latitude ?? null,
+        longitude: parsed.data.longitude ?? null,
         // TRAINER/EQUIPMENT için tarih opsiyonel; yoksa şu anki zaman kullanılır (gizli field)
         dateTime: parsed.data.dateTime
           ? new Date(parsed.data.dateTime)

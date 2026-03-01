@@ -228,6 +228,8 @@ model Listing {
   maxAge          Int?                            // Başvuru için maksimum yaş (opsiyonel)
   groupId         String?                         // Bağlı grup (opsiyonel)
   group           Group?        @relation(fields: [groupId], references: [id])
+  latitude        Float?                          // GPS koordinatı (opsiyonel)
+  longitude       Float?                          // GPS koordinatı (opsiyonel)
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 

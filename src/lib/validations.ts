@@ -65,6 +65,8 @@ export const createListingSchema = z
   minAge: z.number().int().min(10).max(99).optional().nullable(),
   maxAge: z.number().int().min(10).max(99).optional().nullable(),
   groupId: z.string().optional().nullable(),
+  latitude: z.number().optional().nullable(),
+  longitude: z.number().optional().nullable(),
   // Eğitmen ilanı için ek alanlar
   trainerProfile: z.object({
     hourlyRate: z.number().min(0).optional(),
@@ -139,6 +141,9 @@ export const listingFilterSchema = z.object({
   districtId: z.string().optional(),
   cityId: z.string().optional(),
   countryId: z.string().optional(),
+  lat: z.string().optional(),
+  lon: z.string().optional(),
+  radius: z.string().optional(),
   level: z.enum(["BEGINNER", "INTERMEDIATE", "ADVANCED"]).optional(),
   type: z.enum(["RIVAL", "PARTNER", "TRAINER", "EQUIPMENT"]).optional(),
   upcoming: z.string().optional(),
