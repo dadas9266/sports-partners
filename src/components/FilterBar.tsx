@@ -30,8 +30,8 @@ export default function FilterBar({ onFilterChange }: FilterBarProps) {
   const isFirstRender = useRef(true);
 
   const filterInput = useMemo(
-    () => ({ selectedSport, selectedDistrict, selectedCity, selectedLevel, selectedType, minPrice, maxPrice, isRecurring, datePreset }),
-    [selectedSport, selectedDistrict, selectedCity, selectedLevel, selectedType, minPrice, maxPrice, isRecurring, datePreset]
+    () => ({ selectedSport, selectedDistrict, selectedCity, selectedCountry, selectedLevel, selectedType, minPrice, maxPrice, isRecurring, datePreset }),
+    [selectedSport, selectedDistrict, selectedCity, selectedCountry, selectedLevel, selectedType, minPrice, maxPrice, isRecurring, datePreset]
   );
 
   const debouncedFilters = useDebounce(filterInput, 300);
@@ -42,6 +42,7 @@ export default function FilterBar({ onFilterChange }: FilterBarProps) {
     if (debouncedFilters.selectedSport) filters.sportId = debouncedFilters.selectedSport;
     if (debouncedFilters.selectedDistrict) filters.districtId = debouncedFilters.selectedDistrict;
     else if (debouncedFilters.selectedCity) filters.cityId = debouncedFilters.selectedCity;
+    else if (debouncedFilters.selectedCountry) filters.countryId = debouncedFilters.selectedCountry;
     if (debouncedFilters.selectedLevel) filters.level = debouncedFilters.selectedLevel;
     if (debouncedFilters.selectedType) filters.type = debouncedFilters.selectedType;
     if (debouncedFilters.minPrice) filters.minPrice = debouncedFilters.minPrice;

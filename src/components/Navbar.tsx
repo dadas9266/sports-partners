@@ -1,11 +1,12 @@
 ﻿"use client";
 
+import type { ReactNode } from "react";
+
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { useState, useEffect, useRef } from "react";
 import { useNotifications } from "@/hooks/useNotifications";
 import Dropdown from "@/components/ui/Dropdown";
-import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useTranslations } from "next-intl";
@@ -82,32 +83,55 @@ export default function Navbar() {
     >
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex justify-between items-center h-14">
-          <div className="flex items-center gap-2 md:gap-3">
-            <Link href="/" className="text-xl font-bold flex items-center gap-2 mr-2" aria-label={t("homePage")}>
+          <div className="flex items-center gap-1 md:gap-1.5">
+            <Link href="/" className="text-xl font-bold flex items-center gap-2 mr-3" aria-label={t("homePage")}>
               <span className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center text-white text-sm font-black shadow-sm">SP</span>
               <span className="hidden sm:inline text-lg font-extrabold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">SporPartner</span>
             </Link>
-            <Link href="/" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label={t("listings")}>
-              <span className="text-lg">📋</span>
-            </Link>
-            <Link href="/harita" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label={t("map")}>
-              <span className="text-lg">🗺️</span>
-            </Link>
-            <Link href="/sosyal" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label={t("social")}>
-              <span className="text-lg">🌐</span>
-            </Link>
-            <Link href="/topluluklar" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label={t("communities")}>
-              <span className="text-lg">👥</span>
-            </Link>
-            <Link href="/mekanlar" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label={t("venues")}>
-              <span className="text-lg">🏢</span>
-            </Link>
-            <Link href="/turnuvalar" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label={t("tournaments")}>
-              <span className="text-lg">🏆</span>
-            </Link>
-            <Link href="/arama" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label={t("search")}>
-              <span className="text-lg">🔍</span>
-            </Link>
+
+            {/* Nav linkleri — ikon + etiket */}
+            {([
+              { href: "/harita",     icon: (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                </svg>
+              ), label: "Harita" },
+              { href: "/sosyal",     icon: (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              ), label: "Sosyal" },
+              { href: "/topluluklar", icon: (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              ), label: "Topluluklar" },
+              { href: "/mekanlar",   icon: (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+              ), label: "Mekanlar" },
+              { href: "/turnuvalar", icon: (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                </svg>
+              ), label: "Turnuvalar" },
+              { href: "/arama",      icon: (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" />
+                </svg>
+              ), label: "Ara" },
+            ] as { href: string; icon: ReactNode; label: string }[]).map(item => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors text-xs font-medium"
+                aria-label={item.label}
+              >
+                {item.icon}
+                <span>{item.label}</span>
+              </Link>
+            ))}
           </div>
 
           <div className="flex-1 flex justify-center">
@@ -123,17 +147,21 @@ export default function Navbar() {
           <div className="flex items-center gap-2 md:gap-3">
             {session ? (
               <>
-                <Link href="/mesajlar" className="relative p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition" aria-label={t("messages")}>
-                  <span className="text-base">💬</span>
+                <Link href="/mesajlar" className="relative p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label={t("messages")}>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
                   {unreadMessages > 0 && (
-                    <Badge variant="blue" size="sm">{unreadMessages > 9 ? "9+" : unreadMessages}</Badge>
+                    <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-blue-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5">{unreadMessages > 9 ? "9+" : unreadMessages}</span>
                   )}
                 </Link>
                 <div className="relative" ref={notifRef}>
-                  <button onClick={handleOpenNotif} className="relative p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition" aria-label={t("notifications")}>
-                    <span className="text-base">🔔</span>
+                  <button onClick={handleOpenNotif} className="relative p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label={t("notifications")}>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
                     {unreadCount > 0 && (
-                      <Badge variant="red" size="sm">{unreadCount > 9 ? "9+" : unreadCount}</Badge>
+                      <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5">{unreadCount > 9 ? "9+" : unreadCount}</span>
                     )}
                   </button>
                 </div>
@@ -159,16 +187,32 @@ export default function Navbar() {
                     {t("signOut")}
                   </button>
                 </Dropdown>
-                <button onClick={toggleDarkMode} className="ml-1 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition" aria-label="Tema Değiştir">
-                  {darkMode ? <span className="text-base">🌙</span> : <span className="text-base">☀️</span>}
+                <button onClick={toggleDarkMode} className="ml-1 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label="Tema Değiştir">
+                  {darkMode ? (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
+                    </svg>
+                  )}
                 </button>
               </>
             ) : (
               <>
                 <Link href="/auth/giris" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-1.5 rounded-lg transition text-sm font-medium">{t("signIn")}</Link>
                 <Link href="/auth/kayit" className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold px-4 py-1.5 rounded-xl hover:opacity-90 transition text-sm shadow-sm">{t("register")}</Link>
-                <button onClick={toggleDarkMode} className="ml-1 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition" aria-label="Tema Değiştir">
-                  {darkMode ? <span className="text-base">🌙</span> : <span className="text-base">☀️</span>}
+                <button onClick={toggleDarkMode} className="ml-1 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label="Tema Değiştir">
+                  {darkMode ? (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
+                    </svg>
+                  )}
                 </button>
               </>
             )}
@@ -184,7 +228,7 @@ export default function Navbar() {
 
       {menuOpen && (
         <div id="mobile-menu" className="md:hidden pb-4 space-y-1 px-4 border-t border-gray-100 dark:border-gray-700/50 pt-2" role="menu">
-          <Link href="/" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">📋 İlanlar</Link>
+          <Link href="/" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">🏠 İlanlar</Link>
           <Link href="/harita" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">🗺️ Harita</Link>
           <Link href="/liderlik" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">🏅 Liderlik Tablosu</Link>
           <Link href="/sosyal" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">🌐 Sosyal Akış</Link>

@@ -67,11 +67,11 @@ export async function GET(request: Request) {
       );
     }
 
-    let { sportId, districtId, cityId, level, type, upcoming, quickOnly, isRecurring, dateFrom, dateTo, minPrice, maxPrice, page, pageSize } = parsed.data;
+    let { sportId, districtId, cityId, countryId, level, type, upcoming, quickOnly, isRecurring, dateFrom, dateTo, minPrice, maxPrice, page, pageSize } = parsed.data;
 
     // OTOMATİK ŞEHİR FİLTRELEMESİ (Sadece "Sana Uygun" veya genel aramalar için)
-    // Eğer kullanıcı giriş yapmışsa ve manuell bir şehir/ilçe seçmemişse, kendi şehrini baz al.
-    if (userId && !cityId && !districtId) {
+    // Eğer kullanıcı giriş yapmışsa ve manuel bir şehir/ilçe/ülke seçmemişse, kendi şehrini baz al.
+    if (userId && !cityId && !districtId && !countryId) {
       const user = await prisma.user.findUnique({
         where: { id: userId },
         select: { cityId: true }
@@ -99,6 +99,15 @@ export async function GET(request: Request) {
       // ilçesi olan ilanlar district.cityId ile, ilçesiz ilanlar doğrudan cityId ile filtrelenir
       (where.AND as Prisma.ListingWhereInput[]).push({
         OR: [{ cityId }, { district: { cityId } }],
+      });
+    }
+    if (countryId && !cityId && !districtId) {
+      // Sadece ülke seçilmiş, şehir/ilçe yok → ülkedeki tüm ilanları getir
+      (where.AND as Prisma.ListingWhereInput[]).push({
+        OR: [
+          { district: { city: { countryId } } },
+          { city: { countryId } },
+        ],
       });
     }
     if (level) where.level = level;
