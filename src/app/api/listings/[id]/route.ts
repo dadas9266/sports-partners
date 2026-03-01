@@ -22,7 +22,7 @@ export async function GET(
         sport: true,
         district: { include: { city: { include: { country: true } } } },
         venue: true,
-        user: { select: { id: true, name: true, phone: true, email: true } },
+        user: { select: { id: true, name: true, avatarUrl: true } },
         trainerProfile: {
           include: { specializations: true },
         },
@@ -35,8 +35,8 @@ export async function GET(
         },
         match: {
           include: {
-            user1: { select: { id: true, name: true, phone: true, email: true } },
-            user2: { select: { id: true, name: true, phone: true, email: true } },
+            user1: { select: { id: true, name: true, avatarUrl: true } },
+            user2: { select: { id: true, name: true, avatarUrl: true } },
             ratings: { select: { id: true, ratedById: true } },
           },
         },

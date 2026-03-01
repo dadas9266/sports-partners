@@ -241,8 +241,12 @@ export async function toggleFollow(userId: string): Promise<ApiResponse<{ follow
   return fetchAPI(`/api/users/${userId}/follow`, { method: "POST" });
 }
 
-export async function getFollowStats(userId: string): Promise<ApiResponse<{ followerCount: number; followingCount: number; isFollowing: boolean }>> {
+export async function getFollowStats(userId: string): Promise<ApiResponse<{ followerCount: number; followingCount: number; isFollowing: boolean; followsMe: boolean }>> {
   return fetchAPI(`/api/users/${userId}/follow`);
+}
+
+export async function removeFollower(userId: string): Promise<ApiResponse<void>> {
+  return fetchAPI(`/api/users/${userId}/follow`, { method: "DELETE" });
 }
 
 // ========== AKIŞ (FEED) ==========

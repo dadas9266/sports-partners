@@ -45,6 +45,30 @@ export async function POST(
   }
 }
 
+// DELETE /api/users/[id]/follow — bu kullanıcıyı takipçilerimden çıkar
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id: followerId } = await params;
+    const userId = await getCurrentUserId();
+    if (!userId) return unauthorized();
+    if (!isValidId(followerId)) return notFound("Kullanıcı bulunamadı");
+
+    // followerId beni takip ediyorsa, o kaydı sil
+    await prisma.follow.deleteMany({
+      where: { followerId, followingId: userId },
+    });
+
+    log.info("Takipçi çıkarıldı", { userId, followerId });
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    log.error("Remove follower hatası", error);
+    return NextResponse.json({ success: false, error: "İşlem başarısız" }, { status: 500 });
+  }
+}
+
 // GET /api/users/[id]/follow — takip durumu + takipçi/takip sayıları
 export async function GET(
   _req: NextRequest,
@@ -54,12 +78,17 @@ export async function GET(
     const { id: targetId } = await params;
     const userId = await getCurrentUserId();
 
-    const [followerCount, followingCount, isFollowing] = await Promise.all([
+    const [followerCount, followingCount, isFollowing, followsMe] = await Promise.all([
       prisma.follow.count({ where: { followingId: targetId } }),
       prisma.follow.count({ where: { followerId: targetId } }),
       userId
         ? prisma.follow.findUnique({
             where: { followerId_followingId: { followerId: userId, followingId: targetId } },
+          })
+        : null,
+      userId
+        ? prisma.follow.findUnique({
+            where: { followerId_followingId: { followerId: targetId, followingId: userId } },
           })
         : null,
     ]);
@@ -69,6 +98,7 @@ export async function GET(
       followerCount,
       followingCount,
       isFollowing: !!isFollowing,
+      followsMe: !!followsMe,
     });
   } catch (error) {
     log.error("Follow GET hatası", error);

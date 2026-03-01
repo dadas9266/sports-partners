@@ -7,7 +7,7 @@ import { format, differenceInYears } from "date-fns";
 import { tr } from "date-fns/locale";
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
-import { getPublicProfile, submitRating, getUserRatings, toggleFollow, getFollowStats, getLeaderboard, startDirectConversation } from "@/services/api";
+import { getPublicProfile, submitRating, getUserRatings, toggleFollow, getFollowStats, getLeaderboard, startDirectConversation, removeFollower } from "@/services/api";
 import type { PublicProfile, Rating, Badge, UserStoryGroup } from "@/types";
 import { LEVEL_LABELS, LEVEL_COLORS } from "@/types";
 import BadgeComp from "@/components/ui/Badge";
@@ -67,9 +67,18 @@ export default function PublicProfilePage({
 
   // Follow state
   const [isFollowing, setIsFollowing] = useState(false);
+  const [followsMe, setFollowsMe] = useState(false);
   const [followerCount, setFollowerCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
   const [followLoading, setFollowLoading] = useState(false);
+  // Block / report / 3-dot menu state
+  const [dotMenuOpen, setDotMenuOpen] = useState(false);
+  const [blockStatus, setBlockStatus] = useState<"BLOCK" | "RESTRICT" | null>(null);
+  const [blockLoading, setBlockLoading] = useState(false);
+  const [reportModal, setReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState("SPAM");
+  const [reportDesc, setReportDesc] = useState("");
+  const [reportLoading, setReportLoading] = useState(false);
   // Challenge state
   const [showChallengeModal, setShowChallengeModal] = useState(false);
   const [challengeForm, setChallengeForm] = useState({ sportId: "", challengeType: "RIVAL" as "RIVAL" | "PARTNER", message: "", proposedDateTime: "" });
@@ -81,6 +90,7 @@ export default function PublicProfilePage({
       const res = await getFollowStats(id);
       if (res.success && res.data) {
         setIsFollowing(res.data.isFollowing);
+        setFollowsMe(res.data.followsMe ?? false);
         setFollowerCount(res.data.followerCount);
         setFollowingCount(res.data.followingCount);
       }
@@ -110,6 +120,14 @@ export default function PublicProfilePage({
 
     loadFollowStats();
 
+    // Engelleme durumunu yükle
+    if (session) {
+      fetch(`/api/users/${id}/block`)
+        .then(r => r.json())
+        .then(json => { if (json.success) setBlockStatus(json.type ?? null); })
+        .catch(() => {});
+    }
+
     // Hikayeleri yükle
     fetch(`/api/stories?userId=${id}`)
       .then(r => r.json())
@@ -125,7 +143,7 @@ export default function PublicProfilePage({
         }
       })
       .catch(() => {});
-  }, [id, loadFollowStats]);
+  }, [id, loadFollowStats, session]);
 
   // Sporları yükle (teklif modalı için)
   useEffect(() => {
@@ -159,6 +177,80 @@ export default function PublicProfilePage({
       toast.error(err instanceof Error ? err.message : "Hata oluştu");
     } finally {
       setFollowLoading(false);
+    }
+  };
+
+  const handleBlock = async (type: "BLOCK" | "RESTRICT") => {
+    if (!session) return;
+    setBlockLoading(true);
+    setDotMenuOpen(false);
+    try {
+      if (blockStatus === type) {
+        // Kaldır
+        const res = await fetch(`/api/users/${id}/block`, { method: "DELETE" });
+        if ((await res.json()).success) {
+          setBlockStatus(null);
+          toast.success(type === "BLOCK" ? "Engel kaldırıldı" : "Kısıtlama kaldırıldı");
+        }
+      } else {
+        const res = await fetch(`/api/users/${id}/block`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type }),
+        });
+        const json = await res.json();
+        if (json.success) {
+          setBlockStatus(type);
+          if (type === "BLOCK") { setIsFollowing(false); setFollowsMe(false); }
+          toast.success(type === "BLOCK" ? "Kullanıcı engellendi" : "Kullanıcı kısıtlandı");
+        } else {
+          toast.error(json.error ?? "İşlem başarısız");
+        }
+      }
+    } catch {
+      toast.error("Bir hata oluştu");
+    } finally {
+      setBlockLoading(false);
+    }
+  };
+
+  const handleReport = async () => {
+    if (!session) return;
+    setReportLoading(true);
+    try {
+      const res = await fetch(`/api/users/${id}/report`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: reportReason, description: reportDesc || undefined }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        toast.success("Şikayetiniz alındı, incelenecek.");
+        setReportModal(false);
+        setReportDesc("");
+      } else {
+        toast.error(json.error ?? "Şikayet gönderilemedi");
+      }
+    } catch {
+      toast.error("Bir hata oluştu");
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
+  const handleRemoveFollower = async () => {
+    if (!session) return;
+    setDotMenuOpen(false);
+    try {
+      const res = await removeFollower(id);
+      if (res.success) {
+        setFollowsMe(false);
+        toast.success("Takipçi kaldırıldı");
+      } else {
+        toast.error("İşlem başarısız");
+      }
+    } catch {
+      toast.error("Bir hata oluştu");
     }
   };
 
@@ -387,17 +479,37 @@ export default function PublicProfilePage({
           </div>
 
           {/* Sağ taraf butonlar */}
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 min-w-[130px]">
             {session && !profile.isOwnProfile && (
-              <>  
-                <Button
-                  size="sm"
-                  variant={isFollowing ? "secondary" : "primary"}
-                  onClick={handleFollow}
-                  loading={followLoading}
-                >
-                  {isFollowing ? "✓ Takip Ediliyor" : "+ Takip Et"}
-                </Button>
+              <>
+                {/* Takip / blok durumu */}
+                <div className="flex flex-col gap-1">
+                  {followsMe && (
+                    <span className="text-[11px] text-center text-emerald-600 dark:text-emerald-400 font-medium bg-emerald-50 dark:bg-emerald-900/20 rounded-full px-2 py-0.5">
+                      👤 Seni takip ediyor
+                    </span>
+                  )}
+                  {blockStatus === "BLOCK" && (
+                    <span className="text-[11px] text-center text-red-600 dark:text-red-400 font-medium bg-red-50 dark:bg-red-900/20 rounded-full px-2 py-0.5">
+                      🚫 Engellendi
+                    </span>
+                  )}
+                  {blockStatus === "RESTRICT" && (
+                    <span className="text-[11px] text-center text-orange-600 dark:text-orange-400 font-medium bg-orange-50 dark:bg-orange-900/20 rounded-full px-2 py-0.5">
+                      🔇 Kısıtlandı
+                    </span>
+                  )}
+                </div>
+                {blockStatus !== "BLOCK" && (
+                  <Button
+                    size="sm"
+                    variant={isFollowing ? "secondary" : "primary"}
+                    onClick={handleFollow}
+                    loading={followLoading}
+                  >
+                    {isFollowing ? "✓ Takip Ediliyor" : "+ Takip Et"}
+                  </Button>
+                )}
                 <Button size="sm" variant="secondary" onClick={() => setRatingModal(true)}>
                   ⭐ Değerlendir
                 </Button>
@@ -427,6 +539,50 @@ export default function PublicProfilePage({
                 >
                   💬 Mesaj Gönder
                 </Button>
+                {/* ··· Menü */}
+                <div className="relative">
+                  <button
+                    onClick={() => setDotMenuOpen((v) => !v)}
+                    disabled={blockLoading}
+                    className="w-full flex items-center justify-center gap-1 text-xs px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                  >
+                    ··· Daha Fazla
+                  </button>
+                  {dotMenuOpen && (
+                    <>
+                      <div className="fixed inset-0 z-[100]" onClick={() => setDotMenuOpen(false)} />
+                      <div className="absolute right-0 mt-1 w-48 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-xl z-[101] overflow-hidden py-1">
+                        {followsMe && (
+                          <button
+                            onClick={handleRemoveFollower}
+                            className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                          >
+                            👤 Takipçiyi Çıkar
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleBlock("RESTRICT")}
+                          className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                        >
+                          🔇 {blockStatus === "RESTRICT" ? "Kısıtlamayı Kaldır" : "Kısıtla"}
+                        </button>
+                        <button
+                          onClick={() => handleBlock("BLOCK")}
+                          className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
+                        >
+                          🚫 {blockStatus === "BLOCK" ? "Engeli Kaldır" : "Engelle"}
+                        </button>
+                        <div className="border-t border-gray-100 dark:border-gray-700 my-1" />
+                        <button
+                          onClick={() => { setDotMenuOpen(false); setReportModal(true); }}
+                          className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-sm text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition"
+                        >
+                          🚩 Şikayet Et
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
               </>
             )}
             {profile.isOwnProfile && (
@@ -676,6 +832,47 @@ export default function PublicProfilePage({
               <div className="flex gap-3 justify-end">
                 <Button variant="secondary" onClick={() => setRatingModal(false)}>İptal</Button>
                 <Button onClick={handleRatingSubmit} loading={submittingRating}>Gönder</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Şikayet Modal */}
+      {reportModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setReportModal(false)}>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">🚩 Şikayet Et</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sebep</label>
+                <select
+                  value={reportReason}
+                  onChange={(e) => setReportReason(e.target.value)}
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-orange-500 outline-none"
+                >
+                  <option value="SPAM">📧 Spam</option>
+                  <option value="HARASSMENT">😡 Taciz / Zorbalık</option>
+                  <option value="FAKE_PROFILE">🎭 Sahte Profil</option>
+                  <option value="INAPPROPRIATE_CONTENT">⚠️ Uygunsuz İçerik</option>
+                  <option value="SCAM">💸 Dolandırıcılık</option>
+                  <option value="OTHER">🔖 Diğer</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Açıklama (opsiyonel)</label>
+                <textarea
+                  value={reportDesc}
+                  onChange={(e) => setReportDesc(e.target.value)}
+                  rows={3}
+                  maxLength={500}
+                  placeholder="Şikayetinizi detaylandırın..."
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 resize-none focus:ring-2 focus:ring-orange-500 outline-none"
+                />
+              </div>
+              <div className="flex gap-3 justify-end">
+                <Button variant="secondary" onClick={() => setReportModal(false)}>İptal</Button>
+                <Button onClick={handleReport} loading={reportLoading} className="bg-orange-500 hover:bg-orange-600">Şikayet Gönder</Button>
               </div>
             </div>
           </div>

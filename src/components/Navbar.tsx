@@ -50,6 +50,7 @@ export default function Navbar() {
   const handleOpenNotif = async () => {
     const opening = !notifOpen;
     setNotifOpen((v) => !v);
+    setMenuOpen(false); // always close mobile menu when toggling notif panel
     if (opening) {
       // Her açılışta güncel bildirimleri çek
       await refreshNotifs();
@@ -75,6 +76,7 @@ export default function Navbar() {
   const t = useTranslations("nav");
 
   return (
+    <>
     <nav
       ref={navRef}
       className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl text-gray-800 dark:text-gray-100 shadow-sm border-b border-gray-200/60 dark:border-gray-700/60 sticky top-0 z-50"
@@ -240,6 +242,7 @@ export default function Navbar() {
             <>
               <Link href="/ilan/olustur" className="block bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold px-3 py-2.5 rounded-xl text-sm text-center shadow-sm" onClick={() => setMenuOpen(false)} role="menuitem">{t("createListing")}</Link>
               <Link href="/profil" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">👤 {t("profile")}</Link>
+              <Link href="/teklifler" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">⚔️ Teklifler</Link>
               <Link href="/ayarlar" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">⚙️ {t("settings")}</Link>
               <Link href="/mekan-profil" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">🏙️ {t("venueProfile")}</Link>
               <Link href="/mesajlar" className="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-2.5 rounded-xl transition text-sm text-gray-700 dark:text-gray-200" onClick={() => setMenuOpen(false)} role="menuitem">
@@ -260,11 +263,12 @@ export default function Navbar() {
           )}
         </div>
       )}
+    </nav>
 
       {notifOpen && session && (
         <>
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60]" onClick={() => setNotifOpen(false)} aria-hidden="true" />
-          <div className="fixed top-0 right-0 h-full w-full max-w-sm bg-white dark:bg-gray-900 shadow-2xl z-[70] flex flex-col" role="dialog" aria-label={t("notifications")}>
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[9998]" onClick={() => setNotifOpen(false)} aria-hidden="true" />
+          <div className="fixed top-0 right-0 h-full w-full max-w-sm bg-white dark:bg-gray-900 shadow-2xl z-[9999] flex flex-col" role="dialog" aria-label={t("notifications")}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700 shrink-0">
               <div className="flex items-center gap-2">
                 <span className="text-lg">🔔</span>
@@ -310,6 +314,6 @@ export default function Navbar() {
           </div>
         </>
       )}
-    </nav>
+    </>
   );
 }

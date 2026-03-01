@@ -111,8 +111,8 @@ export async function PATCH(
           user2Id: response.userId,
         },
         include: {
-          user1: { select: { id: true, name: true, phone: true, email: true } },
-          user2: { select: { id: true, name: true, phone: true, email: true } },
+          user1: { select: { id: true, name: true, avatarUrl: true } },
+          user2: { select: { id: true, name: true, avatarUrl: true } },
         },
       });
 

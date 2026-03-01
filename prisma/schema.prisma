@@ -106,6 +106,10 @@ model User {
   pushSubscriptions    PushSubscription[]
   createdTournaments   Tournament[]      @relation("CreatedTournaments")
   tournamentParticipations TournamentParticipant[] @relation("TournamentParticipations")
+  blocksGiven          UserBlock[]       @relation("BlockSource")
+  blocksReceived       UserBlock[]       @relation("BlockTarget")
+  reportsGiven         UserReport[]      @relation("ReportSource")
+  reportsReceived      UserReport[]      @relation("ReportTarget")
 }
 
 // ========== SPOR ==========
@@ -360,6 +364,7 @@ enum NotificationType {
   COMMUNITY_UPDATE      // Topluluk üyelik güncellemesi
   TOURNAMENT_INVITE     // Turnuvaya davet
   TOURNAMENT_RESULT     // Turnuva sonucu açıklandı
+  USER_REPORT           // Admin'e kullanıcı şikayeti
 }
 
 model Notification {
@@ -981,4 +986,50 @@ model CommunityMembership {
   @@index([userId])
   @@index([communityId])
   @@index([status])
+}
+
+// ========== ENGELLEME ==========
+enum BlockType {
+  BLOCK     // Tam engel: profil, mesaj, ilan görünmez
+  RESTRICT  // Kısıtla: kullanıcıyı görür ama etkileşim sınırlı
+}
+
+model UserBlock {
+  id          String    @id @default(cuid())
+  blockerId   String
+  blocker     User      @relation("BlockSource", fields: [blockerId], references: [id])
+  blockedId   String
+  blocked     User      @relation("BlockTarget", fields: [blockedId], references: [id])
+  type        BlockType @default(BLOCK)
+  createdAt   DateTime  @default(now())
+
+  @@unique([blockerId, blockedId])
+  @@index([blockerId])
+  @@index([blockedId])
+}
+
+// ========== ŞİKAYET ==========
+enum ReportReason {
+  SPAM
+  HARASSMENT
+  FAKE_PROFILE
+  INAPPROPRIATE_CONTENT
+  SCAM
+  OTHER
+}
+
+model UserReport {
+  id          String       @id @default(cuid())
+  reporterId  String
+  reporter    User         @relation("ReportSource", fields: [reporterId], references: [id])
+  reportedId  String
+  reported    User         @relation("ReportTarget", fields: [reportedId], references: [id])
+  reason      ReportReason
+  description String?      @db.Text
+  resolved    Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+
+  @@index([reporterId])
+  @@index([reportedId])
+  @@index([resolved])
 }

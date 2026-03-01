@@ -73,7 +73,7 @@ export async function GET() {
           },
           match: {
             include: {
-              user2: { select: { id: true, name: true, phone: true, email: true } },
+              user2: { select: { id: true, name: true, avatarUrl: true } },
             },
           },
         },
@@ -95,8 +95,8 @@ export async function GET() {
         where: { OR: [{ user1Id: userId }, { user2Id: userId }] },
         include: {
           listing: { include: { sport: true, venue: true } },
-          user1: { select: { id: true, name: true, phone: true, email: true } },
-          user2: { select: { id: true, name: true, phone: true, email: true } },
+          user1: { select: { id: true, name: true, avatarUrl: true } },
+          user2: { select: { id: true, name: true, avatarUrl: true } },
         },
         orderBy: { createdAt: "desc" },
       }),

@@ -56,6 +56,7 @@ export default function ProfilePage() {
   });
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"listings" | "responses" | "matches" | "calendar" | "templates" | "posts">("posts");
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const [deleteModal, setDeleteModal] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -357,30 +358,81 @@ export default function ProfilePage() {
       />
 
       {/* Tabs */}
-      <div className="flex flex-wrap border-b border-gray-200 dark:border-gray-700 mb-4" role="tablist">
-        {[
-          { key: "posts", label: "📸 Gönderiler" },
-          { key: "listings", label: "İlanlarım" },
-          { key: "responses", label: "Gönderdiğim Karşılıklar" },
-          { key: "matches", label: "Eşleşmeler" },
-          { key: "calendar", label: "📅 Takvim" },
-          { key: "templates", label: "🔁 Şablonlar" },
-        ].map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key as typeof activeTab)}
-            role="tab"
-            aria-selected={activeTab === tab.key}
-            className={`px-4 py-3 text-sm font-medium transition border-b-2 ${
-              activeTab === tab.key
-                ? "border-emerald-600 text-emerald-600 dark:text-emerald-400"
-                : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      {(() => {
+        const pendingIncoming = data.myListings?.reduce((acc: number, l: ListingWithResponses) => acc + (l.responses?.filter(r => r.status === "PENDING").length ?? 0), 0) ?? 0;
+        const myResponsesCount = data.myResponses?.length ?? 0;
+        const matchesCount = data.matches?.length ?? 0;
+        const isMoreActive = activeTab === "calendar" || activeTab === "templates";
+        return (
+          <div className="flex items-center border-b border-gray-200 dark:border-gray-700 mb-4 overflow-x-auto scrollbar-hide" role="tablist">
+            {([
+              { key: "posts", label: "📸 Gönderiler", badge: 0 },
+              { key: "listings", label: "📋 İlanlarım", badge: pendingIncoming },
+              { key: "responses", label: "📩 Başvurularım", badge: myResponsesCount },
+              { key: "matches", label: "🤝 Eşleşmeler", badge: matchesCount },
+            ] as { key: string; label: string; badge: number }[]).map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => { setActiveTab(tab.key as typeof activeTab); setMoreMenuOpen(false); }}
+                role="tab"
+                aria-selected={activeTab === tab.key}
+                className={`shrink-0 flex items-center gap-1.5 px-4 py-3 text-sm font-medium transition border-b-2 whitespace-nowrap ${
+                  activeTab === tab.key
+                    ? "border-emerald-600 text-emerald-600 dark:text-emerald-400"
+                    : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                }`}
+              >
+                {tab.label}
+                {tab.badge > 0 && (
+                  <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] text-[10px] font-bold rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 px-1">
+                    {tab.badge}
+                  </span>
+                )}
+              </button>
+            ))}
+            {/* ··· Daha dropdown */}
+            <div className="relative shrink-0 ml-auto">
+              <button
+                onClick={() => setMoreMenuOpen((v) => !v)}
+                className={`flex items-center gap-1 px-4 py-3 text-sm font-medium transition border-b-2 whitespace-nowrap ${
+                  isMoreActive
+                    ? "border-emerald-600 text-emerald-600 dark:text-emerald-400"
+                    : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                }`}
+              >
+                ··· Daha
+              </button>
+              {moreMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-[90]" onClick={() => setMoreMenuOpen(false)} />
+                  <div className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-xl z-[91] overflow-hidden py-1">
+                    <button
+                      onClick={() => { setActiveTab("calendar"); setMoreMenuOpen(false); }}
+                      className={`w-full text-left flex items-center gap-2 px-4 py-2.5 text-sm transition ${activeTab === "calendar" ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20" : "text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"}`}
+                    >
+                      📅 Takvim
+                    </button>
+                    <button
+                      onClick={() => { setActiveTab("templates"); setMoreMenuOpen(false); }}
+                      className={`w-full text-left flex items-center gap-2 px-4 py-2.5 text-sm transition ${activeTab === "templates" ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20" : "text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"}`}
+                    >
+                      🔁 Şablonlar
+                    </button>
+                    <div className="border-t border-gray-100 dark:border-gray-700 my-1" />
+                    <Link
+                      href="/teklifler"
+                      onClick={() => setMoreMenuOpen(false)}
+                      className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                    >
+                      ⚔️ Teklifler
+                    </Link>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* İlanlarım */}
       {activeTab === "listings" && (
