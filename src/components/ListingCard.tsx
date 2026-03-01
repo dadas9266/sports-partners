@@ -258,30 +258,30 @@ export default function ListingCard({
         </p>
       )}
 
-      <div className="mt-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-400 dark:text-gray-500">
+      <div className="mt-3 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-xs text-gray-400 dark:text-gray-500 truncate">
             💬 {listing._count.responses} {listing.type === "TRAINER" ? "başvuru" : "karşılık"}
           </span>
           {listing.maxParticipants > 2 && (
-            <span className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-1.5 py-0.5 rounded-full font-medium">
-              👥 Grup ({listing.maxParticipants} kişi)
+            <span className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-1.5 py-0.5 rounded-full font-medium shrink-0">
+              👥 {listing.maxParticipants} kişi
             </span>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           {listing.type === "EQUIPMENT" && listing.equipmentDetail && (
-            <span className="text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full font-semibold">
+            <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">
               💰 {listing.equipmentDetail.price.toLocaleString("tr-TR")} ₺
             </span>
           )}
           {listing.type === "TRAINER" && listing.trainerProfile?.hourlyRate && (
-            <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-2 py-0.5 rounded-full font-semibold">
-              ⏱️ {listing.trainerProfile.hourlyRate.toLocaleString("tr-TR")} ₺/saat
+            <span className="text-sm font-bold text-blue-700 dark:text-blue-400">
+              {listing.trainerProfile.hourlyRate.toLocaleString("tr-TR")} ₺<span className="text-xs font-normal opacity-70">/sa</span>
             </span>
           )}
-          <span className={`text-xs text-emerald-600 dark:text-emerald-400 font-semibold group-hover:translate-x-1 transition-transform`}>
-            Detay →
+          <span className={`inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg ${typeConfig.iconColor} bg-white/70 dark:bg-gray-700/60 border border-current/20 group-hover:brightness-110 transition`}>
+            Detay <span className="group-hover:translate-x-0.5 transition-transform inline-block">→</span>
           </span>
         </div>
       </div>

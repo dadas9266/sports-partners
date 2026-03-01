@@ -82,31 +82,31 @@ export default function Navbar() {
     >
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex justify-between items-center h-14">
-          <div className="flex items-center gap-1 md:gap-2">
+          <div className="flex items-center gap-2 md:gap-3">
             <Link href="/" className="text-xl font-bold flex items-center gap-2 mr-2" aria-label={t("homePage")}>
               <span className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center text-white text-sm font-black shadow-sm">SP</span>
               <span className="hidden sm:inline text-lg font-extrabold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">SporPartner</span>
             </Link>
-            <Link href="/" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-2.5 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label={t("listings")}>
-              <span className="text-base">📋</span>
+            <Link href="/" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label={t("listings")}>
+              <span className="text-lg">📋</span>
             </Link>
-            <Link href="/harita" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-2.5 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label={t("map")}>
-              <span className="text-base">🗺️</span>
+            <Link href="/harita" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label={t("map")}>
+              <span className="text-lg">🗺️</span>
             </Link>
-            <Link href="/sosyal" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-2.5 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label={t("social")}>
-              <span className="text-base">🌐</span>
+            <Link href="/sosyal" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label={t("social")}>
+              <span className="text-lg">🌐</span>
             </Link>
-            <Link href="/topluluklar" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-2.5 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label={t("communities")}>
-              <span className="text-base">🏛️</span>
+            <Link href="/topluluklar" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label={t("communities")}>
+              <span className="text-lg">👥</span>
             </Link>
-            <Link href="/mekanlar" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-2.5 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label={t("venues")}>
-              <span className="text-base">🏟️</span>
+            <Link href="/mekanlar" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label={t("venues")}>
+              <span className="text-lg">🏢</span>
             </Link>
-            <Link href="/turnuvalar" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-2.5 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label={t("tournaments")}>
-              <span className="text-base">🏆</span>
+            <Link href="/turnuvalar" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label={t("tournaments")}>
+              <span className="text-lg">🏆</span>
             </Link>
-            <Link href="/arama" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-2.5 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label={t("search")}>
-              <span className="text-base">🔍</span>
+            <Link href="/arama" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label={t("search")}>
+              <span className="text-lg">🔍</span>
             </Link>
           </div>
 
