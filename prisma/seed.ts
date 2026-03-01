@@ -539,6 +539,7 @@ async function main() {
       data: {
         type: "RIVAL",
         sportId: sporlar[0].id,
+        cityId: istanbul.id,
         districtId: kadikoy.id,
         venueId: mekanlar[0].id,
         userId: user1.id,
@@ -552,6 +553,7 @@ async function main() {
       data: {
         type: "PARTNER",
         sportId: sporlar[2].id,
+        cityId: istanbul.id,
         districtId: kadikoy.id,
         venueId: mekanlar[1].id,
         userId: user2.id,
@@ -565,6 +567,7 @@ async function main() {
       data: {
         type: "RIVAL",
         sportId: sporlar[1].id,
+        cityId: istanbul.id,
         districtId: besiktas.id,
         venueId: mekanlar[2].id,
         userId: user3.id,
@@ -578,6 +581,7 @@ async function main() {
       data: {
         type: "PARTNER",
         sportId: sporlar[0].id,
+        cityId: istanbul.id,
         districtId: uskudar.id,
         venueId: mekanlar[3].id,
         userId: user1.id,
@@ -591,6 +595,7 @@ async function main() {
       data: {
         type: "PARTNER",
         sportId: sporlar[3].id,
+        cityId: izmir.id,
         districtId: karsiyaka.id,
         venueId: mekanlar[8].id,
         userId: user2.id,
@@ -603,6 +608,7 @@ async function main() {
       data: {
         type: "RIVAL",
         sportId: sporlar[2].id,
+        cityId: ankara.id,
         districtId: cankaya.id,
         venueId: mekanlar[6].id,
         userId: user3.id,

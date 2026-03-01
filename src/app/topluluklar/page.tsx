@@ -55,8 +55,9 @@ export default function ToplulukPage() {
   useEffect(() => {
     fetch("/api/sports").then(r => r.json()).then(d => setSports(d.sports ?? d.data ?? [])).catch(() => {});
     fetch("/api/locations").then(r => r.json()).then(d => {
-      const allCities = (d.data ?? []).flatMap((country: any) => country.cities ?? []);
-      setCities(allCities);
+      // Sadece Türkiye şehirlerini göster (TR kodu)
+      const trCities = (d.data ?? []).find((c: any) => c.code === "TR")?.cities ?? [];
+      setCities(trCities);
     }).catch(() => {});
   }, []);
 
