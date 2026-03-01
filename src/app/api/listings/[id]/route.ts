@@ -37,6 +37,7 @@ export async function GET(
           include: {
             user1: { select: { id: true, name: true, phone: true, email: true } },
             user2: { select: { id: true, name: true, phone: true, email: true } },
+            ratings: { select: { id: true, ratedById: true } },
           },
         },
       },

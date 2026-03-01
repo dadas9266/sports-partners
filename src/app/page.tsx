@@ -33,7 +33,7 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 export default function HomePage() {
-  const { listings, loading, error, pagination, fetchWithFilters, goToPage } =
+  const { listings, loading, error, pagination, fetchWithFilters, goToPage, currentFilters } =
     useListings(12);
   const { data: session } = useSession();
   const [activeTab, setActiveTab] = useState<"all" | "feed">("all");
@@ -279,13 +279,33 @@ export default function HomePage() {
             </div>
           ) : listings.length === 0 ? (
             <div className="text-center py-16">
-              <span className="text-6xl" role="img" aria-label="üzgün yüz">😕</span>
-              <p className="mt-4 text-gray-500 dark:text-gray-400 text-lg">
-                Henüz uygun ilan bulunamadı
-              </p>
-              <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">
-                Filtreleri değiştirmeyi deneyin veya yeni bir ilan oluşturun
-              </p>
+              {currentFilters.cityId ? (
+                <>
+                  <span className="text-6xl" role="img" aria-label="baloncuk">🏙️</span>
+                  <p className="mt-4 text-gray-700 dark:text-gray-300 text-xl font-semibold">
+                    Bu şehirde henüz ilan yok
+                  </p>
+                  <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
+                    İlk ilanı vererek spor arkadaşı bulmaya başla!
+                  </p>
+                  <Link
+                    href="/ilan/olustur"
+                    className="mt-6 inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-3 rounded-xl transition shadow-lg shadow-emerald-600/20"
+                  >
+                    🎉 İlk ilanı sen ver!
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <span className="text-6xl" role="img" aria-label="üzgün yüz">😕</span>
+                  <p className="mt-4 text-gray-500 dark:text-gray-400 text-lg">
+                    Henüz uygun ilan bulunamadı
+                  </p>
+                  <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">
+                    Filtreleri değiştirmeyi deneyin veya yeni bir ilan oluşturun
+                  </p>
+                </>
+              )}
             </div>
           ) : (
             <>

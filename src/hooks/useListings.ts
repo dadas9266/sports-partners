@@ -18,6 +18,7 @@ interface UseListingsReturn {
   pagination: PaginationState;
   fetchWithFilters: (filters: Record<string, string>) => void;
   goToPage: (page: number) => void;
+  currentFilters: Record<string, string>;
 }
 
 export function useListings(initialPageSize = 12): UseListingsReturn {
@@ -69,5 +70,5 @@ export function useListings(initialPageSize = 12): UseListingsReturn {
     [currentFilters, fetchListings]
   );
 
-  return { listings, loading, error, pagination, fetchWithFilters, goToPage };
+  return { listings, loading, error, pagination, fetchWithFilters, goToPage, currentFilters };
 }

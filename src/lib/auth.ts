@@ -7,10 +7,12 @@ import { prisma } from "@/lib/prisma";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { createLogger } from "@/lib/logger";
 import bcrypt from "bcryptjs";
+import { authConfig } from "@/lib/auth.config";
 
 const log = createLogger("auth");
 
 const config: NextAuthConfig = {
+  ...authConfig,
   providers: [
     // ── Sosyal Giriş ──────────────────────────────────────────────────────────
     ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
@@ -125,9 +127,6 @@ const config: NextAuthConfig = {
       }
       return session;
     },
-  },
-  pages: {
-    signIn: "/auth/giris",
   },
   secret: process.env.NEXTAUTH_SECRET,
 };

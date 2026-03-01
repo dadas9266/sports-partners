@@ -34,6 +34,12 @@ export default function ListingDetailPage({
   const [closing, setClosing] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [noShowSending, setNoShowSending] = useState(false);
+  const [completing, setCompleting] = useState(false);
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [ratingScore, setRatingScore] = useState(0);
+  const [ratingComment, setRatingComment] = useState("");
+  const [ratingSubmitting, setRatingSubmitting] = useState(false);
+  const [ratedThisSession, setRatedThisSession] = useState(false);
   const [similar, setSimilar] = useState<ListingSummary[]>([]);
 
   const currentUserId = session?.user?.id;
@@ -142,6 +148,44 @@ export default function ListingDetailPage({
       toast.error(err instanceof Error ? err.message : "Bildirim gönderilemedi");
     } finally {
       setNoShowSending(false);
+    }
+  };
+
+  const handleCompleteMatch = async (matchId: string) => {
+    setCompleting(true);
+    try {
+      const res = await fetch(`/api/matches/${matchId}/complete`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Maç tamamlanamadı");
+      toast.success("Maç tamamlandı! 🎉 +10 puan kazandınız");
+      fetchListing();
+      setShowRatingModal(true);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Hata oluştu");
+    } finally {
+      setCompleting(false);
+    }
+  };
+
+  const handleRate = async (matchId: string, ratedUserId: string) => {
+    if (ratingScore === 0) { toast.error("Lütfen bir puan seçin"); return; }
+    setRatingSubmitting(true);
+    try {
+      const res = await fetch("/api/ratings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ matchId, ratedUserId, score: ratingScore, comment: ratingComment || undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Değerlendirme gönderilemedi");
+      toast.success("Değerlendirmeniz gönderildi ⭐");
+      setShowRatingModal(false);
+      setRatedThisSession(true);
+      fetchListing();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Hata oluştu");
+    } finally {
+      setRatingSubmitting(false);
     }
   };
 
@@ -419,19 +463,98 @@ export default function ListingDetailPage({
               )}
             </div>
           </div>
-          {/* No-show butonu — maç geçmişteyse katılımcılara göster */}
-          {isMatchParticipant && matchInPast && listing.match && (
-            <div className="mt-4 border-t border-green-200 dark:border-green-700 pt-4">
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Etkinlik gerçekleşti mi?</p>
-              <button
-                onClick={() => handleNoShow(listing.match!.id)}
-                disabled={noShowSending}
-                className="text-sm text-red-600 dark:text-red-400 hover:underline disabled:opacity-50"
-              >
-                {noShowSending ? "Gönderiliyor..." : "⚠️ Karşım gelmedi (bildir)"}
-              </button>
-            </div>
-          )}
+          {/* Post-match panel — only for participants after the event */}
+          {isMatchParticipant && matchInPast && listing.match && (() => {
+            const matchStatus = listing.match.status;
+            const ratedUserId = listing.match.user1Id === currentUserId ? listing.match.user2Id : listing.match.user1Id;
+            const alreadyRated = ratedThisSession || listing.match.ratings?.some((r) => r.ratedById === currentUserId);
+
+            return (
+              <div className="mt-4 border-t border-green-200 dark:border-green-700 pt-4 space-y-4">
+                {/* Complete match CTA */}
+                {matchStatus !== "COMPLETED" && (
+                  <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Etkinliğe katıldınız mı?</p>
+                    <Button onClick={() => handleCompleteMatch(listing.match!.id)} loading={completing} size="sm">
+                      ✅ Maçı Tamamla (+10 puan)
+                    </Button>
+                  </div>
+                )}
+
+                {/* Rating section */}
+                {matchStatus === "COMPLETED" && !alreadyRated && !showRatingModal && (
+                  <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Karşı oyuncuyu değerlendirin</p>
+                    <button
+                      onClick={() => setShowRatingModal(true)}
+                      className="inline-flex items-center gap-2 text-sm bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700 rounded-lg px-4 py-2 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition"
+                    >
+                      ⭐ Değerlendirme Yap
+                    </button>
+                  </div>
+                )}
+
+                {/* Inline star rating modal */}
+                {showRatingModal && !alreadyRated && (
+                  <div className="animate-slide-up bg-white dark:bg-gray-800 border border-amber-200 dark:border-amber-700 rounded-xl p-5 space-y-3">
+                    <h4 className="font-semibold text-gray-800 dark:text-gray-100">⭐ Karşı Oyuncuyu Değerlendir</h4>
+                    <div className="flex gap-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          onClick={() => setRatingScore(star)}
+                          className={`text-3xl transition-transform hover:scale-110 focus:outline-none ${star <= ratingScore ? "opacity-100" : "opacity-30"}`}
+                          aria-label={`${star} yıldız`}
+                        >
+                          ⭐
+                        </button>
+                      ))}
+                    </div>
+                    <textarea
+                      value={ratingComment}
+                      onChange={(e) => setRatingComment(e.target.value)}
+                      rows={2}
+                      maxLength={300}
+                      className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-amber-400 outline-none resize-none"
+                      placeholder="Yorum (opsiyonel, max 300 karakter)..."
+                    />
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={() => handleRate(listing.match!.id, ratedUserId)} loading={ratingSubmitting} disabled={ratingScore === 0}>
+                        Gönder
+                      </Button>
+                      <button onClick={() => setShowRatingModal(false)} className="text-sm text-gray-500 hover:underline">İptal</button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Post-rating: replay CTA */}
+                {(alreadyRated || matchStatus === "COMPLETED") && (
+                  <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg px-4 py-3 flex items-center justify-between gap-3">
+                    <span className="text-sm text-emerald-800 dark:text-emerald-300 font-medium">
+                      {alreadyRated ? "✅ Değerlendirdiniz!" : "✅ Maç tamamlandı!"}
+                    </span>
+                    <Link
+                      href={`/ilan/olustur?sport=${listing.sport?.id}&cityId=${listing.district?.city?.id}`}
+                      className="text-sm font-semibold text-emerald-700 dark:text-emerald-400 hover:underline whitespace-nowrap"
+                    >
+                      🔄 Tekrar buluşalım →
+                    </Link>
+                  </div>
+                )}
+
+                {/* No-show button */}
+                {matchStatus !== "COMPLETED" && (
+                  <button
+                    onClick={() => handleNoShow(listing.match!.id)}
+                    disabled={noShowSending}
+                    className="text-xs text-red-500 dark:text-red-400 hover:underline disabled:opacity-50"
+                  >
+                    {noShowSending ? "Gönderiliyor..." : "⚠️ Karşım gelmedi (bildir)"}
+                  </button>
+                )}
+              </div>
+            );
+          })()}
         </div>
       )}
 

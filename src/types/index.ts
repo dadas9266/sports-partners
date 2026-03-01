@@ -97,6 +97,8 @@ export interface Match {
   user2: UserContact;
   createdAt: string;
   listing?: ListingSummary;
+  status?: "SCHEDULED" | "ONGOING" | "COMPLETED" | "DISPUTED";
+  ratings?: { id: string; ratedById: string }[];
 }
 
 export interface ListingSummary {
