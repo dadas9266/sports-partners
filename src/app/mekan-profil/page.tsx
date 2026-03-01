@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -30,6 +31,7 @@ export default function MekanProfilPage() {
   const [saving, setSaving] = useState(false);
   const [stats, setStats] = useState<{ approvedMatches: number } | null>(null);
   const [isVerified, setIsVerified] = useState(false);
+  const [profileId, setProfileId] = useState<string | null>(null);
 
   const [form, setForm] = useState<VenueProfileData>({
     businessName: "", address: "", description: "", phone: "",
@@ -59,6 +61,7 @@ export default function MekanProfilPage() {
             sports: p.sports || [],
           });
           setIsVerified(p.isVerified);
+          setProfileId(p.id);
         }
         if (d.stats) setStats(d.stats);
       })
@@ -148,6 +151,14 @@ export default function MekanProfilPage() {
               <li>📋 Kullanıcılar maç yerini mekanınız olarak seçebilir</li>
               <li>⭐ Mekanınız öne çıkan mekanlar listesine girebilir</li>
             </ul>
+            {profileId && (
+              <Link
+                href={`/mekanlar/${profileId}`}
+                className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-700 dark:text-emerald-300 hover:underline"
+              >
+                🔗 Herkese açık profilimi görüntüle →
+              </Link>
+            )}
           </div>
         ) : (
           <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-100 dark:border-amber-800">
