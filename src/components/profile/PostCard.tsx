@@ -1,0 +1,147 @@
+"use client";
+
+import { useState } from "react";
+import { format } from "date-fns";
+import { tr } from "date-fns/locale";
+import Button from "@/components/ui/Button";
+
+interface PostCardProps {
+  post: any;
+  onLikeToggle: (id: string, liked: boolean, count: number) => void;
+}
+
+export default function PostCard({ post, onLikeToggle }: PostCardProps) {
+  const [toggling, setToggling] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  const [commentText, setCommentText] = useState("");
+  const [comments, setComments] = useState<any[]>(post.comments ?? []);
+  const [commentCount, setCommentCount] = useState(post._count?.comments ?? 0);
+  const [addingComment, setAddingComment] = useState(false);
+
+  const handleLike = async () => {
+    if (toggling) return;
+    setToggling(true);
+    try {
+      const res = await fetch(`/api/posts/${post.id}/like`, { method: "POST" });
+      const json = await res.json();
+      onLikeToggle(post.id, json.liked, json.likeCount);
+    } finally {
+      setToggling(false);
+    }
+  };
+
+  const loadComments = async () => {
+    const res = await fetch(`/api/posts/${post.id}/comments`);
+    const json = await res.json();
+    if (Array.isArray(json.comments)) setComments(json.comments);
+  };
+
+  const handleToggleComments = () => {
+    const next = !showComments;
+    setShowComments(next);
+    if (next && comments.length === 0) loadComments();
+  };
+
+  const handleAddComment = async () => {
+    if (!commentText.trim()) return;
+    setAddingComment(true);
+    try {
+      const res = await fetch(`/api/posts/${post.id}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: commentText.trim() }),
+      });
+      const json = await res.json();
+      if (json.comment) {
+        setComments((prev) => [...prev, json.comment]);
+        setCommentCount((n: number) => n + 1);
+        setCommentText("");
+      }
+    } finally {
+      setAddingComment(false);
+    }
+  };
+
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4">
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-3">
+        <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 overflow-hidden flex items-center justify-center text-lg">
+          {post.user?.avatarUrl ? (
+            <img src={post.user.avatarUrl} alt={post.user.name} className="w-full h-full object-cover" />
+          ) : (
+            post.user?.name?.charAt(0)?.toUpperCase() || "?"
+          )}
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">{post.user?.name}</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500">
+            {format(new Date(post.createdAt), "d MMM yyyy, HH:mm", { locale: tr })}
+          </p>
+        </div>
+      </div>
+
+      {/* Content */}
+      {post.content && (
+        <p className="text-gray-800 dark:text-gray-100 text-sm whitespace-pre-wrap mb-3">{post.content}</p>
+      )}
+
+      {/* Images */}
+      {post.images?.length > 0 && (
+        <div className={`grid gap-1.5 mb-3 ${post.images.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
+          {post.images.slice(0, 4).map((url: string, i: number) => (
+            <img key={i} src={url} alt="" className="w-full h-48 object-cover rounded-lg" />
+          ))}
+        </div>
+      )}
+
+      {/* Actions */}
+      <div className="flex items-center gap-4 pt-2 border-t border-gray-100 dark:border-gray-700">
+        <button
+          onClick={handleLike}
+          disabled={toggling}
+          className={`flex items-center gap-1.5 text-sm transition ${
+            post.likedByMe ? "text-red-500 font-semibold" : "text-gray-500 dark:text-gray-400 hover:text-red-500"
+          }`}
+        >
+          {post.likedByMe ? "❤️" : "🤍"} {post._count?.likes ?? 0}
+        </button>
+        <button
+          onClick={handleToggleComments}
+          className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition"
+        >
+          💬 {commentCount}
+        </button>
+      </div>
+
+      {/* Comments */}
+      {showComments && (
+        <div className="mt-3 space-y-2">
+          {comments.map((c) => (
+            <div key={c.id} className="flex gap-2 text-sm">
+              <span className="font-semibold text-gray-700 dark:text-gray-300 shrink-0">{c.user?.name}:</span>
+              <span className="text-gray-600 dark:text-gray-400">{c.content}</span>
+            </div>
+          ))}
+          <div className="flex gap-2 mt-2">
+            <input
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleAddComment()}
+              placeholder="Yorum yaz..."
+              className="flex-1 text-sm px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-transparent text-gray-800 dark:text-gray-100 outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+            <Button
+              size="sm"
+              onClick={handleAddComment}
+              loading={addingComment}
+              disabled={!commentText.trim()}
+            >
+              Gönder
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

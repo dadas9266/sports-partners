@@ -82,6 +82,8 @@ model User {
   following         Follow[]        @relation("FollowSource")
   messagesSent      Message[]       @relation("MessageSender")
   messagesReceived  Message[]       @relation("MessageReceiver")
+  dirConvsAsUser1   DirectConversation[] @relation("DirConvUser1")
+  dirConvsAsUser2   DirectConversation[] @relation("DirConvUser2")
   noShowsReported   NoShowReport[]  @relation("NoShowReporter")
   noShowsReceived   NoShowReport[]  @relation("NoShowReceived")
   trainerProfile    TrainerProfile?
@@ -439,19 +441,38 @@ model NoShowReport {
 }
 
 // ========== MESAJLAŞMA ==========
+
+/// İki kullanıcı arasındaki direkt sohbet kanalı (eşleşme gerektirmez)
+model DirectConversation {
+  id        String   @id @default(cuid())
+  user1Id   String
+  user1     User     @relation("DirConvUser1", fields: [user1Id], references: [id])
+  user2Id   String
+  user2     User     @relation("DirConvUser2", fields: [user2Id], references: [id])
+  createdAt DateTime @default(now())
+  messages  Message[]
+
+  @@unique([user1Id, user2Id])
+  @@index([user1Id])
+  @@index([user2Id])
+}
+
 model Message {
-  id         String   @id @default(cuid())
-  senderId   String
-  sender     User     @relation("MessageSender", fields: [senderId], references: [id])
-  receiverId String
-  receiver   User     @relation("MessageReceiver", fields: [receiverId], references: [id])
-  matchId    String   // Sadece eşleşmiş kullanıcılar mesajlaşabilir
-  match      Match    @relation(fields: [matchId], references: [id])
-  content    String
-  read       Boolean  @default(false)
-  createdAt  DateTime @default(now())
+  id             String              @id @default(cuid())
+  senderId       String
+  sender         User                @relation("MessageSender", fields: [senderId], references: [id])
+  receiverId     String
+  receiver       User                @relation("MessageReceiver", fields: [receiverId], references: [id])
+  matchId        String?             // Eşleşme bazlı mesaj (opsiyonel)
+  match          Match?              @relation(fields: [matchId], references: [id])
+  conversationId String?             // Direkt mesaj (opsiyonel)
+  conversation   DirectConversation? @relation(fields: [conversationId], references: [id])
+  content        String
+  read           Boolean             @default(false)
+  createdAt      DateTime            @default(now())
 
   @@index([matchId])
+  @@index([conversationId])
   @@index([senderId])
   @@index([receiverId, read])
 }

@@ -274,7 +274,7 @@ export async function PUT(request: Request) {
     // Şifre değiştirme
     if (parsed.data.newPassword && parsed.data.currentPassword) {
       // Rate limit for password change attempts
-      const rateCheck = checkRateLimit(userId, "auth");
+      const rateCheck = await checkRateLimit(userId, "auth");
       if (!rateCheck.allowed) {
         return NextResponse.json(
           { success: false, error: "Çok fazla deneme. Lütfen bekleyin." },

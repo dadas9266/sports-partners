@@ -25,6 +25,7 @@
     "seed": "npx tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@prisma/client": "5.22.0",
     "@supabase/supabase-js": "^2.97.0",
     "@types/leaflet": "^1.9.21",
     "@types/web-push": "^3.6.4",
@@ -34,7 +35,7 @@
     "dotenv": "^17.3.1",
     "leaflet": "^1.9.4",
     "next": "16.1.6",
-    "next-auth": "^4.24.13",
+    "next-auth": "^5.0.0-beta.30",
     "next-intl": "^4.8.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",
@@ -45,7 +46,6 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
-    "@prisma/client": "5.22.0",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",

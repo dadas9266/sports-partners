@@ -2,11 +2,12 @@
 
 import { use, useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { format, differenceInYears } from "date-fns";
 import { tr } from "date-fns/locale";
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
-import { getPublicProfile, submitRating, getUserRatings, toggleFollow, getFollowStats, getLeaderboard } from "@/services/api";
+import { getPublicProfile, submitRating, getUserRatings, toggleFollow, getFollowStats, getLeaderboard, startDirectConversation } from "@/services/api";
 import type { PublicProfile, Rating, Badge, UserStoryGroup } from "@/types";
 import { LEVEL_LABELS, LEVEL_COLORS } from "@/types";
 import BadgeComp from "@/components/ui/Badge";
@@ -45,6 +46,8 @@ export default function PublicProfilePage({
 }) {
   const { id } = use(params);
   const { data: session } = useSession();
+  const router = useRouter();
+  const [messagingLoading, setMessagingLoading] = useState(false);
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [ratings, setRatings] = useState<Rating[]>([]);
   const [badges, setBadges] = useState<Badge[]>([]);
@@ -400,6 +403,29 @@ export default function PublicProfilePage({
                 </Button>
                 <Button size="sm" variant="secondary" onClick={() => setShowChallengeModal(true)}>
                   ⚔️ Teklif Gönder
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  loading={messagingLoading}
+                  onClick={async () => {
+                    if (!session) { toast.error("Mesaj göndermek için giriş yapın"); return; }
+                    setMessagingLoading(true);
+                    try {
+                      const res = await startDirectConversation(id);
+                      if (res.success && res.data) {
+                        router.push(`/mesajlar/dm/${res.data.id}`);
+                      } else {
+                        toast.error("Konuşma başlatılamadı");
+                      }
+                    } catch {
+                      toast.error("Konuşma başlatılamadı");
+                    } finally {
+                      setMessagingLoading(false);
+                    }
+                  }}
+                >
+                  💬 Mesaj Gönder
                 </Button>
               </>
             )}

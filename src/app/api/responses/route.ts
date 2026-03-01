@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     const { listingId, message } = parsed.data;
 
     // Rate limit — check early before any DB lookups
-    const rateCheck = checkRateLimit(userId, "response");
+    const rateCheck = await checkRateLimit(userId, "response");
     if (!rateCheck.allowed) {
       return NextResponse.json(
         { success: false, error: "Çok fazla karşılık gönderdiniz. Lütfen bekleyin." },

@@ -36,7 +36,8 @@ const TYPE_LABELS: Record<string, { label: string; color: string; emoji: string 
 };
 
 export default function CommunityDetailPage() {
-  const { id } = useParams<{ id: string }>();
+  const params = useParams();
+  const id = typeof params?.id === "string" ? params.id : "";
   const router = useRouter();
   const { data: session } = useSession();
 

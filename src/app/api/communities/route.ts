@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
 import { getCurrentUserId } from "@/lib/api-utils";
 import { createLogger } from "@/lib/logger";
+import { listCommunities, attachMyStatus, createCommunity } from "@/lib/community-service";
+import type { CommunityType } from "@prisma/client";
 
 const logger = createLogger("communities");
 
@@ -17,27 +18,12 @@ const createSchema = z.object({
   cityId: z.string().optional().nullable(),
 });
 
-const communitySelect = {
-  id: true,
-  type: true,
-  name: true,
-  description: true,
-  avatarUrl: true,
-  website: true,
-  isPrivate: true,
-  createdAt: true,
-  sport: { select: { id: true, name: true, icon: true } },
-  city: { select: { id: true, name: true } },
-  creator: { select: { id: true, name: true, avatarUrl: true } },
-  _count: { select: { members: true } },
-} as const;
-
 // GET /api/communities?type=GROUP|CLUB|TEAM&cityId=&sportId=&search=&page=&limit=&myMemberships=true
 export async function GET(req: NextRequest) {
   try {
     const userId = await getCurrentUserId();
     const { searchParams } = new URL(req.url);
-    const type = searchParams.get("type") as "GROUP" | "CLUB" | "TEAM" | null;
+    const type = searchParams.get("type") as CommunityType | null;
     const cityId = searchParams.get("cityId") ?? undefined;
     const sportId = searchParams.get("sportId") ?? undefined;
     const search = searchParams.get("search") ?? undefined;
@@ -45,58 +31,19 @@ export async function GET(req: NextRequest) {
     const page = Math.max(1, Number(searchParams.get("page") ?? 1));
     const limit = Math.min(100, Number(searchParams.get("limit") ?? 20));
 
-    // When myMemberships=true — return communities the current user belongs to
     if (myMemberships) {
       if (!userId) return NextResponse.json({ error: "Yetkisiz" }, { status: 401 });
-      const memberships = await (prisma as any).communityMembership.findMany({
-        where: { userId },
-        select: {
-          role: true,
-          status: true,
-          community: { select: communitySelect },
-        },
-        orderBy: { joinedAt: "desc" },
-      });
-
-      const data = memberships.map((m: any) => ({
-        ...m.community,
-        role: m.role,
-        myStatus: m.status as "APPROVED" | "PENDING" | "REJECTED",
-      }));
-
-      return NextResponse.json({ success: true, data, total: data.length, page: 1, limit });
+      const result = await listCommunities({ myMembershipUserId: userId, limit });
+      return NextResponse.json({ success: true, ...result });
     }
 
-    const where = {
-      ...(type && { type }),
-      ...(cityId && { cityId }),
-      ...(sportId && { sportId }),
-      ...(search && { name: { contains: search, mode: "insensitive" as const } }),
-    };
+    const result = await listCommunities({ type, cityId, sportId, search, page, limit });
+    const communities = (result as { communities: { id: string }[] }).communities;
 
-    const [communities, total] = await Promise.all([
-      (prisma as any).community.findMany({
-        where,
-        select: communitySelect,
-        orderBy: { createdAt: "desc" },
-        skip: (page - 1) * limit,
-        take: limit,
-      }),
-      (prisma as any).community.count({ where }),
-    ]);
+    let data: unknown[] = communities;
+    if (userId) data = await attachMyStatus(communities, userId);
 
-    // Attach myStatus for authenticated users
-    let data: Array<any> = communities;
-    if (userId) {
-      const myMems = await (prisma as any).communityMembership.findMany({
-        where: { userId, communityId: { in: communities.map((c: any) => c.id) } },
-        select: { communityId: true, status: true },
-      });
-      const statusMap = Object.fromEntries(myMems.map((m: any) => [m.communityId, m.status]));
-      data = communities.map((c: any) => ({ ...c, myStatus: statusMap[c.id] ?? null }));
-    }
-
-    return NextResponse.json({ success: true, data, total, page, limit });
+    return NextResponse.json({ success: true, data, total: result.total, page, limit });
   } catch (err) {
     logger.error("GET /api/communities error", { err });
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
@@ -117,22 +64,16 @@ export async function POST(req: NextRequest) {
 
     const { type, name, description, avatarUrl, website, isPrivate, sportId, cityId } = parsed.data;
 
-    const community = await (prisma as any).community.create({
-      data: {
-        type,
-        name,
-        description: description ?? null,
-        avatarUrl: avatarUrl ?? null,
-        website: website ?? null,
-        isPrivate,
-        sportId: sportId ?? null,
-        cityId: cityId ?? null,
-        creatorId: userId,
-        members: {
-          create: { userId, role: "ADMIN" },
-        },
-      },
-      select: communitySelect,
+    const community = await createCommunity({
+      type: type as CommunityType,
+      name,
+      description,
+      avatarUrl,
+      website,
+      isPrivate,
+      sportId,
+      cityId,
+      creatorId: userId,
     });
 
     logger.info("Community created", { communityId: community.id, type, userId });

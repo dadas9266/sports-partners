@@ -9,7 +9,46 @@ import toast from "react-hot-toast";
 import type { ListingSummary } from "@/types";
 import { LEVEL_LABELS, LEVEL_COLORS, GENDER_LABELS } from "@/types";
 import { toggleFavorite } from "@/services/api";
-import Badge from "@/components/ui/Badge";
+
+// ─── Tür bazlı görsel konfigürasyonu ─────────────────────────────────────────
+const LISTING_TYPE_CONFIG = {
+  RIVAL: {
+    label: "🥊 Rakip Arıyor",
+    borderColor: "border-l-orange-500",
+    bgGradient: "from-orange-50/60 dark:from-orange-900/10",
+    hoverBorder: "hover:border-orange-300/60 dark:hover:border-orange-700/50",
+    badgeVariant: "orange" as const,
+    headerBg: "bg-orange-50 dark:bg-orange-900/20 border-b border-orange-100 dark:border-orange-800/30",
+    iconColor: "text-orange-600 dark:text-orange-400",
+  },
+  PARTNER: {
+    label: "🤝 Partner Arıyor",
+    borderColor: "border-l-emerald-500",
+    bgGradient: "from-emerald-50/60 dark:from-emerald-900/10",
+    hoverBorder: "hover:border-emerald-200/60 dark:hover:border-emerald-700/40",
+    badgeVariant: "emerald" as const,
+    headerBg: "bg-emerald-50 dark:bg-emerald-900/20 border-b border-emerald-100 dark:border-emerald-800/30",
+    iconColor: "text-emerald-600 dark:text-emerald-400",
+  },
+  TRAINER: {
+    label: "🎓 Eğitmen",
+    borderColor: "border-l-blue-500",
+    bgGradient: "from-blue-50/60 dark:from-blue-900/10",
+    hoverBorder: "hover:border-blue-300/60 dark:hover:border-blue-700/50",
+    badgeVariant: "blue" as const,
+    headerBg: "bg-blue-50 dark:bg-blue-900/20 border-b border-blue-100 dark:border-blue-800/30",
+    iconColor: "text-blue-600 dark:text-blue-400",
+  },
+  EQUIPMENT: {
+    label: "🛒 Satılık",
+    borderColor: "border-l-purple-500",
+    bgGradient: "from-purple-50/60 dark:from-purple-900/10",
+    hoverBorder: "hover:border-purple-300/60 dark:hover:border-purple-700/50",
+    badgeVariant: "purple" as const,
+    headerBg: "bg-purple-50 dark:bg-purple-900/20 border-b border-purple-100 dark:border-purple-800/30",
+    iconColor: "text-purple-600 dark:text-purple-400",
+  },
+} as const;
 
 const GENDER_ICONS: Record<string, string> = {
   MALE: "♂️",
@@ -68,20 +107,35 @@ export default function ListingCard({
     router.push(`/profil/${listing.user.id}`);
   };
 
+  const typeConfig = LISTING_TYPE_CONFIG[listing.type] ?? LISTING_TYPE_CONFIG.PARTNER;
+
   return (
     <article
       onClick={() => router.push(`/ilan/${listing.id}`)}
       onKeyDown={(e) => e.key === "Enter" && router.push(`/ilan/${listing.id}`)}
-      className="bg-white dark:bg-gray-800/80 rounded-2xl shadow-sm border border-gray-100/80 dark:border-gray-700/50 p-5 hover:shadow-lg hover:border-emerald-200/60 dark:hover:border-emerald-700/40 transition-all duration-200 cursor-pointer h-full relative group"
+      className={`bg-gradient-to-br ${typeConfig.bgGradient} to-white dark:to-gray-800/80 rounded-2xl shadow-sm border border-gray-100/80 dark:border-gray-700/50 border-l-4 ${typeConfig.borderColor} hover:shadow-lg ${typeConfig.hoverBorder} transition-all duration-200 cursor-pointer h-full relative group overflow-hidden`}
       role="button"
       tabIndex={0}
       aria-label={`${listing.sport.name} ilanı detayı`}
     >
+      {/* Tür başlık şeridi */}
+      <div className={`flex items-center justify-between px-4 py-2 ${typeConfig.headerBg}`}>
+        <span className={`text-xs font-bold tracking-wide ${typeConfig.iconColor}`}>
+          {typeConfig.label}
+        </span>
+        {listing.isQuick && timeLeft && (
+          <span className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-full font-semibold">
+            ⚡ {timeLeft} kaldı
+          </span>
+        )}
+      </div>
+
+      <div className="p-5">
       {/* Favori Butonu */}
       <button
         onClick={handleFavorite}
         disabled={favLoading}
-        className={`absolute top-3 right-3 text-lg transition-all hover:scale-125 disabled:opacity-60 z-10 w-8 h-8 flex items-center justify-center rounded-full ${
+        className={`absolute top-10 right-3 text-lg transition-all hover:scale-125 disabled:opacity-60 z-10 w-8 h-8 flex items-center justify-center rounded-full ${
           favorited
             ? "text-red-500 bg-red-50 dark:bg-red-900/30"
             : "text-gray-300 dark:text-gray-600 hover:text-red-400 bg-gray-50 dark:bg-gray-700/50"
@@ -92,13 +146,8 @@ export default function ListingCard({
         {favorited ? "❤️" : "🤍"}
       </button>
 
-      {/* Üst etiketler */}
+      {/* Üst etiketler (cinsiyet filtresi, uyumluluk) */}
       <div className="flex flex-wrap gap-1 mb-2">
-        {listing.isQuick && (
-          <span className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-full font-semibold">
-            ⚡ Hızlı {timeLeft ? `· ${timeLeft} kaldı` : "İlan"}
-          </span>
-        )}
         {listing.allowedGender === "FEMALE_ONLY" && (
           <span className="text-xs bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300 px-2 py-0.5 rounded-full font-semibold">
             👩 Yalnızca Kadınlar
@@ -137,9 +186,6 @@ export default function ListingCard({
             <h3 className="font-semibold text-gray-800 dark:text-gray-100">
               {listing.sport.name}
             </h3>
-            <Badge variant={listing.type === "RIVAL" ? "orange" : listing.type === "TRAINER" ? "blue" : listing.type === "EQUIPMENT" ? "purple" : "emerald"}>
-              {listing.type === "RIVAL" ? "🥊 Rakip Arıyor" : listing.type === "TRAINER" ? "🎓 Eğitmen" : listing.type === "EQUIPMENT" ? "🛒 Satılık" : "🤝 Partner Arıyor"}
-            </Badge>
           </div>
         </div>
         <span
@@ -234,10 +280,11 @@ export default function ListingCard({
               ⏱️ {listing.trainerProfile.hourlyRate.toLocaleString("tr-TR")} ₺/saat
             </span>
           )}
-          <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold group-hover:translate-x-1 transition-transform">
+          <span className={`text-xs text-emerald-600 dark:text-emerald-400 font-semibold group-hover:translate-x-1 transition-transform`}>
             Detay →
           </span>
         </div>
+      </div>
       </div>
     </article>
   );

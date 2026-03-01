@@ -11,7 +11,7 @@ export async function POST(request: Request) {
   try {
     // IP-based rate limit
     const ip = getClientIP(request);
-    const rateCheck = checkRateLimit(ip, "register");
+    const rateCheck = await checkRateLimit(ip, "register");
     if (!rateCheck.allowed) {
       log.warn("Kayıt rate limit aşıldı", { ip });
       return NextResponse.json(

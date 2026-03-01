@@ -8,6 +8,7 @@ import Dropdown from "@/components/ui/Dropdown";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { useTranslations } from "next-intl";
 
 export default function Navbar() {
   const { data: session } = useSession();
@@ -70,40 +71,41 @@ export default function Navbar() {
   };
 
   const mobileLinkClass = "block hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-2.5 rounded-xl transition text-gray-700 dark:text-gray-200 text-sm font-medium";
+  const t = useTranslations("nav");
 
   return (
     <nav
       ref={navRef}
       className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl text-gray-800 dark:text-gray-100 shadow-sm border-b border-gray-200/60 dark:border-gray-700/60 sticky top-0 z-50"
       role="navigation"
-      aria-label="Ana navigasyon"
+      aria-label={t("mainNav")}
     >
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex justify-between items-center h-14">
           <div className="flex items-center gap-1 md:gap-2">
-            <Link href="/" className="text-xl font-bold flex items-center gap-2 mr-2" aria-label="SporPartner Ana Sayfa">
+            <Link href="/" className="text-xl font-bold flex items-center gap-2 mr-2" aria-label={t("homePage")}>
               <span className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center text-white text-sm font-black shadow-sm">SP</span>
               <span className="hidden sm:inline text-lg font-extrabold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">SporPartner</span>
             </Link>
-            <Link href="/" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-2.5 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label="İlanlar">
+            <Link href="/" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-2.5 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label={t("listings")}>
               <span className="text-base">📋</span>
             </Link>
-            <Link href="/harita" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-2.5 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label="Harita">
+            <Link href="/harita" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-2.5 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label={t("map")}>
               <span className="text-base">🗺️</span>
             </Link>
-            <Link href="/sosyal" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-2.5 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label="Sosyal">
+            <Link href="/sosyal" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-2.5 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label={t("social")}>
               <span className="text-base">🌐</span>
             </Link>
-            <Link href="/topluluklar" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-2.5 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label="Topluluklar">
+            <Link href="/topluluklar" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-2.5 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label={t("communities")}>
               <span className="text-base">🏛️</span>
             </Link>
-            <Link href="/mekanlar" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-2.5 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label="Mekanlar">
+            <Link href="/mekanlar" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-2.5 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label={t("venues")}>
               <span className="text-base">🏟️</span>
             </Link>
-            <Link href="/turnuvalar" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-2.5 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label="Turnuvalar">
+            <Link href="/turnuvalar" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-2.5 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label={t("tournaments")}>
               <span className="text-base">🏆</span>
             </Link>
-            <Link href="/arama" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-2.5 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label="Ara">
+            <Link href="/arama" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-2.5 py-1.5 rounded-lg transition text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label={t("search")}>
               <span className="text-base">🔍</span>
             </Link>
           </div>
@@ -112,7 +114,7 @@ export default function Navbar() {
             {session && (
               <Link href="/ilan/olustur" className="group">
                 <Button variant="primary" size="lg" className="shadow-md px-5 py-1.5 text-sm font-bold tracking-wide relative overflow-hidden transition-all group-hover:scale-105 bg-gradient-to-r from-emerald-500 to-teal-600 border-0 rounded-xl">
-                  <span className="relative z-10">+ İlan Oluştur</span>
+                  <span className="relative z-10">{t("createListing")}</span>
                 </Button>
               </Link>
             )}
@@ -121,14 +123,14 @@ export default function Navbar() {
           <div className="flex items-center gap-2 md:gap-3">
             {session ? (
               <>
-                <Link href="/mesajlar" className="relative p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition" aria-label="Mesajlar">
+                <Link href="/mesajlar" className="relative p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition" aria-label={t("messages")}>
                   <span className="text-base">💬</span>
                   {unreadMessages > 0 && (
                     <Badge variant="blue" size="sm">{unreadMessages > 9 ? "9+" : unreadMessages}</Badge>
                   )}
                 </Link>
                 <div className="relative" ref={notifRef}>
-                  <button onClick={handleOpenNotif} className="relative p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition" aria-label="Bildirimler">
+                  <button onClick={handleOpenNotif} className="relative p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition" aria-label={t("notifications")}>
                     <span className="text-base">🔔</span>
                     {unreadCount > 0 && (
                       <Badge variant="red" size="sm">{unreadCount > 9 ? "9+" : unreadCount}</Badge>
@@ -146,15 +148,15 @@ export default function Navbar() {
                 >
                   {session.user?.isAdmin && (
                     <Link href="/admin" className="block px-4 py-2 text-sm font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30">
-                      🛡️ Yönetici Paneli
+                      {t("admin")}
                     </Link>
                   )}
-                  <Link href="/profil" className="block px-4 py-2 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/30">Profilim</Link>
-                  <Link href="/mekan-profil" className="block px-4 py-2 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/30">Mekanım</Link>
-                  <Link href="/topluluklarim" className="block px-4 py-2 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/30">Topluluklarım</Link>
-                  <Link href="/ayarlar" className="block px-4 py-2 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/30">Ayarlar</Link>
+                  <Link href="/profil" className="block px-4 py-2 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/30">{t("profile")}</Link>
+                  <Link href="/mekan-profil" className="block px-4 py-2 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/30">{t("venue")}</Link>
+                  <Link href="/topluluklarim" className="block px-4 py-2 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/30">{t("myCommunities")}</Link>
+                  <Link href="/ayarlar" className="block px-4 py-2 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/30">{t("settings")}</Link>
                   <button onClick={() => signOut()} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30">
-                    Çıkış Yap
+                    {t("signOut")}
                   </button>
                 </Dropdown>
                 <button onClick={toggleDarkMode} className="ml-1 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition" aria-label="Tema Değiştir">
@@ -163,14 +165,14 @@ export default function Navbar() {
               </>
             ) : (
               <>
-                <Link href="/auth/giris" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-1.5 rounded-lg transition text-sm font-medium">Giriş Yap</Link>
-                <Link href="/auth/kayit" className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold px-4 py-1.5 rounded-xl hover:opacity-90 transition text-sm shadow-sm">Kayıt Ol</Link>
+                <Link href="/auth/giris" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-1.5 rounded-lg transition text-sm font-medium">{t("signIn")}</Link>
+                <Link href="/auth/kayit" className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold px-4 py-1.5 rounded-xl hover:opacity-90 transition text-sm shadow-sm">{t("register")}</Link>
                 <button onClick={toggleDarkMode} className="ml-1 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition" aria-label="Tema Değiştir">
                   {darkMode ? <span className="text-base">🌙</span> : <span className="text-base">☀️</span>}
                 </button>
               </>
             )}
-            <button className="md:hidden p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition" onClick={() => setMenuOpen((v) => !v)} aria-label="Menüyü aç/kapat" aria-expanded={menuOpen} aria-controls="mobile-menu">
+            <button className="md:hidden p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition" onClick={() => setMenuOpen((v) => !v)} aria-label={t("toggleMenu")} aria-expanded={menuOpen} aria-controls="mobile-menu">
               <span className="text-xl text-gray-600 dark:text-gray-300">{menuOpen ? "✕" : "☰"}</span>
             </button>
             <div className="hidden md:flex">
@@ -192,24 +194,24 @@ export default function Navbar() {
           <Link href="/arama" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">🔍 Ara</Link>
           {session ? (
             <>
-              <Link href="/ilan/olustur" className="block bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold px-3 py-2.5 rounded-xl text-sm text-center shadow-sm" onClick={() => setMenuOpen(false)} role="menuitem">+ İlan Oluştur</Link>
-              <Link href="/profil" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">👤 Profilim</Link>
-              <Link href="/ayarlar" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">⚙️ Ayarlar</Link>
-              <Link href="/mekan-profil" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">🏙️ Mekan Profili</Link>
+              <Link href="/ilan/olustur" className="block bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold px-3 py-2.5 rounded-xl text-sm text-center shadow-sm" onClick={() => setMenuOpen(false)} role="menuitem">{t("createListing")}</Link>
+              <Link href="/profil" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">👤 {t("profile")}</Link>
+              <Link href="/ayarlar" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">⚙️ {t("settings")}</Link>
+              <Link href="/mekan-profil" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">🏙️ {t("venueProfile")}</Link>
               <Link href="/mesajlar" className="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-2.5 rounded-xl transition text-sm text-gray-700 dark:text-gray-200" onClick={() => setMenuOpen(false)} role="menuitem">
-                <span>💬 Mesajlar</span>
+                <span>💬 {t("messages")}</span>
                 {unreadMessages > 0 && <span className="bg-blue-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{unreadMessages > 9 ? "9+" : unreadMessages}</span>}
               </Link>
-              <button onClick={() => { setMenuOpen(false); handleOpenNotif(); }} className="flex items-center gap-2 w-full text-left hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-2.5 rounded-xl transition text-sm text-gray-700 dark:text-gray-200" role="menuitem" aria-label="Bildirimler">
-                <span>🔔 Bildirimler</span>
+              <button onClick={() => { setMenuOpen(false); handleOpenNotif(); }} className="flex items-center gap-2 w-full text-left hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-2.5 rounded-xl transition text-sm text-gray-700 dark:text-gray-200" role="menuitem" aria-label={t("notifications")}>
+                <span>🔔 {t("notifications")}</span>
                 {unreadCount > 0 && <span className="bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{unreadCount > 9 ? "9+" : unreadCount}</span>}
               </button>
-              <button onClick={() => { setMenuOpen(false); signOut(); }} className="block w-full text-left hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-2.5 rounded-xl transition text-sm text-red-600 dark:text-red-400 font-medium" role="menuitem">Çıkış</button>
+              <button onClick={() => { setMenuOpen(false); signOut(); }} className="block w-full text-left hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-2.5 rounded-xl transition text-sm text-red-600 dark:text-red-400 font-medium" role="menuitem">{t("signOut")}</button>
             </>
           ) : (
             <>
-              <Link href="/auth/giris" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">Giriş Yap</Link>
-              <Link href="/auth/kayit" className="block bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold px-3 py-2.5 rounded-xl text-sm text-center shadow-sm" onClick={() => setMenuOpen(false)} role="menuitem">Kayıt Ol</Link>
+              <Link href="/auth/giris" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">{t("signIn")}</Link>
+              <Link href="/auth/kayit" className="block bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold px-3 py-2.5 rounded-xl text-sm text-center shadow-sm" onClick={() => setMenuOpen(false)} role="menuitem">{t("register")}</Link>
             </>
           )}
         </div>
@@ -218,14 +220,14 @@ export default function Navbar() {
       {notifOpen && session && (
         <>
           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60]" onClick={() => setNotifOpen(false)} aria-hidden="true" />
-          <div className="fixed top-0 right-0 h-full w-full max-w-sm bg-white dark:bg-gray-900 shadow-2xl z-[70] flex flex-col" role="dialog" aria-label="Bildirimler">
+          <div className="fixed top-0 right-0 h-full w-full max-w-sm bg-white dark:bg-gray-900 shadow-2xl z-[70] flex flex-col" role="dialog" aria-label={t("notifications")}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700 shrink-0">
               <div className="flex items-center gap-2">
                 <span className="text-lg">🔔</span>
-                <span className="font-bold text-gray-800 dark:text-gray-100 text-base">Bildirimler</span>
+                <span className="font-bold text-gray-800 dark:text-gray-100 text-base">{t("notifications")}</span>
                 {unreadCount > 0 && <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{unreadCount}</span>}
               </div>
-              <button onClick={() => setNotifOpen(false)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-gray-600 transition" aria-label="Kapat">
+              <button onClick={() => setNotifOpen(false)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-gray-600 transition" aria-label={t("close")}>
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
@@ -233,7 +235,7 @@ export default function Navbar() {
               {notifications.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 gap-3">
                   <span className="text-5xl">🔕</span>
-                  <p className="text-gray-400 dark:text-gray-500 text-sm font-medium">Bildirim yok</p>
+                  <p className="text-gray-400 dark:text-gray-500 text-sm font-medium">{t("noNotifications")}</p>
                 </div>
               ) : (
                 notifications.map((n) => (
@@ -258,7 +260,7 @@ export default function Navbar() {
             </div>
             {notifications.length > 0 && (
               <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-700 shrink-0">
-                <p className="text-xs text-center text-gray-400 dark:text-gray-500">{notifications.length} bildirim gösteriliyor</p>
+                <p className="text-xs text-center text-gray-400 dark:text-gray-500">{t("notificationsShowing", { count: notifications.length })}</p>
               </div>
             )}
           </div>

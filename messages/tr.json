@@ -16,7 +16,13 @@
     "signOut": "Çıkış Yap",
     "signIn": "Giriş Yap",
     "register": "Kayıt Ol",
-    "createListing": "+ İlan Oluştur"
+    "createListing": "+ İlan Oluştur",
+    "admin": "🛡️ Yönetici Paneli",
+    "venues": "Mekanlar",
+    "venueProfile": "Mekan Profili",
+    "noNotifications": "Bildirim yok",
+    "notificationsShowing": "{count} bildirim gösteriliyor",
+    "close": "Kapat"
   },
   "common": {
     "loading": "Yükleniyor...",
@@ -97,5 +103,171 @@
       "active": "Push bildirimleri aktif.",
       "description": "Maç istekleri, mesajlar ve eşleşme bildirimleri alın."
     }
+  },
+  "profile": {
+    "title": "Profilim",
+    "editTitle": "Profili Düzenle",
+    "name": "Ad Soyad",
+    "bio": "Hakkımda",
+    "bioPlaceholder": "Kendinizden bahsedin...",
+    "bioMaxChars": "{count}/300",
+    "location": "Konum",
+    "country": "Ülke Seçin...",
+    "city": "Şehir Seçin...",
+    "district": "İlçe Seçin...",
+    "sports": "Sporlarım (max 5)",
+    "sportsMax": "En fazla 5 spor seçebilirsiniz",
+    "phone": "Telefon",
+    "phonePlaceholder": "05551234567",
+    "birthDate": "Doğum Tarihi",
+    "gender": "Cinsiyet",
+    "genders": {
+      "UNSPECIFIED": "Belirtilmemiş",
+      "MALE": "Erkek",
+      "FEMALE": "Kadın",
+      "PREFER_NOT_TO_SAY": "Belirtmek İstemiyorum"
+    },
+    "currentPassword": "Mevcut Şifre (değiştirmek için)",
+    "newPassword": "Yeni Şifre",
+    "newPasswordHint": "Min 8 karakter, büyük/küçük harf, rakam, özel karakter",
+    "socialLinks": "Sosyal Medya Hesapları",
+    "tabs": {
+      "posts": "📸 Gönderiler",
+      "listings": "İlanlarım",
+      "responses": "Gönderdiğim Karşılıklar",
+      "matches": "Eşleşmeler",
+      "calendar": "📅 Takvim",
+      "templates": "🔁 Şablonlar"
+    },
+    "completion": {
+      "complete": "Profil tamamlandı! 🎉",
+      "missing": "Eksik alanlar:"
+    },
+    "uploadAvatarSuccess": "Profil fotoğrafı güncellendi",
+    "uploadCoverSuccess": "Kapak fotoğrafı güncellendi",
+    "changeCover": "📷 Kapak fotoğrafı değiştir",
+    "level": {
+      "BEGINNER": "Acemi",
+      "AMATEUR": "Amatör",
+      "SEMI_PRO": "Yarı Pro",
+      "PRO": "⚡ Pro"
+    },
+    "verifiedBadge": "✓ Verified Pro",
+    "followers": "Takipçi",
+    "following": "Takip Edilen",
+    "streak": { "current": "Günlük Seri", "longest": "En Uzun Seri", "days": "gün" },
+    "saveSuccess": "Profil güncellendi",
+    "saveError": "Güncelleme başarısız",
+    "age": "{age} Yaş",
+    "noListings": "Henüz ilan yok",
+    "noMatches": "Henüz eşleşme yok",
+    "noPosts": "Henüz gönderi yok"
+  },
+  "social": {
+    "title": "Sosyal Akış",
+    "createPostPlaceholder": "Ne düşünüyorsun? Paylaş...",
+    "addPhoto": "🖼️ Fotoğraf Ekle",
+    "share": "Paylaş",
+    "like": "Beğen",
+    "comment": "Yorum",
+    "addCommentPlaceholder": "Yorum yaz...",
+    "send": "Gönder",
+    "noStories": "Henüz hikaye yok",
+    "stories": "Hikayeler",
+    "addStory": "Hikaye Ekle",
+    "postSuccess": "Gönderi paylaşıldı!",
+    "postError": "Gönderi oluşturulamadı",
+    "noPosts": "Henüz gönderi yok",
+    "feedEmpty": "Takip ettiğiniz kullanıcıların gönderileri burada görünecek"
+  },
+  "match": {
+    "request": "Eşleşme İsteği",
+    "accept": "Kabul Et",
+    "reject": "Reddet",
+    "cancel": "İptal Et",
+    "status": {
+      "PENDING": "Bekliyor",
+      "ACCEPTED": "Kabul Edildi",
+      "REJECTED": "Reddedildi",
+      "CANCELLED": "İptal Edildi",
+      "COMPLETED": "Tamamlandı",
+      "NO_SHOW": "Gelmedi"
+    },
+    "noMatches": "Henüz eşleşme yok",
+    "rate": "Değerlendir",
+    "sendMessage": "Mesaj Gönder"
+  },
+  "notifications": {
+    "title": "Bildirimler",
+    "empty": "Bildirim yok",
+    "showing": "{count} bildirim gösteriliyor"
+  },
+  "leaderboard": {
+    "title": "Liderlik Tablosu",
+    "subtitle": "En aktif sporcuları keşfet",
+    "rank": "Sıra",
+    "player": "Oyuncu",
+    "points": "Puan",
+    "matches": "Maç",
+    "sport": "Spor",
+    "city": "Şehir",
+    "weekly": "Bu Hafta",
+    "monthly": "Bu Ay",
+    "allTime": "Tüm Zamanlar"
+  },
+  "search": {
+    "title": "Kullanıcı Ara",
+    "placeholder": "İsim veya spor ara...",
+    "noResults": "Sonuç bulunamadı",
+    "filters": "Filtreler",
+    "sport": "Spor Dalı",
+    "location": "Konum",
+    "level": "Seviye",
+    "apply": "Filtrele",
+    "reset": "Temizle"
+  },
+  "onboarding": {
+    "title": "Hoş Geldiniz!",
+    "subtitle": "Spor partnerini bulmak için profilini tamamla",
+    "step1Title": "Temel Bilgiler",
+    "step2Title": "Spor Tercihleri",
+    "step3Title": "Konum Bilgisi",
+    "step": "Adım {current}/{total}",
+    "next": "Devam",
+    "previous": "Geri",
+    "finish": "Profili Tamamla",
+    "skip": "Şimdi Atla"
+  },
+  "venues": {
+    "title": "Spor Mekanları",
+    "subtitle": "Yakınındaki spor tesislerini keşfet",
+    "noVenues": "Henüz mekan yok",
+    "openHours": "Çalışma Saatleri",
+    "contact": "İletişim",
+    "address": "Adres",
+    "priceRange": "Fiyat Aralığı",
+    "rating": "Değerlendirme",
+    "reviews": "Yorum",
+    "bookNow": "Rezervasyon Yap",
+    "viewDetails": "Detayları Gör"
+  },
+  "communities": {
+    "title": "Topluluklar",
+    "subtitle": "Spor topluluklarına katıl",
+    "create": "Topluluk Oluştur",
+    "join": "Topluluğa Katıl",
+    "leave": "Topluluktan Ayrıl",
+    "members": "Üyeler",
+    "noCommunities": "Henüz topluluk yok",
+    "myCommunities": "Topluluklarım",
+    "sport": "Spor Dalı",
+    "location": "Konum"
+  },
+  "messages": {
+    "title": "Mesajlar",
+    "noConversations": "Henüz mesaj yok",
+    "typePlaceholder": "Mesaj yaz...",
+    "send": "Gönder",
+    "you": "Siz"
   }
 }

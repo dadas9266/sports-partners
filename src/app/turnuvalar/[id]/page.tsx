@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
+import TournamentBracket from "@/components/tournament/TournamentBracket";
 
 interface Participant {
   id: string;
@@ -57,6 +58,7 @@ export default function TournamentDetailPage({
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<"katilimcilar" | "bracket">("katilimcilar");
 
   const load = async () => {
     const res = await fetch(`/api/turnuvalar/${id}`);
@@ -269,17 +271,46 @@ export default function TournamentDetailPage({
         )}
       </div>
 
-      {/* Katılımcı Listesi */}
+      {/* Katılımcı Listesi + Bracket */}
       <div className="bg-gray-800/60 border border-gray-700 rounded-xl p-5 space-y-3">
-        <h2 className="font-semibold text-white">
-          Katılımcılar ({tournament.participants.length})
-        </h2>
+        {/* Sekme başlıkları */}
+        <div className="flex gap-1 border-b border-gray-700 mb-4 -mx-5 px-5">
+          <button
+            onClick={() => setActiveTab("katilimcilar")}
+            className={`px-4 py-2 text-sm font-medium transition border-b-2 -mb-px ${
+              activeTab === "katilimcilar"
+                ? "border-emerald-500 text-emerald-400"
+                : "border-transparent text-gray-500 hover:text-gray-300"
+            }`}
+          >
+            👥 Katılımcılar ({tournament.participants.length})
+          </button>
+          <button
+            onClick={() => setActiveTab("bracket")}
+            className={`px-4 py-2 text-sm font-medium transition border-b-2 -mb-px ${
+              activeTab === "bracket"
+                ? "border-emerald-500 text-emerald-400"
+                : "border-transparent text-gray-500 hover:text-gray-300"
+            }`}
+          >
+            🏆 Bracket
+          </button>
+        </div>
 
-        {tournament.participants.length === 0 ? (
-          <p className="text-sm text-gray-500">Henüz katılımcı yok.</p>
-        ) : (
-          <div className="space-y-2">
-            {tournament.participants.map((p) => (
+        {activeTab === "bracket" && (
+          <TournamentBracket
+            participants={tournament.participants}
+            format={tournament.format}
+            status={tournament.status}
+          />
+        )}
+
+        {activeTab === "katilimcilar" && (
+          tournament.participants.length === 0 ? (
+            <p className="text-sm text-gray-500">Henüz katılımcı yok.</p>
+          ) : (
+            <div className="space-y-2">
+              {tournament.participants.map((p) => (
               <div
                 key={p.id}
                 className="flex items-center justify-between py-2 border-b border-gray-700/50 last:border-0"
@@ -323,8 +354,9 @@ export default function TournamentDetailPage({
                     : "Reddedildi"}
                 </span>
               </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )
         )}
       </div>
     </div>

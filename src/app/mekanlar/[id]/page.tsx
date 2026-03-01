@@ -40,11 +40,13 @@ const FACILITY_TYPE_LABELS: Record<string, string> = {
 };
 
 export default function MekanDetailPage() {
-  const { id } = useParams<{ id: string }>();
+  const params = useParams();
+  const id = typeof params?.id === "string" ? params.id : "";
   const [venue, setVenue]     = useState<VenueDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [activeImg, setActiveImg] = useState(0);
+  const [mapCoords, setMapCoords] = useState<{ lat: number; lon: number } | null>(null);
 
   useEffect(() => {
     fetch(`/api/mekanlar/${id}`)
@@ -52,6 +54,20 @@ export default function MekanDetailPage() {
       .then(json => {
         if (!json.success) { setNotFound(true); return; }
         setVenue(json.data);
+        // Geocode the address via Nominatim (no API key required)
+        if (json.data.address) {
+          fetch(
+            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(json.data.address)}&limit=1`,
+            { headers: { "Accept-Language": "tr" } }
+          )
+            .then(r => r.json())
+            .then((results: Array<{ lat: string; lon: string }>) => {
+              if (results.length > 0) {
+                setMapCoords({ lat: parseFloat(results[0].lat), lon: parseFloat(results[0].lon) });
+              }
+            })
+            .catch(() => {});
+        }
       })
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
@@ -237,7 +253,7 @@ export default function MekanDetailPage() {
 
         {/* Equipment */}
         {venue.equipment.length > 0 && (
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 mb-6">
             <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-3">Ekipmanlar</h2>
             <div className="flex flex-wrap gap-2">
               {venue.equipment.map(e => (
@@ -246,6 +262,40 @@ export default function MekanDetailPage() {
                 </span>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Harita */}
+        {venue.address && (
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-3">📍 Konum</h2>
+            {mapCoords ? (
+              <>
+                <div className="rounded-xl overflow-hidden h-64 border border-gray-100 dark:border-gray-800">
+                  <iframe
+                    title="Mekan Konumu"
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    loading="lazy"
+                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${mapCoords.lon - 0.006}%2C${mapCoords.lat - 0.004}%2C${mapCoords.lon + 0.006}%2C${mapCoords.lat + 0.004}&layer=mapnik&marker=${mapCoords.lat}%2C${mapCoords.lon}`}
+                  />
+                </div>
+                <a
+                  href={`https://www.openstreetmap.org/?mlat=${mapCoords.lat}&mlon=${mapCoords.lon}#map=16/${mapCoords.lat}/${mapCoords.lon}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block mt-2 text-xs text-emerald-600 dark:text-emerald-400 hover:underline"
+                >
+                  OpenStreetMap'te Aç ↗
+                </a>
+              </>
+            ) : (
+              <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                <div className="animate-spin w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full" />
+                <span>Harita yükleniyor…</span>
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const rl = checkRateLimit(userId, "post");
+  const rl = await checkRateLimit(userId, "post");
   if (!rl.allowed) return rateLimitResponse(rl.remaining);
 
   try {

@@ -20,7 +20,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Giriş yapmanız gerekiyor" }, { status: 401 });
     }
 
-    const rl = checkRateLimit(userId, "rating");
+    const rl = await checkRateLimit(userId, "rating");
     if (!rl.allowed) return rateLimitResponse(rl.remaining);
 
     const body = await request.json();

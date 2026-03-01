@@ -1,7 +1,8 @@
-import { NextAuthOptions } from "next-auth";
-import CredentialsProvider from "next-auth/providers/credentials";
-import GoogleProvider from "next-auth/providers/google";
-import GitHubProvider from "next-auth/providers/github";
+import NextAuth from "next-auth";
+import type { NextAuthConfig } from "next-auth";
+import Credentials from "next-auth/providers/credentials";
+import Google from "next-auth/providers/google";
+import GitHub from "next-auth/providers/github";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { createLogger } from "@/lib/logger";
@@ -9,55 +10,52 @@ import bcrypt from "bcryptjs";
 
 const log = createLogger("auth");
 
-export const authOptions: NextAuthOptions = {
+const config: NextAuthConfig = {
   providers: [
     // ── Sosyal Giriş ──────────────────────────────────────────────────────────
     ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
-      ? [GoogleProvider({
+      ? [Google({
           clientId: process.env.GOOGLE_CLIENT_ID,
           clientSecret: process.env.GOOGLE_CLIENT_SECRET,
         })]
       : []),
     ...(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
-      ? [GitHubProvider({
+      ? [GitHub({
           clientId: process.env.GITHUB_CLIENT_ID,
           clientSecret: process.env.GITHUB_CLIENT_SECRET,
         })]
       : []),
     // ── E-posta / Şifre ───────────────────────────────────────────────────────
-    CredentialsProvider({
+    Credentials({
       name: "Credentials",
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
+        const email = credentials?.email as string | undefined;
+        const password = credentials?.password as string | undefined;
+        if (!email || !password) {
           throw new Error("E-posta ve şifre gereklidir");
         }
 
         // Email-based rate limit for login
-        const rateCheck = checkRateLimit(credentials.email, "auth");
+        const rateCheck = await checkRateLimit(email, "auth");
         if (!rateCheck.allowed) {
-          log.warn("Login rate limit aşıldı", { email: credentials.email });
+          log.warn("Login rate limit aşıldı", { email });
           throw new Error("Çok fazla giriş denemesi. 15 dakika bekleyin.");
         }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-        });
+        const user = await prisma.user.findUnique({ where: { email } });
 
         if (!user) {
           throw new Error("E-posta veya şifre hatalı");
         }
 
-        const isValid = await bcrypt.compare(
-          credentials.password,
-          user.passwordHash ?? ""
-        );
+        const isValid = await bcrypt.compare(password, user.passwordHash ?? "");
 
         if (!isValid) {
-          log.warn("Hatalı şifre denemesi", { email: credentials.email });
+          log.warn("Hatalı şifre denemesi", { email });
           throw new Error("E-posta veya şifre hatalı");
         }
 
@@ -133,3 +131,9 @@ export const authOptions: NextAuthOptions = {
   },
   secret: process.env.NEXTAUTH_SECRET,
 };
+
+export const { handlers, auth, signIn, signOut } = NextAuth(config);
+
+// Legacy export for gradual migration compatibility
+export const authOptions = config;
+

@@ -10,8 +10,10 @@ import toast from "react-hot-toast";
 import { getConversations } from "@/services/api";
 import type { Conversation } from "@/types";
 
+// NOTE: getConversations now hits /api/conversations which returns both match + direct
+
 export default function MesajlarPage() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,63 +50,79 @@ export default function MesajlarPage() {
           <span className="text-6xl">💬</span>
           <p className="mt-4 text-gray-500 dark:text-gray-400 text-lg">Henüz mesajınız yok</p>
           <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">
-            Bir eşleşme gerçekleştiğinde buradan mesajlaşabilirsiniz
+            Eşleşme gerçekleştiğinde veya birine doğrudan mesaj attığınızda buradan görürsünüz
           </p>
         </div>
       ) : (
         <div className="space-y-2">
-          {conversations.map((conv) => (
-            <Link
-              key={conv.matchId}
-              href={`/mesajlar/${conv.matchId}`}
-              className={`flex items-center gap-4 p-4 rounded-xl border transition hover:shadow-md cursor-pointer ${
-                conv.hasUnread
-                  ? "bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800"
-                  : "bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700"
-              }`}
-            >
-              {/* Avatar */}
-              <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-lg font-bold text-emerald-600 dark:text-emerald-400 shrink-0 overflow-hidden">
-                {conv.partner.avatarUrl ? (
-                  <img src={conv.partner.avatarUrl} alt={conv.partner.name} className="w-full h-full object-cover" />
-                ) : (
-                  conv.partner.name.charAt(0).toUpperCase()
-                )}
-              </div>
+          {conversations.map((conv) => {
+            const href =
+              conv.type === "direct"
+                ? `/mesajlar/dm/${conv.conversationId ?? conv.id}`
+                : `/mesajlar/${conv.matchId ?? conv.id}`;
 
-              {/* İçerik */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2">
-                  <span className={`font-semibold truncate ${conv.hasUnread ? "text-emerald-700 dark:text-emerald-300" : "text-gray-800 dark:text-gray-100"}`}>
-                    {conv.partner.name}
-                  </span>
-                  {conv.lastMessage && (
-                    <span className="text-xs text-gray-400 dark:text-gray-500 shrink-0">
-                      {format(new Date(conv.lastMessage.createdAt), "d MMM HH:mm", { locale: tr })}
-                    </span>
+            return (
+              <Link
+                key={conv.id}
+                href={href}
+                className={`flex items-center gap-4 p-4 rounded-xl border transition hover:shadow-md cursor-pointer ${
+                  conv.hasUnread
+                    ? "bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800"
+                    : "bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700"
+                }`}
+              >
+                {/* Avatar */}
+                <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-lg font-bold text-emerald-600 dark:text-emerald-400 shrink-0 overflow-hidden">
+                  {conv.partner.avatarUrl ? (
+                    <img src={conv.partner.avatarUrl} alt={conv.partner.name} className="w-full h-full object-cover" />
+                  ) : (
+                    conv.partner.name.charAt(0).toUpperCase()
                   )}
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
-                  {conv.listing.sport.icon} {conv.listing.sport.name} — {format(new Date(conv.listing.dateTime), "d MMM", { locale: tr })}
-                </p>
-                {conv.lastMessage ? (
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 truncate">
-                    {conv.lastMessage.isMine ? (
-                      <span className="text-gray-400 dark:text-gray-500">Sen: </span>
-                    ) : null}
-                    {conv.lastMessage.content}
-                  </p>
-                ) : (
-                  <p className="text-sm text-gray-400 dark:text-gray-500 mt-1 italic">Henüz mesaj yok</p>
-                )}
-              </div>
 
-              {/* Unread badge */}
-              {conv.hasUnread && (
-                <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full shrink-0" />
-              )}
-            </Link>
-          ))}
+                {/* İçerik */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className={`font-semibold truncate ${conv.hasUnread ? "text-emerald-700 dark:text-emerald-300" : "text-gray-800 dark:text-gray-100"}`}>
+                        {conv.partner.name}
+                      </span>
+                      {conv.type === "direct" && (
+                        <span className="text-[10px] bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded-full shrink-0">
+                          DM
+                        </span>
+                      )}
+                    </div>
+                    {conv.lastMessage && (
+                      <span className="text-xs text-gray-400 dark:text-gray-500 shrink-0">
+                        {format(new Date(conv.lastMessage.createdAt), "d MMM HH:mm", { locale: tr })}
+                      </span>
+                    )}
+                  </div>
+
+                  {conv.listing ? (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
+                      {conv.listing.sport.icon} {conv.listing.sport.name} — {format(new Date(conv.listing.dateTime), "d MMM", { locale: tr })}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Direkt mesaj</p>
+                  )}
+
+                  {conv.lastMessage ? (
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 truncate">
+                      {conv.lastMessage.isMine ? <span className="text-gray-400 dark:text-gray-500">Sen: </span> : null}
+                      {conv.lastMessage.content}
+                    </p>
+                  ) : (
+                    <p className="text-sm text-gray-400 dark:text-gray-500 mt-1 italic">Henüz mesaj yok</p>
+                  )}
+                </div>
+
+                {/* Unread badge */}
+                {conv.hasUnread && <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full shrink-0" />}
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>

@@ -253,7 +253,7 @@ export async function getLeaderboard(sportId?: string, limit = 20): Promise<ApiR
 
 // ========== MESAJLAR ==========
 export async function getConversations(): Promise<ApiResponse<Conversation[]>> {
-  return fetchAPI("/api/messages");
+  return fetchAPI("/api/conversations");
 }
 
 export async function getMessages(
@@ -270,6 +270,34 @@ export async function sendMessage(
   content: string
 ): Promise<ApiResponse<Message>> {
   return fetchAPI(`/api/messages/${matchId}`, {
+    method: "POST",
+    body: JSON.stringify({ content }),
+  });
+}
+
+export async function startDirectConversation(
+  targetUserId: string
+): Promise<ApiResponse<{ id: string; partner: { id: string; name: string; avatarUrl?: string | null } }>> {
+  return fetchAPI("/api/conversations", {
+    method: "POST",
+    body: JSON.stringify({ targetUserId }),
+  });
+}
+
+export async function getDirectMessages(
+  conversationId: string,
+  cursor?: string
+): Promise<ApiResponse<{ messages: Message[]; nextCursor: string | null }>> {
+  const params = new URLSearchParams();
+  if (cursor) params.set("cursor", cursor);
+  return fetchAPI(`/api/conversations/${conversationId}/messages?${params.toString()}`);
+}
+
+export async function sendDirectMessage(
+  conversationId: string,
+  content: string
+): Promise<ApiResponse<Message>> {
+  return fetchAPI(`/api/conversations/${conversationId}/messages`, {
     method: "POST",
     body: JSON.stringify({ content }),
   });

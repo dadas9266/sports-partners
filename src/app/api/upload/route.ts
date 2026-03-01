@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
 
   // Rate limit: 20 upload/saat
   const ip = getClientIP(req);
-  const rl = checkRateLimit(`${userId}:${ip}`, "upload");
+  const rl = await checkRateLimit(`${userId}:${ip}`, "upload");
   if (!rl.allowed) return rateLimitResponse(rl.remaining);
 
   // Supabase env kontrolü

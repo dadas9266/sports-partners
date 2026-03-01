@@ -16,7 +16,13 @@
     "signOut": "Sign Out",
     "signIn": "Sign In",
     "register": "Register",
-    "createListing": "+ Create Listing"
+    "createListing": "+ Create Listing",
+    "admin": "🛡️ Admin Panel",
+    "venues": "Venues",
+    "venueProfile": "Venue Profile",
+    "noNotifications": "No notifications",
+    "notificationsShowing": "{count} notifications shown",
+    "close": "Close"
   },
   "common": {
     "loading": "Loading...",
@@ -97,5 +103,171 @@
       "active": "Push notifications are active.",
       "description": "Receive match requests, messages, and pairing notifications."
     }
+  },
+  "profile": {
+    "title": "My Profile",
+    "editTitle": "Edit Profile",
+    "name": "Full Name",
+    "bio": "About Me",
+    "bioPlaceholder": "Tell others about yourself...",
+    "bioMaxChars": "{count}/300",
+    "location": "Location",
+    "country": "Select Country...",
+    "city": "Select City...",
+    "district": "Select District...",
+    "sports": "My Sports (max 5)",
+    "sportsMax": "You can select up to 5 sports",
+    "phone": "Phone",
+    "phonePlaceholder": "+1 555 123 4567",
+    "birthDate": "Date of Birth",
+    "gender": "Gender",
+    "genders": {
+      "UNSPECIFIED": "Unspecified",
+      "MALE": "Male",
+      "FEMALE": "Female",
+      "PREFER_NOT_TO_SAY": "Prefer not to say"
+    },
+    "currentPassword": "Current Password (to change)",
+    "newPassword": "New Password",
+    "newPasswordHint": "Min 8 chars, upper/lower case, number, special character",
+    "socialLinks": "Social Media Accounts",
+    "tabs": {
+      "posts": "📸 Posts",
+      "listings": "My Listings",
+      "responses": "Sent Responses",
+      "matches": "Matches",
+      "calendar": "📅 Calendar",
+      "templates": "🔁 Templates"
+    },
+    "completion": {
+      "complete": "Profile complete! 🎉",
+      "missing": "Missing fields:"
+    },
+    "uploadAvatarSuccess": "Profile photo updated",
+    "uploadCoverSuccess": "Cover photo updated",
+    "changeCover": "📷 Change cover photo",
+    "level": {
+      "BEGINNER": "Beginner",
+      "AMATEUR": "Amateur",
+      "SEMI_PRO": "Semi-Pro",
+      "PRO": "⚡ Pro"
+    },
+    "verifiedBadge": "✓ Verified Pro",
+    "followers": "Followers",
+    "following": "Following",
+    "streak": { "current": "Daily Streak", "longest": "Longest Streak", "days": "days" },
+    "saveSuccess": "Profile updated",
+    "saveError": "Update failed",
+    "age": "{age} years old",
+    "noListings": "No listings yet",
+    "noMatches": "No matches yet",
+    "noPosts": "No posts yet"
+  },
+  "social": {
+    "title": "Social Feed",
+    "createPostPlaceholder": "What's on your mind? Share...",
+    "addPhoto": "🖼️ Add Photo",
+    "share": "Share",
+    "like": "Like",
+    "comment": "Comment",
+    "addCommentPlaceholder": "Write a comment...",
+    "send": "Send",
+    "noStories": "No stories yet",
+    "stories": "Stories",
+    "addStory": "Add Story",
+    "postSuccess": "Post shared!",
+    "postError": "Could not create post",
+    "noPosts": "No posts yet",
+    "feedEmpty": "Posts from users you follow will appear here"
+  },
+  "match": {
+    "request": "Match Request",
+    "accept": "Accept",
+    "reject": "Reject",
+    "cancel": "Cancel",
+    "status": {
+      "PENDING": "Pending",
+      "ACCEPTED": "Accepted",
+      "REJECTED": "Rejected",
+      "CANCELLED": "Cancelled",
+      "COMPLETED": "Completed",
+      "NO_SHOW": "No Show"
+    },
+    "noMatches": "No matches yet",
+    "rate": "Rate",
+    "sendMessage": "Send Message"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "No notifications",
+    "showing": "{count} notifications shown"
+  },
+  "leaderboard": {
+    "title": "Leaderboard",
+    "subtitle": "Discover the most active athletes",
+    "rank": "Rank",
+    "player": "Player",
+    "points": "Points",
+    "matches": "Matches",
+    "sport": "Sport",
+    "city": "City",
+    "weekly": "This Week",
+    "monthly": "This Month",
+    "allTime": "All Time"
+  },
+  "search": {
+    "title": "Search Users",
+    "placeholder": "Search by name or sport...",
+    "noResults": "No results found",
+    "filters": "Filters",
+    "sport": "Sport",
+    "location": "Location",
+    "level": "Level",
+    "apply": "Apply",
+    "reset": "Reset"
+  },
+  "onboarding": {
+    "title": "Welcome!",
+    "subtitle": "Complete your profile to find a sports partner",
+    "step1Title": "Basic Info",
+    "step2Title": "Sports Preferences",
+    "step3Title": "Location",
+    "step": "Step {current} of {total}",
+    "next": "Next",
+    "previous": "Back",
+    "finish": "Complete Profile",
+    "skip": "Skip for now"
+  },
+  "venues": {
+    "title": "Sports Venues",
+    "subtitle": "Discover sports facilities near you",
+    "noVenues": "No venues yet",
+    "openHours": "Opening Hours",
+    "contact": "Contact",
+    "address": "Address",
+    "priceRange": "Price Range",
+    "rating": "Rating",
+    "reviews": "Reviews",
+    "bookNow": "Book Now",
+    "viewDetails": "View Details"
+  },
+  "communities": {
+    "title": "Communities",
+    "subtitle": "Join sports communities",
+    "create": "Create Community",
+    "join": "Join Community",
+    "leave": "Leave Community",
+    "members": "Members",
+    "noCommunities": "No communities yet",
+    "myCommunities": "My Communities",
+    "sport": "Sport",
+    "location": "Location"
+  },
+  "messages": {
+    "title": "Messages",
+    "noConversations": "No messages yet",
+    "typePlaceholder": "Type a message...",
+    "send": "Send",
+    "you": "You"
   }
 }

@@ -2,30 +2,30 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserId, unauthorized, notFound, isValidId, sanitizeText } from "@/lib/api-utils";
 import { createLogger } from "@/lib/logger";
-import { createNotification, NOTIF } from "@/lib/notifications";
+import { createNotification } from "@/lib/notifications";
+import type { NotificationType } from "@prisma/client";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { z } from "zod";
 
-const log = createLogger("messages:match");
+const log = createLogger("conversations:messages");
 
-// GET /api/messages/[matchId] — bir eşleşmenin mesajlarını getir
+// GET /api/conversations/[id]/messages
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ matchId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { matchId } = await params;
+    const { id } = await params;
     const userId = await getCurrentUserId();
     if (!userId) return unauthorized();
-    if (!isValidId(matchId)) return notFound("Konuşma bulunamadı");
+    if (!isValidId(id)) return notFound("Konuşma bulunamadı");
 
-    // Kullanıcının bu eşleşmede olup olmadığını kontrol et
-    const match = await prisma.match.findUnique({
-      where: { id: matchId },
+    const conv = await prisma.directConversation.findUnique({
+      where: { id },
       select: { user1Id: true, user2Id: true },
     });
-    if (!match) return notFound("Konuşma bulunamadı");
-    if (match.user1Id !== userId && match.user2Id !== userId) {
+    if (!conv) return notFound("Konuşma bulunamadı");
+    if (conv.user1Id !== userId && conv.user2Id !== userId) {
       return NextResponse.json({ success: false, error: "Bu konuşmaya erişim yetkiniz yok" }, { status: 403 });
     }
 
@@ -34,13 +34,13 @@ export async function GET(
     const limit = 30;
 
     const messages = await prisma.message.findMany({
-      where: { matchId },
+      where: { conversationId: id },
       orderBy: { createdAt: "desc" },
       take: limit + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       select: {
         id: true,
-        matchId: true,
+        conversationId: true,
         senderId: true,
         receiverId: true,
         content: true,
@@ -53,18 +53,15 @@ export async function GET(
     const hasMore = messages.length > limit;
     if (hasMore) messages.pop();
 
-    // Okunmamış mesajları okundu yap
+    // Okunmamış mesajları okundu olarak işaretle
     await prisma.message.updateMany({
-      where: { matchId, receiverId: userId, read: false },
+      where: { conversationId: id, receiverId: userId, read: false },
       data: { read: true },
     });
 
     return NextResponse.json({
       success: true,
-      data: {
-        messages: messages.reverse(),
-        nextCursor: hasMore ? messages[0]?.id : null,
-      },
+      data: { messages: messages.reverse(), nextCursor: hasMore ? messages[0]?.id : null },
     });
   } catch (error) {
     log.error("Mesajlar yüklenemedi", error);
@@ -76,18 +73,17 @@ const sendSchema = z.object({
   content: z.string().min(1, "Mesaj boş olamaz").max(1000, "Mesaj çok uzun"),
 });
 
-// POST /api/messages/[matchId] — yeni mesaj gönder
+// POST /api/conversations/[id]/messages
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ matchId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { matchId } = await params;
+    const { id } = await params;
     const userId = await getCurrentUserId();
     if (!userId) return unauthorized();
-    if (!isValidId(matchId)) return notFound("Konuşma bulunamadı");
+    if (!isValidId(id)) return notFound("Konuşma bulunamadı");
 
-    // Rate limit: 60 mesaj/dk
     const rl = await checkRateLimit(userId, "message");
     if (!rl.allowed) return rateLimitResponse(rl.remaining);
 
@@ -95,22 +91,27 @@ export async function POST(
     const { content: rawContent } = sendSchema.parse(body);
     const content = sanitizeText(rawContent);
 
-    const match = await prisma.match.findUnique({
-      where: { id: matchId },
+    const conv = await prisma.directConversation.findUnique({
+      where: { id },
       select: { user1Id: true, user2Id: true },
     });
-    if (!match) return notFound("Konuşma bulunamadı");
-    if (match.user1Id !== userId && match.user2Id !== userId) {
+    if (!conv) return notFound("Konuşma bulunamadı");
+    if (conv.user1Id !== userId && conv.user2Id !== userId) {
       return NextResponse.json({ success: false, error: "Bu konuşmaya erişim yetkiniz yok" }, { status: 403 });
     }
 
-    const receiverId = match.user1Id === userId ? match.user2Id : match.user1Id;
+    const receiverId = conv.user1Id === userId ? conv.user2Id : conv.user1Id;
 
     const message = await prisma.message.create({
-      data: { matchId, senderId: userId, receiverId, content },
+      data: {
+        conversationId: id,
+        senderId: userId,
+        receiverId,
+        content,
+      },
       select: {
         id: true,
-        matchId: true,
+        conversationId: true,
         senderId: true,
         receiverId: true,
         content: true,
@@ -120,18 +121,21 @@ export async function POST(
       },
     });
 
-    // Bildirim gönder (karşı tarafa)
-    const sender = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
-    await createNotification(
-      NOTIF.newMessage(receiverId, sender?.name ?? "Biri", matchId, content.slice(0, 60))
-    );
-
-    log.info("Mesaj gönderildi", { matchId, senderId: userId });
-    return NextResponse.json({ success: true, data: message });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ success: false, error: error.issues[0].message }, { status: 400 });
+    // Bildirim gönder
+    try {
+      await createNotification({
+        userId: receiverId,
+        type: "NEW_MESSAGE" as NotificationType,
+        title: `${message.sender.name ?? "Biri"} mesaj gönderdi`,
+        body: content.slice(0, 80),
+        link: `/mesajlar/dm/${id}`,
+      });
+    } catch {
+      // Bildirim hatası mesaj gönderimini engellemez
     }
+
+    return NextResponse.json({ success: true, data: message }, { status: 201 });
+  } catch (error) {
     log.error("Mesaj gönderilemedi", error);
     return NextResponse.json({ success: false, error: "Mesaj gönderilemedi" }, { status: 500 });
   }

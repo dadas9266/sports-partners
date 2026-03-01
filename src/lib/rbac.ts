@@ -1,5 +1,4 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 
 export type RBACSession = {
@@ -18,7 +17,7 @@ export type RBACSession = {
 export async function requireAuth(): Promise<
   RBACSession | NextResponse
 > {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json(
       { error: "Giriş yapmanız gerekiyor" },
@@ -35,7 +34,7 @@ export async function requireAuth(): Promise<
 export async function requireAdmin(): Promise<
   RBACSession | NextResponse
 > {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json(
       { error: "Giriş yapmanız gerekiyor" },

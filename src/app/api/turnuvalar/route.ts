@@ -1,6 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 const TOURNAMENT_SELECT = {
@@ -50,7 +49,7 @@ export async function GET(req: NextRequest) {
 
 /** POST /api/turnuvalar — Turnuva oluştur */
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Yetkisiz" }, { status: 401 });
   }

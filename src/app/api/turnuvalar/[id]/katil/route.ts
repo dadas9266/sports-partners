@@ -1,13 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 type Params = { params: Promise<{ id: string }> };
 
 /** POST /api/turnuvalar/[id]/katil — Turnuvaya katıl */
 export async function POST(_req: NextRequest, { params }: Params) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Yetkisiz" }, { status: 401 });
   }
@@ -55,7 +54,7 @@ export async function POST(_req: NextRequest, { params }: Params) {
 
 /** DELETE /api/turnuvalar/[id]/katil — Turnuvadan çık */
 export async function DELETE(_req: NextRequest, { params }: Params) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Yetkisiz" }, { status: 401 });
   }

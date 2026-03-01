@@ -346,7 +346,8 @@ export interface Follow {
 
 export interface Message {
   id: string;
-  matchId: string;
+  matchId?: string | null;
+  conversationId?: string | null;
   senderId: string;
   receiverId: string;
   content: string;
@@ -356,11 +357,15 @@ export interface Message {
 }
 
 export interface Conversation {
-  matchId: string;
+  type: "match" | "direct";
+  id: string;
+  matchId?: string | null;
+  conversationId?: string | null;
   partner: UserPublic & { avatarUrl?: string | null };
-  listing: { id: string; sport: Sport; dateTime: string };
+  listing: { id: string; sport: Sport; dateTime: string } | null;
   lastMessage: { content: string; createdAt: string; isMine: boolean } | null;
   hasUnread: boolean;
+  updatedAt: string;
 }
 
 // --- Gamification Types ---
