@@ -38,7 +38,7 @@ export default function YeniTurnuvaPage() {
   useEffect(() => {
     fetch("/api/sports")
       .then((r) => r.json())
-      .then((d) => setSports(d.sports ?? d ?? []))
+      .then((d) => setSports(Array.isArray(d) ? d : (d.data ?? d.sports ?? [])))
       .catch(() => null);
   }, []);
 
@@ -62,14 +62,16 @@ export default function YeniTurnuvaPage() {
         }),
       });
 
+      const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        const t = await res.json();
         toast.success("Turnuva oluşturuldu!");
-        router.push(`/turnuvalar/${t.id}`);
+        router.push(`/turnuvalar/${data.id}`);
       } else {
-        const d = await res.json();
-        toast.error(d.error ?? "Hata oluştu");
+        toast.error(data.error ?? "Turnuva oluşturulamadı");
       }
+    } catch (err) {
+      console.error("Turnuva oluşturma hatası:", err);
+      toast.error("Bağlantı hatası. Lütfen tekrar deneyin.");
     } finally {
       setLoading(false);
     }

@@ -36,7 +36,14 @@ export async function GET(
         ratingsReceived: {
           select: { score: true },
         },
-        trainerProfile: { select: { isVerified: true, experience: true, specialization: true, hourlyRate: true } },
+        trainerProfile: {
+          select: {
+            isVerified: true,
+            hourlyRate: true,
+            gymName: true,
+            specializations: { select: { sportName: true, years: true } },
+          },
+        },
         coverUrl: true,
         clubMemberships: {
           select: {

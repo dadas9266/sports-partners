@@ -72,23 +72,27 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Başlık gerekli" }, { status: 400 });
   }
 
-  const tournament = await (prisma as any).tournament.create({
-    data: {
-      creatorId: session.user.id,
-      title: title.trim(),
-      description: description ?? null,
-      sportId: sportId ?? null,
-      format: format ?? "SINGLE_ELIMINATION",
-      maxParticipants: maxParticipants ?? 16,
-      prizeInfo: prizeInfo ?? null,
-      startsAt: startsAt ? new Date(startsAt) : null,
-      endsAt: endsAt ? new Date(endsAt) : null,
-      location: location ?? null,
-      isPublic,
-      status: "DRAFT",
-    },
-    select: TOURNAMENT_SELECT,
-  });
-
-  return NextResponse.json(tournament, { status: 201 });
+  try {
+    const tournament = await (prisma as any).tournament.create({
+      data: {
+        creatorId: session.user.id,
+        title: title.trim(),
+        description: description ?? null,
+        sportId: sportId || null,
+        format: format ?? "SINGLE_ELIMINATION",
+        maxParticipants: Number(maxParticipants ?? 16),
+        prizeInfo: prizeInfo ?? null,
+        startsAt: startsAt ? new Date(startsAt) : null,
+        endsAt: endsAt ? new Date(endsAt) : null,
+        location: location ?? null,
+        isPublic,
+        status: "DRAFT",
+      },
+      select: TOURNAMENT_SELECT,
+    });
+    return NextResponse.json(tournament, { status: 201 });
+  } catch (error) {
+    console.error("Turnuva oluşturma hatası:", error);
+    return NextResponse.json({ error: "Turnuva oluşturulamadı" }, { status: 500 });
+  }
 }

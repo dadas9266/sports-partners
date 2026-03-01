@@ -47,6 +47,8 @@ export default function ToplulukPage() {
     isPrivate: false,
     sportId: "",
     cityId: "",
+    website: "",
+    maxMembers: "",
   });
   const [creating, setCreating] = useState(false);
 
@@ -127,17 +129,20 @@ export default function ToplulukPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...form,
+          type: form.type,
+          name: form.name.trim(),
+          description: form.description || undefined,
+          isPrivate: form.isPrivate,
           sportId: form.sportId || undefined,
           cityId:  form.cityId  || undefined,
-          description: form.description || undefined,
+          website: form.website || undefined,
         }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error);
       toast.success("Topluluk oluşturuldu!");
       setShowCreate(false);
-      setForm({ type: "GROUP", name: "", description: "", isPrivate: false, sportId: "", cityId: "" });
+      setForm({ type: "GROUP", name: "", description: "", isPrivate: false, sportId: "", cityId: "", website: "", maxMembers: "" });
       fetchCommunities();
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "Bir hata oluştu");
@@ -270,7 +275,7 @@ export default function ToplulukPage() {
           className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
           onClick={e => { if (e.target === e.currentTarget) setShowCreate(false); }}
         >
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-gray-900 dark:text-white">Yeni Topluluk Oluştur</h2>
               <button onClick={() => setShowCreate(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">✕</button>
@@ -278,37 +283,51 @@ export default function ToplulukPage() {
 
             {/* Type selector */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tür</label>
-              <div className="flex gap-2">
-                {TYPES.slice(1).map(t => (
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tür</label>
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  { value: "GROUP", icon: "👥", label: "Grup", desc: "Spor grubu, herkes katılabilir" },
+                  { value: "CLUB",  icon: "🏛️", label: "Kulüp", desc: "Kurumsal kulüp, kaptan onaylı" },
+                  { value: "TEAM",  icon: "⚽", label: "Takım", desc: "Küçük takım, maç odaklı" },
+                ] as const).map(t => (
                   <button
                     key={t.value}
-                    onClick={() => setForm(f => ({ ...f, type: t.value as CommunityType }))}
-                    className={`flex-1 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                    type="button"
+                    onClick={() => setForm(f => ({ ...f, type: t.value }))}
+                    className={`p-3 rounded-xl border-2 text-center transition-colors ${
                       form.type === t.value
-                        ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300"
-                        : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
+                        ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20"
+                        : "border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
                     }`}
                   >
-                    {t.label}
+                    <div className="text-2xl mb-1">{t.icon}</div>
+                    <div className="text-xs font-semibold text-gray-800 dark:text-gray-200">{t.label}</div>
                   </button>
                 ))}
               </div>
+              {/* Type description hint */}
+              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2">
+                {form.type === "GROUP" && "👥 Herkesin katılabileceği açık bir spor grubu. Etkinlik odaklı, ilan bağlantısı vardır."}
+                {form.type === "CLUB" && "🏛️ Resmi spor kulübü. Üyelik yönetim onayı gerektirir, web sitesi ve kurumsal bilgi eklenebilir."}
+                {form.type === "TEAM" && "⚽ Küçük ve maç odaklı takım. Belirli bir spor branşı için birlikte oynamak isteyen kişiler içindir."}
+              </p>
             </div>
 
+            {/* İsim — tüm tipler */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                İsim <span className="text-red-500">*</span>
+                {form.type === "CLUB" ? "Kulüp Adı" : form.type === "TEAM" ? "Takım Adı" : "Grup Adı"} <span className="text-red-500">*</span>
               </label>
               <input
                 value={form.name}
                 onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                 maxLength={80}
-                placeholder="Topluluk adı"
+                placeholder={form.type === "CLUB" ? "Örn: Kadıköy Tenis Kulübü" : form.type === "TEAM" ? "Örn: Pazar Sabahı FC" : "Örn: İstanbul Koşucuları"}
                 className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
             </div>
 
+            {/* Açıklama — tüm tipler */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Açıklama</label>
               <textarea
@@ -316,11 +335,12 @@ export default function ToplulukPage() {
                 onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                 rows={3}
                 maxLength={500}
-                placeholder="Topluluk hakkında kısa açıklama..."
+                placeholder={form.type === "CLUB" ? "Kulübün misyonu ve faaliyetleri..." : form.type === "TEAM" ? "Takımın oyun tarzı ve hedefleri..." : "Grup hakkında kısa açıklama..."}
                 className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
               />
             </div>
 
+            {/* Spor + Şehir — tüm tipler */}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Spor</label>
@@ -346,22 +366,43 @@ export default function ToplulukPage() {
               </div>
             </div>
 
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={form.isPrivate}
-                onChange={e => setForm(f => ({ ...f, isPrivate: e.target.checked }))}
-                className="w-4 h-4 accent-emerald-500"
-              />
-              <span className="text-sm text-gray-700 dark:text-gray-300">🔒 Özel topluluk (onaylı üyelik)</span>
-            </label>
+            {/* Kulüp'e özel: Website */}
+            {form.type === "CLUB" && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  🌐 Web Sitesi <span className="text-gray-400 text-xs font-normal">(opsiyonel)</span>
+                </label>
+                <input
+                  value={form.website}
+                  onChange={e => setForm(f => ({ ...f, website: e.target.value }))}
+                  type="url"
+                  placeholder="https://kulubunuz.com"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+            )}
+
+            {/* Özel/gizli — Grup ve Kulüp için */}
+            {form.type !== "TEAM" && (
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.isPrivate}
+                  onChange={e => setForm(f => ({ ...f, isPrivate: e.target.checked }))}
+                  className="w-4 h-4 accent-emerald-500"
+                />
+                <span className="text-sm text-gray-700 dark:text-gray-300">
+                  🔒 {form.type === "CLUB" ? "Üyelik onay gerektirsin" : "Özel grup (katılım onaylı)"}
+                </span>
+              </label>
+            )}
 
             <button
               onClick={handleCreate}
               disabled={creating || !form.name.trim()}
               className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-medium transition-colors disabled:opacity-50"
             >
-              {creating ? "Oluşturuluyor..." : "Oluştur"}
+              {creating ? "Oluşturuluyor..." : `${form.type === "CLUB" ? "Kulübü" : form.type === "TEAM" ? "Takımı" : "Grubu"} Oluştur`}
             </button>
           </div>
         </div>
