@@ -86,16 +86,17 @@ export default function LocationSelector({
         {error?.city && <p className={errorClass}>{error.city}</p>}
       </div>
 
-      {/* İlçe Seçimi */}
+      {/* İlçe Seçimi — şehirde ilçe verisi varsa göster */}
+      {districts.length > 0 && (
       <div>
-        {showLabels && <label className={labelClass}>İlçe</label>}
+        {showLabels && <label className={labelClass}>İlçe <span className="text-gray-400 font-normal text-xs">(opsiyonel)</span></label>}
         <select
           value={districtId}
           onChange={(e) => onChange({ districtId: e.target.value })}
           disabled={disabled || loading || !cityId}
           className={`${selectClass} ${error?.district ? "border-red-500" : ""}`}
         >
-          <option value="">{showLabels ? "İlçe Seçiniz" : "İlçe"}</option>
+          <option value="">{showLabels ? "İlçe Seçiniz (opsiyonel)" : "İlçe"}</option>
           {districts.map((d) => (
             <option key={d.id} value={d.id}>
               {d.name}
@@ -104,6 +105,7 @@ export default function LocationSelector({
         </select>
         {error?.district && <p className={errorClass}>{error.district}</p>}
       </div>
+      )}
     </div>
   );
 }

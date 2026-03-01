@@ -62,7 +62,8 @@ export async function getListingDetail(id: string): Promise<ApiResponse<ListingD
 export async function createListing(data: {
   type: string;
   sportId: string;
-  districtId: string;
+  cityId: string;
+  districtId?: string | null;
   venueId?: string | null;
   dateTime: string;
   level: string;

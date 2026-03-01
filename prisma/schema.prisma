@@ -141,6 +141,7 @@ model City {
   clubs       Club[]
   groups      Group[]
   communities Community[]
+  listings    Listing[]
 
   @@unique([name, countryId])
 }
@@ -205,8 +206,10 @@ model Listing {
   type            ListingType
   sportId         String
   sport           Sport         @relation(fields: [sportId], references: [id])
-  districtId      String
-  district        District      @relation(fields: [districtId], references: [id])
+  cityId          String?
+  city            City?         @relation(fields: [cityId], references: [id])
+  districtId      String?
+  district        District?     @relation(fields: [districtId], references: [id])
   venueId         String?
   venue           Venue?        @relation(fields: [venueId], references: [id])
   userId          String

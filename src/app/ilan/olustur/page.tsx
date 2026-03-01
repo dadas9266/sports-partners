@@ -113,7 +113,8 @@ export default function CreateListingPage() {
       const payload: any = {
         type: form.type as string,
         sportId: form.sportId,
-        districtId: form.districtId,
+        cityId: form.cityId,
+        districtId: form.districtId || undefined,
         venueId: form.venueId || null,
         // EQUIPMENT için tarih gönderilmez; TRAINER için opsiyonel (dolu ise gönderilir); diğerleri zorunlu
         ...(form.type !== "EQUIPMENT" && form.type !== "TRAINER" && { dateTime: form.dateTime }),
@@ -275,7 +276,7 @@ export default function CreateListingPage() {
             /* Haritadan seç butonu */
             <button
               type="button"
-              disabled={!form.districtId || !form.sportId}
+              disabled={!form.cityId || !form.sportId}
               onClick={() => setShowMapPicker(true)}
               className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed
                 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400
@@ -283,17 +284,17 @@ export default function CreateListingPage() {
                 disabled:opacity-40 disabled:cursor-not-allowed
                 transition-colors text-sm font-medium"
             >
-              🗺️ {!form.districtId || !form.sportId ? "Spor dalı ve ilçe seçince mekan belirtebilirsiniz" : "Haritadan Mekan Seç"}
+              🗺️ {!form.cityId || !form.sportId ? "Spor dalı ve şehir seçince mekan belirtebilirsiniz" : "Haritadan Mekan Seç"}
             </button>
           )}
         </div>
 
         {/* Harita Modal */}
-        {showMapPicker && selectedSport && selectedDistrict && (
+        {showMapPicker && selectedSport && (
           <VenueMapPicker
             sportName={selectedSport.name}
-            districtName={selectedDistrict.name}
-            districtId={form.districtId}
+            districtName={selectedDistrict?.name ?? cities.find(c => c.id === form.cityId)?.name ?? ""}
+            districtId={form.districtId || form.cityId}
             initialVenue={selectedMapVenue}
             onSelect={(venue) => {
               setSelectedMapVenue(venue);

@@ -95,7 +95,12 @@ export async function GET(request: Request) {
 
     if (sportId) where.sportId = sportId;
     if (districtId) where.districtId = districtId;
-    if (cityId) where.district = { cityId };
+    if (cityId) {
+      // ilçesi olan ilanlar district.cityId ile, ilçesiz ilanlar doğrudan cityId ile filtrelenir
+      (where.AND as Prisma.ListingWhereInput[]).push({
+        OR: [{ cityId }, { district: { cityId } }],
+      });
+    }
     if (level) where.level = level;
     if (type) where.type = type;
     if (upcoming === "true") {
@@ -311,7 +316,8 @@ export async function POST(request: Request) {
       data: {
         type: parsed.data.type,
         sportId: parsed.data.sportId,
-        districtId: parsed.data.districtId,
+        cityId: parsed.data.cityId,
+        districtId: parsed.data.districtId || null,
         venueId: parsed.data.venueId || null,
         userId,
         // TRAINER/EQUIPMENT için tarih opsiyonel; yoksa şu anki zaman kullanılır (gizli field)
