@@ -33,6 +33,13 @@
 				"$tsc"
 			],
 			"group": "build"
+		},
+		{
+			"label": "Start Next.js Dev Server (Turbo)",
+			"type": "shell",
+			"command": "npx next dev --turbo",
+			"isBackground": true,
+			"group": "build"
 		}
 	]
 }

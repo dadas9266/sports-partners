@@ -45,6 +45,7 @@ export default function ClubVitrinPage() {
   const [postsLoading, setPostsLoading] = useState(false);
   const [newPost, setNewPost] = useState("");
   const [submittingPost, setSubmittingPost] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
     const [openComments, setOpenComments] = useState<string | null>(null);
     const [comments, setComments] = useState<Record<string, any[]>>({});
     const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
@@ -128,6 +129,34 @@ export default function ClubVitrinPage() {
     finally { setSubmittingPost(false); }
   };
 
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingLogo(true);
+    try {
+      const fd = new FormData();
+      fd.append("type", "post");
+      fd.append("file", file);
+      fd.append("resourceId", clubId);
+      const uploadRes = await fetch("/api/upload", { method: "POST", body: fd });
+      const uploadJson = await uploadRes.json();
+      if (!uploadRes.ok || !uploadJson.url) { toast.error(uploadJson.error ?? "Yükleme başarısız"); return; }
+      const patchRes = await fetch(`/api/clubs/${clubId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ logoUrl: uploadJson.url }),
+      });
+      const patchJson = await patchRes.json();
+      if (patchJson.success) {
+        setClub(prev => prev ? { ...prev, logoUrl: uploadJson.url } : prev);
+        toast.success("Kulüp fotoğrafı güncellendi!");
+      } else {
+        toast.error(patchJson.error ?? "Güncellenemedi");
+      }
+    } catch { toast.error("Sunucu hatası"); }
+    finally { setUploadingLogo(false); e.target.value = ""; }
+  };
+
   const handleJoin = async () => {
     if (!session) { router.push("/auth/giris"); return; }
     setJoining(true);
@@ -185,11 +214,19 @@ export default function ClubVitrinPage() {
           </button>
           <div className="flex items-start gap-5">
             {/* Logo */}
-            <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center text-4xl flex-shrink-0 shadow-lg">
-              {club.logoUrl ? (
-                <img src={club.logoUrl} alt={club.name} className="w-full h-full object-cover rounded-2xl" />
-              ) : (
-                club.sport?.icon ?? "🏅"
+            <div className="relative w-20 h-20 flex-shrink-0">
+              <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center text-4xl shadow-lg overflow-hidden">
+                {club.logoUrl ? (
+                  <img src={club.logoUrl} alt={club.name} className="w-full h-full object-cover" />
+                ) : (
+                  club.sport?.icon ?? "🏅"
+                )}
+              </div>
+              {isCapt && (
+                <label className="absolute inset-0 rounded-2xl cursor-pointer flex items-center justify-center bg-black/50 opacity-0 hover:opacity-100 transition-opacity">
+                  <input type="file" accept="image/*" hidden onChange={handleLogoUpload} disabled={uploadingLogo} />
+                  <span className="text-white text-xs font-semibold">{uploadingLogo ? "⏳" : "📷"}</span>
+                </label>
               )}
             </div>
             {/* Info */}

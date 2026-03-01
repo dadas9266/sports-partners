@@ -57,7 +57,7 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const {
       businessName, address, description, phone, website,
-      capacity, sports, images, openingHours,
+      capacity, sports, images, openingHours, logoUrl,
     } = body;
 
     if (!businessName?.trim())
@@ -71,6 +71,7 @@ export async function PUT(request: NextRequest) {
         sports: sports ?? [],
         images: images ?? [],
         openingHours,
+        ...(logoUrl !== undefined ? { logoUrl } : {}),
       },
       create: {
         userId,
@@ -79,6 +80,7 @@ export async function PUT(request: NextRequest) {
         sports: sports ?? [],
         images: images ?? [],
         openingHours,
+        logoUrl: logoUrl ?? null,
       },
     });
 

@@ -42,6 +42,7 @@ export default function GroupVitrinPage() {
   const [postsLoading, setPostsLoading] = useState(false);
   const [newPost, setNewPost] = useState("");
   const [submittingPost, setSubmittingPost] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   const fetchGroup = useCallback(async () => {
     try {
@@ -121,6 +122,34 @@ export default function GroupVitrinPage() {
     finally { setSubmittingPost(false); }
   };
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingAvatar(true);
+    try {
+      const fd = new FormData();
+      fd.append("type", "post");
+      fd.append("file", file);
+      fd.append("resourceId", groupId);
+      const uploadRes = await fetch("/api/upload", { method: "POST", body: fd });
+      const uploadJson = await uploadRes.json();
+      if (!uploadRes.ok || !uploadJson.url) { toast.error(uploadJson.error ?? "Yükleme başarısız"); return; }
+      const patchRes = await fetch(`/api/groups/${groupId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ avatarUrl: uploadJson.url }),
+      });
+      const patchJson = await patchRes.json();
+      if (patchJson.success) {
+        setGroup(prev => prev ? { ...prev, avatarUrl: uploadJson.url } : prev);
+        toast.success("Grup fotoğrafı güncellendi!");
+      } else {
+        toast.error(patchJson.error ?? "Güncellenemedi");
+      }
+    } catch { toast.error("Sunucu hatası"); }
+    finally { setUploadingAvatar(false); e.target.value = ""; }
+  };
+
   const handleJoin = async () => {
     if (!session) { router.push("/auth/giris"); return; }
     setJoining(true);
@@ -177,11 +206,19 @@ export default function GroupVitrinPage() {
             ← Tüm Gruplar
           </button>
           <div className="flex items-start gap-5">
-            <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center text-4xl flex-shrink-0 shadow-lg">
-              {group.avatarUrl ? (
-                <img src={group.avatarUrl} alt={group.name} className="w-full h-full object-cover rounded-2xl" />
-              ) : (
-                group.sport?.icon ?? "👥"
+            <div className="relative w-20 h-20 flex-shrink-0">
+              <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center text-4xl shadow-lg overflow-hidden">
+                {group.avatarUrl ? (
+                  <img src={group.avatarUrl} alt={group.name} className="w-full h-full object-cover" />
+                ) : (
+                  group.sport?.icon ?? "👥"
+                )}
+              </div>
+              {isAdmin && (
+                <label className="absolute inset-0 rounded-2xl cursor-pointer flex items-center justify-center bg-black/50 opacity-0 hover:opacity-100 transition-opacity">
+                  <input type="file" accept="image/*" hidden onChange={handleAvatarUpload} disabled={uploadingAvatar} />
+                  <span className="text-white text-xs font-semibold">{uploadingAvatar ? "⏳" : "📷"}</span>
+                </label>
               )}
             </div>
             <div className="flex-1 min-w-0">

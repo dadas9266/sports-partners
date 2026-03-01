@@ -551,6 +551,7 @@ model VenueProfile {
   sports       String[] @default([])             // Faaliyet gösterilen sporlar (hızlı filtre)
   equipment    String[] @default([])             // Mevcut spor malzemeleri
   images       String[] @default([])             // Tesis görselleri
+  logoUrl      String?                           // Logo / profil fotoğrafı
   openingHours String?                           // "09:00-22:00" formatı
   isVerified   Boolean  @default(false)          // Admin onayı
   verifiedAt   DateTime?

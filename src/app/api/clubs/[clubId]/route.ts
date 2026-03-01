@@ -42,6 +42,7 @@ const updateClubSchema = z.object({
   description: z.string().max(500).optional(),
   website: z.string().url().optional().or(z.literal("")),
   isPrivate: z.boolean().optional(),
+  logoUrl: z.string().url().optional().or(z.literal("")),
 });
 
 export async function PATCH(req: NextRequest, { params }: Params) {
@@ -74,6 +75,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     if (data.description !== undefined) updateData.description = data.description || null;
     if (data.website !== undefined) updateData.website = data.website || null;
     if (data.isPrivate !== undefined) updateData.isPrivate = data.isPrivate;
+    if (data.logoUrl !== undefined) updateData.logoUrl = data.logoUrl || null;
 
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json({ error: "Değiştirilecek alan belirtilmedi" }, { status: 400 });

@@ -418,14 +418,6 @@ export default function ProfilePage() {
                     >
                       🔁 Şablonlar
                     </button>
-                    <div className="border-t border-gray-100 dark:border-gray-700 my-1" />
-                    <Link
-                      href="/teklifler"
-                      onClick={() => setMoreMenuOpen(false)}
-                      className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-                    >
-                      ⚔️ Teklifler
-                    </Link>
                   </div>
                 </>
               )}

@@ -16,6 +16,7 @@ type VenueProfileData = {
   fieldCount: string;
   openingHours: string;
   sports: string[];
+  logoUrl: string;
 };
 
 const SPORT_OPTIONS = [
@@ -35,8 +36,9 @@ export default function MekanProfilPage() {
 
   const [form, setForm] = useState<VenueProfileData>({
     businessName: "", address: "", description: "", phone: "",
-    website: "", capacity: "", fieldCount: "", openingHours: "", sports: [],
+    website: "", capacity: "", fieldCount: "", openingHours: "", sports: [], logoUrl: "",
   });
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/auth/giris");
@@ -59,6 +61,7 @@ export default function MekanProfilPage() {
             fieldCount: p.fieldCount?.toString() || "",
             openingHours: p.openingHours || "",
             sports: p.sports || [],
+            logoUrl: p.logoUrl || "",
           });
           setIsVerified(p.isVerified);
           setProfileId(p.id);
@@ -68,6 +71,33 @@ export default function MekanProfilPage() {
       .catch(() => toast.error("Profil yüklenemedi"))
       .finally(() => setLoading(false));
   }, [status]);
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingLogo(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      const json = await res.json();
+      if (!res.ok || !json.url) { toast.error(json.error ?? "Yükleme başarısız"); return; }
+      // Save logoUrl immediately via PUT
+      const putRes = await fetch("/api/venue-profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, logoUrl: json.url }),
+      });
+      const putJson = await putRes.json();
+      if (putJson.profile) {
+        setForm(f => ({ ...f, logoUrl: json.url }));
+        toast.success("Mekan logosu güncellendi!");
+      } else {
+        toast.error(putJson.error ?? "Güncellenemedi");
+      }
+    } catch { toast.error("Sunucu hatası"); }
+    finally { setUploadingLogo(false); e.target.value = ""; }
+  };
 
   const toggleSport = (sport: string) => {
     setForm(f => ({
@@ -113,11 +143,27 @@ export default function MekanProfilPage() {
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">🏟️ Mekan Profili</h1>
-            <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-              {form.businessName || session?.user?.name} · Kurumsal Hesap
-            </p>
+          <div className="flex items-center gap-4">
+            {/* Logo Upload */}
+            <div className="relative w-16 h-16 flex-shrink-0">
+              <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center border border-gray-200 dark:border-gray-600">
+                {form.logoUrl ? (
+                  <img src={form.logoUrl} alt="logo" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-3xl">🏟️</span>
+                )}
+              </div>
+              <label className="absolute inset-0 rounded-xl cursor-pointer flex items-center justify-center bg-black/50 opacity-0 hover:opacity-100 transition-opacity">
+                <input type="file" accept="image/*" hidden onChange={handleLogoUpload} disabled={uploadingLogo} />
+                <span className="text-white text-xs font-semibold">{uploadingLogo ? "⏳" : "📷"}</span>
+              </label>
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Mekan Profili</h1>
+              <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+                {form.businessName || session?.user?.name} · Kurumsal Hesap
+              </p>
+            </div>
           </div>
           {isVerified ? (
             <span className="inline-flex items-center gap-1.5 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-sm font-bold px-3 py-1.5 rounded-full border border-emerald-200 dark:border-emerald-700">

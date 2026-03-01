@@ -21,6 +21,7 @@ interface ClubInfo {
   description: string | null;
   isPrivate: boolean;
   website: string | null;
+  logoUrl: string | null;
   sport: { name: string } | null;
   city: { name: string } | null;
   _count: { members: number };
@@ -44,6 +45,8 @@ export default function ClubManagePage() {
   // Settings form state
   const [form, setForm] = useState({ name: "", description: "", website: "", isPrivate: false });
   const [saving, setSaving] = useState(false);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   const fetchClub = useCallback(async () => {
     try {
@@ -57,6 +60,7 @@ export default function ClubManagePage() {
           website: json.data.website ?? "",
           isPrivate: json.data.isPrivate ?? false,
         });
+        setLogoUrl(json.data.logoUrl ?? null);
       } else {
         toast.error("Kulüp bulunamadı");
         router.push("/kulupler");
@@ -128,6 +132,58 @@ export default function ClubManagePage() {
     } finally {
       setActionId(null);
     }
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingLogo(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const uploadRes = await fetch("/api/upload", { method: "POST", body: fd });
+      const uploadJson = await uploadRes.json();
+      if (!uploadRes.ok || !uploadJson.url) { toast.error(uploadJson.error ?? "Yükleme başarısız"); return; }
+      const patchRes = await fetch(`/api/clubs/${clubId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ logoUrl: uploadJson.url }),
+      });
+      const patchJson = await patchRes.json();
+      if (patchJson.success) {
+        setLogoUrl(uploadJson.url);
+        toast.success("Kulüb logoso güncellendi!");
+      } else {
+        toast.error(patchJson.error ?? "Güncellenemedi");
+      }
+    } catch { toast.error("Sunucu hatası"); }
+    finally { setUploadingLogo(false); e.target.value = ""; }
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingLogo(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const uploadRes = await fetch("/api/upload", { method: "POST", body: fd });
+      const uploadJson = await uploadRes.json();
+      if (!uploadRes.ok || !uploadJson.url) { toast.error(uploadJson.error ?? "Yükleme başarısız"); return; }
+      const patchRes = await fetch(`/api/clubs/${clubId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ logoUrl: uploadJson.url }),
+      });
+      const patchJson = await patchRes.json();
+      if (patchJson.success) {
+        setLogoUrl(uploadJson.url);
+        toast.success("Kulüp logosu güncellendi!");
+      } else {
+        toast.error(patchJson.error ?? "Güncellenemedi");
+      }
+    } catch { toast.error("Sunucu hatası"); }
+    finally { setUploadingLogo(false); e.target.value = ""; }
   };
 
   const saveSettings = async (e: React.FormEvent) => {
@@ -278,6 +334,26 @@ export default function ClubManagePage() {
         {/* Tab: Settings */}
         {tab === "settings" && (
           <form onSubmit={saveSettings} className="space-y-4 bg-gray-900 p-6 rounded-xl">
+            {/* Logo Upload */}
+            <div className="flex items-center gap-4 pb-4 border-b border-gray-800">
+              <div className="relative w-20 h-20 flex-shrink-0">
+                <div className="w-20 h-20 rounded-2xl overflow-hidden bg-gray-800 flex items-center justify-center border border-gray-700 text-4xl">
+                  {logoUrl ? (
+                    <img src={logoUrl} alt="logo" className="w-full h-full object-cover" />
+                  ) : (
+                    "🏟️"
+                  )}
+                </div>
+                <label className="absolute inset-0 rounded-2xl cursor-pointer flex items-center justify-center bg-black/60 opacity-0 hover:opacity-100 transition-opacity">
+                  <input type="file" accept="image/*" hidden onChange={handleLogoUpload} disabled={uploadingLogo} />
+                  <span className="text-white text-xs font-semibold">{uploadingLogo ? "⏳" : "📷"}</span>
+                </label>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-200">Kulüp Logosu</p>
+                <p className="text-xs text-gray-500 mt-0.5">Üzerine tıklayarak değiştirin</p>
+              </div>
+            </div>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">Kulüp Adı</label>
               <input
