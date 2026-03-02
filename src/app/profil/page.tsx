@@ -24,6 +24,7 @@ import ProfileHeaderView from "@/components/profile/ProfileHeaderView";
 import ProfileEditFormPanel from "@/components/profile/ProfileEditForm";
 import CreatePostBox from "@/components/profile/CreatePostBox";
 import PostCard from "@/components/profile/PostCard";
+import FollowListModal from "@/components/profile/FollowListModal";
 
 // Eksik alanları tespit eden fonksiyon
 function getMissingProfileFields(user: any) {
@@ -55,8 +56,9 @@ export default function ProfilePage() {
     return a.name.localeCompare(b.name);
   });
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"listings" | "responses" | "matches" | "calendar" | "templates" | "posts">("posts");
+  const [activeTab, setActiveTab] = useState<"listings" | "responses" | "matches" | "calendar" | "templates" | "posts" | "challenges">("posts");
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+  const [followListOpen, setFollowListOpen] = useState<null | "followers" | "following">(null);
   const [deleteModal, setDeleteModal] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -65,6 +67,8 @@ export default function ProfilePage() {
   const [posts, setPosts] = useState<any[]>([]);
   const [postsLoading, setPostsLoading] = useState(false);
   const [postsView, setPostsView] = useState<"grid" | "list">("grid");
+  const [challenges, setChallenges] = useState<any[]>([]);
+  const [challengesLoading, setChallengesLoading] = useState(false);
   const [otpFlow, setOtpFlow] = useState<Record<string, { step: "idle" | "requested" | "verifying"; code: string; generated?: string; loading: boolean }>>({});
 
   const requestOtp = async (matchId: string) => {
@@ -117,6 +121,20 @@ export default function ProfilePage() {
       router.push("/auth/giris");
     }
   }, [status, router]);
+
+  useEffect(() => {
+    if (activeTab !== "challenges") return;
+    setChallengesLoading(true);
+    Promise.all([
+      fetch("/api/challenges?direction=received").then(r => r.json()),
+      fetch("/api/challenges?direction=sent").then(r => r.json()),
+    ]).then(([rec, sent]) => {
+      const recList = Array.isArray(rec.data) ? rec.data.map((c: any) => ({ ...c, direction: "received" })) : [];
+      const sentList = Array.isArray(sent.data) ? sent.data.map((c: any) => ({ ...c, direction: "sent" })) : [];
+      setChallenges([...recList, ...sentList]);
+    }).catch(() => {})
+      .finally(() => setChallengesLoading(false));
+  }, [activeTab]);
 
   useEffect(() => {
     if (activeTab !== "posts" || !session?.user) return;
@@ -322,6 +340,8 @@ export default function ProfilePage() {
             setUploadingCover={setUploadingCover}
             onEditClick={handleEditProfile}
             onUploadSuccess={refresh}
+            onFollowerClick={() => setFollowListOpen("followers")}
+            onFollowingClick={() => setFollowListOpen("following")}
           />
         ) : (
           <div className="p-6">
@@ -370,6 +390,7 @@ export default function ProfilePage() {
               { key: "listings", label: "📋 İlanlarım", badge: pendingIncoming },
               { key: "responses", label: "📩 Başvurularım", badge: myResponsesCount },
               { key: "matches", label: "🤝 Eşleşmeler", badge: matchesCount },
+              { key: "challenges", label: "⚔️ Tekliflerim", badge: 0 },
             ] as { key: string; label: string; badge: number }[]).map((tab) => (
               <button
                 key={tab.key}
@@ -796,6 +817,74 @@ export default function ProfilePage() {
         </div>
       )}
 
+      {/* Tekliflerim */}
+      {activeTab === "challenges" && (
+        <div className="space-y-4" role="tabpanel">
+          {challengesLoading ? (
+            <div className="flex justify-center py-10"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600" /></div>
+          ) : challenges.length === 0 ? (
+            <div className="text-center py-12 text-gray-400 dark:text-gray-500">
+              <p className="text-4xl mb-2">⚔️</p>
+              <p className="text-lg font-medium">Aktif teklif yok</p>
+              <p className="text-sm mt-1">Birine teklif gönder veya tekliflerini bekle.</p>
+            </div>
+          ) : (
+            challenges.map((c: any) => (
+              <div key={c.id} className={`bg-white dark:bg-gray-800 rounded-xl shadow-sm border p-5 ${c.direction === "received" ? "border-indigo-200 dark:border-indigo-800" : "border-emerald-200 dark:border-emerald-800"}`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center shrink-0">
+                      {c.direction === "received" ? (
+                        c.challenger?.avatarUrl
+                          ? <img src={c.challenger.avatarUrl} alt={c.challenger.name} className="w-full h-full object-cover" />
+                          : <span className="text-lg font-bold">{c.challenger?.name?.[0]}</span>
+                      ) : (
+                        c.target?.avatarUrl
+                          ? <img src={c.target.avatarUrl} alt={c.target.name} className="w-full h-full object-cover" />
+                          : <span className="text-lg font-bold">{c.target?.name?.[0]}</span>
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-800 dark:text-gray-100 text-sm">
+                        {c.direction === "received" ? (
+                          <><span className="text-indigo-600 dark:text-indigo-400">📨 Gelen:</span> {c.challenger?.name}</>
+                        ) : (
+                          <><span className="text-emerald-600 dark:text-emerald-400">📤 Gönderilen:</span> {c.target?.name}</>
+                        )}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        {c.sport?.icon} {c.sport?.name}
+                        {c.district ? ` · ${c.district.city?.name}, ${c.district.name}` : ""}
+                        {c.proposedDateTime ? ` · ${new Date(c.proposedDateTime).toLocaleDateString("tr-TR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}` : ""}
+                      </p>
+                      {c.message && <p className="text-xs text-gray-400 mt-1 italic">&quot;{c.message}&quot;</p>}
+                    </div>
+                  </div>
+                  {c.direction === "received" && (
+                    <div className="flex gap-2 shrink-0">
+                      <button
+                        onClick={async () => {
+                          const res = await fetch(`/api/challenges/${c.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "accept" }) });
+                          if (res.ok) { setChallenges(prev => prev.filter(ch => ch.id !== c.id)); toast.success("Teklif kabul edildi!"); }
+                        }}
+                        className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-semibold transition"
+                      >✓ Kabul</button>
+                      <button
+                        onClick={async () => {
+                          const res = await fetch(`/api/challenges/${c.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "reject" }) });
+                          if (res.ok) { setChallenges(prev => prev.filter(ch => ch.id !== c.id)); toast.success("Teklif reddedildi."); }
+                        }}
+                        className="text-xs bg-gray-200 dark:bg-gray-700 hover:bg-red-100 dark:hover:bg-red-900/30 text-gray-600 dark:text-gray-400 hover:text-red-600 px-3 py-1.5 rounded-lg font-semibold transition"
+                      >✕ Reddet</button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
       {/* Gönderiler */}
       {activeTab === "posts" && (
         <div className="space-y-4" role="tabpanel">
@@ -893,6 +982,14 @@ export default function ProfilePage() {
           onSuccess={refresh}
         />
       )}
+
+      {/* Follow List Modal */}
+      <FollowListModal
+        open={followListOpen !== null}
+        type={followListOpen ?? "followers"}
+        onClose={() => setFollowListOpen(null)}
+        onCountChange={refresh}
+      />
     </div>
   );
 }

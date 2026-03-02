@@ -50,7 +50,7 @@ export default function ProfesyonelPage() {
       });
       const json = await res.json();
       if (json.success) {
-        toast.success("Antrenör başvurunuz alındı! İnceleme sonucunda size bildirim gönderilecek.");
+        toast.success("✅ Antrenör hesabınız aktif edildi! Sayfayı yenileyiniz.");
       } else {
         toast.error(json.error || "Başvuru gönderilemedi");
       }
@@ -74,7 +74,7 @@ export default function ProfesyonelPage() {
       });
       const json = await res.json();
       if (json.success) {
-        toast.success("Tesis başvurunuz alındı! İnceleme sonucunda size bildirim gönderilecek.");
+        toast.success("✅ Tesis hesabınız aktif edildi! Sayfayı yenileyiniz.");
       } else {
         toast.error(json.error || "Başvuru gönderilemedi");
       }

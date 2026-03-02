@@ -26,6 +26,8 @@ interface ProfileHeaderViewProps {
   setUploadingCover: (v: boolean) => void;
   onEditClick: () => void;
   onUploadSuccess: () => void;
+  onFollowerClick?: () => void;
+  onFollowingClick?: () => void;
 }
 
 export default function ProfileHeaderView({
@@ -36,6 +38,8 @@ export default function ProfileHeaderView({
   setUploadingCover,
   onEditClick,
   onUploadSuccess,
+  onFollowerClick,
+  onFollowingClick,
 }: ProfileHeaderViewProps) {
   const lvl = user.userLevel || "BEGINNER";
   const levelCfg = LEVEL_CONFIG[lvl] || LEVEL_CONFIG.BEGINNER;
@@ -114,9 +118,16 @@ export default function ProfileHeaderView({
           <div className="flex-1">
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{user.name}</h1>
-              {user.trainerProfile?.isVerified && (
+              {/* Antrenör Rozeti */}
+              {user.userType === "TRAINER" && (
                 <span className="inline-flex items-center gap-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-xs font-bold px-2.5 py-1 rounded-full border border-blue-200 dark:border-blue-700 whitespace-nowrap">
-                  ✓ Verified Pro
+                  🏅 Antrenör{user.trainerProfile?.isVerified ? " ✓" : ""}
+                </span>
+              )}
+              {/* Tesis Rozeti */}
+              {user.userType === "VENUE" && (
+                <span className="inline-flex items-center gap-1 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-xs font-bold px-2.5 py-1 rounded-full border border-amber-200 dark:border-amber-700 whitespace-nowrap">
+                  🏟️ Tesis{user.trainerProfile?.isVerified ? " ✓" : ""}
                 </span>
               )}
               <span className={`inline-flex items-center text-xs font-bold px-2.5 py-1 rounded-full border whitespace-nowrap ${levelCfg.cls}`}>
@@ -147,16 +158,22 @@ export default function ProfileHeaderView({
               )}
             </div>
 
-            {/* Sosyal İstatistikler */}
+            {/* Sosyal İstatistikler — tıklanabilir */}
             <div className="flex gap-4 mt-2">
-              <div className="text-sm">
-                <span className="font-bold text-gray-800 dark:text-gray-100">{user._count?.followers || 0}</span>
+              <button
+                onClick={onFollowerClick}
+                className="text-sm text-left hover:text-emerald-600 dark:hover:text-emerald-400 transition group"
+              >
+                <span className="font-bold text-gray-800 dark:text-gray-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400">{user._count?.followers || 0}</span>
                 <span className="text-gray-500 dark:text-gray-400 ml-1">Takipçi</span>
-              </div>
-              <div className="text-sm">
-                <span className="font-bold text-gray-800 dark:text-gray-100">{user._count?.following || 0}</span>
+              </button>
+              <button
+                onClick={onFollowingClick}
+                className="text-sm text-left hover:text-emerald-600 dark:hover:text-emerald-400 transition group"
+              >
+                <span className="font-bold text-gray-800 dark:text-gray-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400">{user._count?.following || 0}</span>
                 <span className="text-gray-500 dark:text-gray-400 ml-1">Takip Edilen</span>
-              </div>
+              </button>
             </div>
 
             {/* Bio */}
