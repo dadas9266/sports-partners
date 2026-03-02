@@ -12,6 +12,37 @@ const SPORT_OPTIONS = [
   "Masa Tenisi", "Yoga", "Pilates", "Koşu",
 ];
 
+type SportDetailField = { label: string; key: string } & (
+  | { type: "select"; options: string[] }
+  | { type: "number"; placeholder?: string }
+);
+
+const SPORT_DETAILS_CONFIG: Record<string, SportDetailField[]> = {
+  Futbol:    [
+    { key: "sahaType",  label: "Saha Tipi",   type: "select",  options: ["Halı", "Çim", "Toprak", "Sentetik"] },
+    { key: "sahaCount", label: "Saha Sayısı", type: "number", placeholder: "2" },
+  ],
+  Tenis:     [
+    { key: "kortType",  label: "Kort Tipi",   type: "select",  options: ["Sert", "Toprak", "Çim"] },
+    { key: "kortCount", label: "Kort Sayısı", type: "number", placeholder: "4" },
+  ],
+  Basketbol: [
+    { key: "kortType",  label: "Kort Tipi",   type: "select",  options: ["İç Mekan", "Dış Mekan"] },
+    { key: "potaCount", label: "Pota Sayısı", type: "number", placeholder: "2" },
+  ],
+  Voleybol:  [
+    { key: "sahaType",  label: "Saha Tipi",   type: "select",  options: ["İç Mekan", "Dış Mekan", "Plaj"] },
+    { key: "sahaCount", label: "Saha Sayısı", type: "number", placeholder: "2" },
+  ],
+  "Yüzme":   [
+    { key: "havuzType",  label: "Havuz Tipi",   type: "select",  options: ["Açık", "Kapalı"] },
+    { key: "seritCount", label: "Şerit Sayısı", type: "number", placeholder: "8" },
+  ],
+  Padel:     [{ key: "kortCount", label: "Kort Sayısı", type: "number", placeholder: "4" }],
+  Squash:    [{ key: "kortCount", label: "Kort Sayısı", type: "number", placeholder: "2" }],
+  Badminton: [{ key: "kortCount", label: "Kort Sayısı", type: "number", placeholder: "4" }],
+};
+
 type VenueProfile = {
   id: string;
   businessName: string;
@@ -64,6 +95,7 @@ export default function IsletmeYonetimiPage() {
     openingHours: "",
     sports: [] as string[],
   });
+  const [sportDetails, setSportDetails] = useState<Record<string, Record<string, string>>>({});
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/auth/giris");
@@ -89,6 +121,7 @@ export default function IsletmeYonetimiPage() {
           openingHours: p.openingHours || "",
           sports: p.sports || [],
         });
+        if ((p as any).sportDetails) setSportDetails((p as any).sportDetails);
       }
       if (listingData.listings) setListings(listingData.listings);
     }).catch(() => toast.error("Veriler yüklenemedi"))
@@ -107,6 +140,7 @@ export default function IsletmeYonetimiPage() {
           capacity: form.capacity ? parseInt(form.capacity) : null,
           images: profile?.images ?? [],
           logoUrl: profile?.logoUrl,
+          sportDetails,
         }),
       });
       const json = await res.json();
@@ -273,13 +307,23 @@ export default function IsletmeYonetimiPage() {
             )}
           </div>
 
-          {/* Quick action */}
-          <Link
-            href="/ilan/olustur"
-            className="flex-shrink-0 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold rounded-xl transition"
-          >
-            + İlan Oluştur
-          </Link>
+          {/* Quick actions */}
+          <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
+            <Link
+              href={`/mekanlar/${profile.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-4 py-2 border border-emerald-500 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-sm font-semibold rounded-xl transition text-center"
+            >
+              🌐 Herkese Açık Profil
+            </Link>
+            <Link
+              href="/ilan/olustur"
+              className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold rounded-xl transition text-center"
+            >
+              + İlan Oluştur
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -446,6 +490,50 @@ export default function IsletmeYonetimiPage() {
               })}
             </div>
           </div>
+
+          {/* Dynamic sport detail fields */}
+          {form.sports.filter(s => SPORT_DETAILS_CONFIG[s]).length > 0 && (
+            <div className="space-y-4 pt-2 border-t border-gray-100 dark:border-gray-700">
+              <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400">Branş Detayları</label>
+              {form.sports.filter(s => SPORT_DETAILS_CONFIG[s]).map(sport => (
+                <div key={sport} className="bg-gray-50 dark:bg-gray-700/40 rounded-xl p-4 space-y-3">
+                  <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">{sport}</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {SPORT_DETAILS_CONFIG[sport].map(field => (
+                      <div key={field.key}>
+                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">{field.label}</label>
+                        {field.type === "select" ? (
+                          <select
+                            value={sportDetails[sport]?.[field.key] ?? ""}
+                            onChange={e => setSportDetails(prev => ({
+                              ...prev,
+                              [sport]: { ...(prev[sport] ?? {}), [field.key]: e.target.value },
+                            }))}
+                            className={inputClass}
+                          >
+                            <option value="">Seçiniz</option>
+                            {field.options.map(o => <option key={o} value={o}>{o}</option>)}
+                          </select>
+                        ) : (
+                          <input
+                            type="number"
+                            min={1}
+                            placeholder={field.placeholder ?? ""}
+                            value={sportDetails[sport]?.[field.key] ?? ""}
+                            onChange={e => setSportDetails(prev => ({
+                              ...prev,
+                              [sport]: { ...(prev[sport] ?? {}), [field.key]: e.target.value },
+                            }))}
+                            className={inputClass}
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div className="flex gap-3 pt-2 border-t border-gray-100 dark:border-gray-700">
             <button

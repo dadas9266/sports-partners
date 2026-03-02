@@ -221,7 +221,7 @@ export default function Navbar() {
                     </Link>
                   )}
                   <Link href="/profil" className="block px-4 py-2 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/30">{t("profile")}</Link>
-                  <Link href="/mekan-profil" className="block px-4 py-2 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/30">{t("venue")}</Link>
+                  <Link href="/ayarlar/isletme" className="block px-4 py-2 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/30">🏟️ İşletme Yönetimi</Link>
                   <Link href="/topluluklarim" className="block px-4 py-2 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/30">{t("myCommunities")}</Link>
                   <Link href="/ayarlar" className="block px-4 py-2 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/30">{t("settings")}</Link>
                   <button onClick={() => signOut()} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30">
@@ -284,7 +284,7 @@ export default function Navbar() {
               <Link href="/profil" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">👤 {t("profile")}</Link>
               <Link href="/teklifler" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">⚔️ Teklifler</Link>
               <Link href="/ayarlar" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">⚙️ {t("settings")}</Link>
-              <Link href="/mekan-profil" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">🏙️ {t("venueProfile")}</Link>
+              <Link href="/ayarlar/isletme" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">🏟️ İşletme Yönetimi</Link>
               <Link href="/mesajlar" className="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-2.5 rounded-xl transition text-sm text-gray-700 dark:text-gray-200" onClick={() => setMenuOpen(false)} role="menuitem">
                 <span>💬 {t("messages")}</span>
                 {unreadMessages > 0 && <span className="bg-blue-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{unreadMessages > 9 ? "9+" : unreadMessages}</span>}

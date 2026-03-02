@@ -321,292 +321,287 @@ export default function PublicProfilePage({
   const joinDate = format(new Date(profile.createdAt), "MMMM yyyy", { locale: tr });
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      {/* Profil Kartı */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+    <div className="max-w-3xl mx-auto space-y-4">
+
+      {/* ── HERO CARD: Cover + Avatar + Floating Actions ── */}
+      <div className="relative rounded-2xl overflow-hidden shadow-sm">
+
         {/* Cover */}
-        <div className="relative h-44 bg-gradient-to-r from-emerald-400 to-teal-500">
+        <div className="relative h-52 sm:h-60 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600">
           {(profile as any).coverUrl && (
             <img src={(profile as any).coverUrl} alt="Kapak" className="w-full h-full object-cover" />
           )}
-        </div>
-        <div className="p-6">
-        <div className="flex items-start gap-5 flex-wrap">
-          {/* Avatar — story varsa halkali, tıklanabilir */}
-          <button
-            onClick={() => storyGroups.length > 0 ? setStoryViewerOpen(true) : undefined}
-            className={`relative w-20 h-20 rounded-full shrink-0 -mt-10 border-4 border-white dark:border-gray-800 shadow overflow-visible ${
-              storyGroups.length > 0 ? "cursor-pointer" : "cursor-default"
-            }`}
-            disabled={storyGroups.length === 0}
-            aria-label={storyGroups.length > 0 ? "Hikayeleri görüntüle" : undefined}
-          >
-            {/* Gradient ring (hikaye varsa) */}
-            {storyGroups.length > 0 && (
-              <span className={`absolute inset-[-4px] rounded-full ${
-                storyGroups[0].hasUnread
-                  ? "bg-gradient-to-br from-pink-500 via-orange-400 to-yellow-300"
-                  : "bg-gray-400"
-              }`} />
-            )}
-            <span className="absolute inset-[2px] rounded-full bg-white dark:bg-gray-800 z-[1]" />
-            <span className="absolute inset-[4px] rounded-full overflow-hidden z-[2] bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-3xl font-bold text-emerald-600 dark:text-emerald-400">
-              {profile.avatarUrl ? (
-                <img src={profile.avatarUrl} alt={profile.name} className="w-full h-full object-cover" />
-              ) : (
-                profile.name.charAt(0).toUpperCase()
-              )}
-            </span>
-          </button>
+          {/* Bottom gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent pointer-events-none" />
 
-          {/* Bilgiler */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{profile.name}</h1>
+          {/* Name + badges on cover — bottom left */}
+          <div className="absolute bottom-4 left-[108px] sm:left-[120px] right-3 z-10 pointer-events-none">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <h1 className="text-xl sm:text-2xl font-black text-white drop-shadow-lg leading-tight">{profile.name}</h1>
+              {profile.isOwnProfile && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/80 text-white backdrop-blur-sm">Sen</span>
+              )}
               {(profile as any).trainerProfile?.isVerified && (
-                <span className="inline-flex items-center gap-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-xs font-bold px-2.5 py-1 rounded-full border border-blue-200 dark:border-blue-700">
-                  ✓ Verified Pro
-                </span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/80 text-white backdrop-blur-sm whitespace-nowrap">🏅 Antrenör ✓</span>
+              )}
+              {(profile as any).userType === "VENUE" && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/80 text-white backdrop-blur-sm whitespace-nowrap">🏟️ Tesis</span>
               )}
               {profile.birthDate && (
-                <span className="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded text-xs font-bold text-gray-600 dark:text-gray-400">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-black/30 text-white backdrop-blur-sm">
                   {differenceInYears(new Date(), new Date(profile.birthDate))} Yaş
                 </span>
               )}
-              {profile.isOwnProfile && (
-                <Link href="/profil"><BadgeComp variant="emerald">Sen</BadgeComp></Link>
-              )}
             </div>
-
-            {profile.avgRating !== null && profile.avgRating !== undefined && (
-              <div className="flex items-center gap-2 mt-1">
-                <StarRating value={Math.round(profile.avgRating)} />
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  {profile.avgRating.toFixed(1)} ({profile.ratingCount} değerlendirme)
-                </span>
-              </div>
-            )}
-
-            {/* Rozetler */}
-            <div className="flex flex-wrap gap-1.5 mt-2 items-center">
-              {badges.length > 0 && badges.map((b) => <BadgeChip key={b.id} badge={b} />)}
-              {/* Streak Rozeti */}
-              {(profile as any).currentStreak > 0 && (
-                <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300" title={`En uzun seri: ${(profile as any).longestStreak} gün`}>
-                  🔥 {(profile as any).currentStreak} Günlük Seri
-                </span>
-              )}
-            </div>
-
-            {/* Trainer Badges */}
-            {(profile as any).trainerProfile?.isVerified && (
-              <div className="flex flex-wrap gap-1.5 mt-2">
-                {(profile as any).trainerProfile.specialization && (
-                  <span className="inline-flex items-center bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 text-xs font-semibold px-2.5 py-1 rounded-full">
-                    🎯 {(profile as any).trainerProfile.specialization}
-                  </span>
-                )}
-                {(profile as any).trainerProfile.experience && (
-                  <span className="inline-flex items-center bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-xs font-semibold px-2.5 py-1 rounded-full">
-                    🏆 {(profile as any).trainerProfile.experience} Yıl Deneyim
-                  </span>
-                )}
-                {(profile as any).trainerProfile.hourlyRate && (
-                  <span className="inline-flex items-center bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-xs font-semibold px-2.5 py-1 rounded-full">
-                    💰 {(profile as any).trainerProfile.hourlyRate}₺/sa
-                  </span>
-                )}
-              </div>
-            )}
-
-            {profile.bio && (
-              <p className="mt-2 text-gray-600 dark:text-gray-400 text-sm">{profile.bio}</p>
-            )}
-
-            <div className="mt-3 flex flex-wrap gap-3 text-sm text-gray-500 dark:text-gray-400">
-              {profile.city && (
-                <span className="flex items-center gap-1">
-                  📍 {profile.city.name}{profile.city.country ? `, ${profile.city.country.name}` : ""}
-                </span>
-              )}
-              <span className="flex items-center gap-1">📅 {joinDate} tarihinden beri</span>
-            </div>
-
-            {/* Athlete Stats */}
-            <div className="grid grid-cols-4 gap-2 mt-4">
-              <div className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-xl p-3 text-center border border-emerald-100 dark:border-emerald-800">
-                <p className="text-xl font-black text-emerald-700 dark:text-emerald-300">{profile.totalMatches}</p>
-                <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400 mt-0.5">Maç</p>
-              </div>
-              <div className="bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 rounded-xl p-3 text-center border border-amber-100 dark:border-amber-800">
-                <p className="text-xl font-black text-amber-700 dark:text-amber-300">
-                  {profile.avgRating ? `${profile.avgRating.toFixed(1)} ⭐` : "—"}
-                </p>
-                <p className="text-xs font-medium text-amber-600 dark:text-amber-400 mt-0.5">Puan</p>
-              </div>
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-3 text-center border border-blue-100 dark:border-blue-800">
-                <p className="text-xl font-black text-blue-700 dark:text-blue-300">{followerCount}</p>
-                <p className="text-xs font-medium text-blue-600 dark:text-blue-400 mt-0.5">Takipçi</p>
-              </div>
-              <div className="bg-gradient-to-br from-gray-50 to-slate-50 dark:from-gray-800/40 dark:to-slate-800/40 rounded-xl p-3 text-center border border-gray-100 dark:border-gray-700">
-                <p className="text-xl font-black text-gray-700 dark:text-gray-300">{profile.totalListings}</p>
-                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mt-0.5">İlan</p>
-              </div>
-            </div>
-
-            {/* Sporlar */}
-            {profile.sports.length > 0 && (
-              <div className="mt-3 flex flex-wrap gap-2">
-                {profile.sports.map((s) => (
-                  <span key={s.id} className="inline-flex items-center gap-1 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 text-xs px-2 py-1 rounded-full">
-                    {s.icon} {s.name}
-                  </span>
-                ))}
-              </div>
-            )}
-
-            {/* Kulüpler */}
-            {(profile as any).clubs?.length > 0 && (
-              <div className="mt-3 flex flex-wrap gap-2">
-                {(profile as any).clubs.map((c: { id: string; name: string; role: string; sport?: { icon?: string | null } | null }) => (
-                  <span key={c.id} className="inline-flex items-center gap-1 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 text-xs px-2 py-1 rounded-full">
-                    {c.sport?.icon ?? "🏅"} {c.name}
-                    {c.role === "CAPTAIN" && <span className="ml-1 text-amber-500">👑</span>}
-                  </span>
-                ))}
-              </div>
+            {profile.city && (
+              <p className="text-white/80 text-xs mt-0.5 drop-shadow">
+                📍 {profile.city.name}{profile.city.country ? `, ${profile.city.country.name}` : ""}
+              </p>
             )}
           </div>
 
-          {/* Sağ taraf butonlar */}
-          <div className="flex flex-col gap-2 min-w-[130px]">
-            {session && !profile.isOwnProfile && (
-              <>
-                {/* Takip / blok durumu */}
-                <div className="flex flex-col gap-1">
-                  {followsMe && (
-                    <span className="text-[11px] text-center text-emerald-600 dark:text-emerald-400 font-medium bg-emerald-50 dark:bg-emerald-900/20 rounded-full px-2 py-0.5">
-                      👤 Seni takip ediyor
-                    </span>
-                  )}
-                  {blockStatus === "BLOCK" && (
-                    <span className="text-[11px] text-center text-red-600 dark:text-red-400 font-medium bg-red-50 dark:bg-red-900/20 rounded-full px-2 py-0.5">
-                      🚫 Engellendi
-                    </span>
-                  )}
-                  {blockStatus === "RESTRICT" && (
-                    <span className="text-[11px] text-center text-orange-600 dark:text-orange-400 font-medium bg-orange-50 dark:bg-orange-900/20 rounded-full px-2 py-0.5">
-                      🔇 Kısıtlandı
-                    </span>
-                  )}
-                </div>
-                {blockStatus !== "BLOCK" && (
-                  <Button
-                    size="sm"
-                    variant={isFollowing ? "secondary" : "primary"}
-                    onClick={handleFollow}
-                    loading={followLoading}
-                  >
-                    {isFollowing ? "✓ Takip Ediliyor" : "+ Takip Et"}
-                  </Button>
-                )}
-                <Button size="sm" variant="secondary" onClick={() => setRatingModal(true)}>
-                  ⭐ Değerlendir
-                </Button>
-                <Button size="sm" variant="secondary" onClick={() => setShowChallengeModal(true)}>
-                  ⚔️ Teklif Gönder
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  loading={messagingLoading}
-                  onClick={async () => {
-                    if (!session) { toast.error("Mesaj göndermek için giriş yapın"); return; }
-                    setMessagingLoading(true);
-                    try {
-                      const res = await startDirectConversation(id);
-                      if (res.success && res.data) {
-                        router.push(`/mesajlar/dm/${res.data.id}`);
-                      } else {
-                        toast.error("Konuşma başlatılamadı");
-                      }
-                    } catch {
-                      toast.error("Konuşma başlatılamadı");
-                    } finally {
-                      setMessagingLoading(false);
-                    }
-                  }}
-                >
-                  💬 Mesaj Gönder
-                </Button>
-                {/* ··· Menü */}
-                <div className="relative">
-                  <button
-                    onClick={() => setDotMenuOpen((v) => !v)}
-                    disabled={blockLoading}
-                    className="w-full flex items-center justify-center gap-1 text-xs px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-                  >
-                    ··· Daha Fazla
-                  </button>
-                  {dotMenuOpen && (
-                    <>
-                      <div className="fixed inset-0 z-[100]" onClick={() => setDotMenuOpen(false)} />
-                      <div className="absolute right-0 mt-1 w-48 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-xl z-[101] overflow-hidden py-1">
-                        {followsMe && (
-                          <button
-                            onClick={handleRemoveFollower}
-                            className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-                          >
-                            👤 Takipçiyi Çıkar
-                          </button>
-                        )}
-                        <button
-                          onClick={() => handleBlock("RESTRICT")}
-                          className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-                        >
-                          🔇 {blockStatus === "RESTRICT" ? "Kısıtlamayı Kaldır" : "Kısıtla"}
-                        </button>
-                        <button
-                          onClick={() => handleBlock("BLOCK")}
-                          className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
-                        >
-                          🚫 {blockStatus === "BLOCK" ? "Engeli Kaldır" : "Engelle"}
-                        </button>
-                        <div className="border-t border-gray-100 dark:border-gray-700 my-1" />
-                        <button
-                          onClick={() => { setDotMenuOpen(false); setReportModal(true); }}
-                          className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-sm text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition"
-                        >
-                          🚩 Şikayet Et
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </>
-            )}
-            {profile.isOwnProfile && (
-              <Link href="/profil">
-                <Button size="sm" variant="secondary">Profili Düzenle</Button>
+          {/* Floating action buttons — top right */}
+          {session && !profile.isOwnProfile && blockStatus !== "BLOCK" && (
+            <div className="absolute top-3 right-3 z-20 flex gap-1.5">
+              <button
+                onClick={handleFollow}
+                disabled={followLoading}
+                className={`text-xs font-bold px-3.5 py-1.5 rounded-full backdrop-blur-sm border transition ${
+                  isFollowing
+                    ? "bg-white/25 text-white border-white/40 hover:bg-white/15"
+                    : "bg-white text-emerald-700 border-white/80 hover:bg-emerald-50 shadow"
+                }`}
+              >
+                {followLoading ? "..." : isFollowing ? "✓ Takip" : "+ Takip Et"}
+              </button>
+            </div>
+          )}
+          {profile.isOwnProfile && (
+            <div className="absolute top-3 right-3 z-20">
+              <Link href="/profil"
+                className="text-xs font-bold px-3.5 py-1.5 rounded-full bg-white/25 text-white border border-white/40 hover:bg-white/35 backdrop-blur-sm transition">
+                ✏️ Profili Düzenle
               </Link>
-            )}
-          </div>
+            </div>
+          )}
         </div>
+
+        {/* Avatar — overlaps cover, bottom-left */}
+        <div className="absolute left-5 z-20" style={{ bottom: "-44px" }}>
+          <button
+            onClick={() => storyGroups.length > 0 ? setStoryViewerOpen(true) : undefined}
+            disabled={storyGroups.length === 0}
+            className={`relative block w-24 h-24 rounded-2xl border-4 border-white dark:border-gray-900 shadow-xl overflow-visible ${storyGroups.length > 0 ? "cursor-pointer" : ""}`}
+          >
+            {storyGroups.length > 0 && (
+              <span className={`absolute inset-[-4px] rounded-2xl ${storyGroups[0].hasUnread ? "bg-gradient-to-br from-pink-500 via-orange-400 to-yellow-300" : "bg-gray-400"}`} />
+            )}
+            <span className="absolute inset-0 rounded-2xl overflow-hidden bg-emerald-100 dark:bg-emerald-900/30 z-[1] flex items-center justify-center text-3xl font-black text-emerald-600">
+              {profile.avatarUrl ? (
+                <img src={profile.avatarUrl} alt={profile.name} className="w-full h-full object-cover" />
+              ) : profile.name.charAt(0).toUpperCase()}
+            </span>
+          </button>
+        </div>
+
+        {/* White bottom bar of hero card */}
+        <div className="h-14 bg-white dark:bg-gray-800" />
+      </div>
+
+      {/* ── STATS + ACTION BAR ───────────────────────────── */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm px-5 py-4">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+
+          {/* Stats row */}
+          <div className="flex items-center divide-x divide-gray-100 dark:divide-gray-700">
+            {[
+              { val: profile.totalMatches, label: "MAÇ" },
+              { val: followerCount, label: "TAKİPÇİ" },
+              { val: followingCount, label: "TAKİP" },
+              { val: profile.avgRating ? `${profile.avgRating.toFixed(1)}⭐` : "—", label: "PUAN" },
+              { val: profile.totalListings, label: "İLAN" },
+            ].map(s => (
+              <div key={s.label} className="px-4 first:pl-0 last:pr-0 text-center">
+                <p className="text-lg font-black text-gray-900 dark:text-white leading-none">{s.val}</p>
+                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mt-0.5">{s.label}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Action icons */}
+          {session && !profile.isOwnProfile && (
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={async () => {
+                  if (!session) { toast.error("Giriş yapın"); return; }
+                  setMessagingLoading(true);
+                  try {
+                    const res = await startDirectConversation(id);
+                    if (res.success && res.data) router.push(`/mesajlar/dm/${res.data.id}`);
+                    else toast.error("Konuşma başlatılamadı");
+                  } catch { toast.error("Konuşma başlatılamadı"); }
+                  finally { setMessagingLoading(false); }
+                }}
+                disabled={messagingLoading}
+                title="Mesaj Gönder"
+                className="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:text-emerald-600 transition text-base"
+              >💬</button>
+              {blockStatus !== "BLOCK" && (
+                <button onClick={() => setShowChallengeModal(true)} title="Teklif Gönder"
+                  className="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:text-emerald-600 transition text-base">
+                  ⚔️
+                </button>
+              )}
+              <button onClick={() => setRatingModal(true)} title="Değerlendir"
+                className="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:text-amber-500 transition text-base">
+                ⭐
+              </button>
+              <div className="relative">
+                <button onClick={() => setDotMenuOpen(v => !v)}
+                  className="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition text-gray-600 dark:text-gray-400 font-bold text-sm">
+                  ···
+                </button>
+                {dotMenuOpen && (
+                  <>
+                    <div className="fixed inset-0 z-[100]" onClick={() => setDotMenuOpen(false)} />
+                    <div className="absolute right-0 mt-1 w-48 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-xl z-[101] overflow-hidden py-1">
+                      {followsMe && (
+                        <button onClick={handleRemoveFollower} className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                          👤 Takipçiyi Çıkar
+                        </button>
+                      )}
+                      <button onClick={() => handleBlock("RESTRICT")} className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                        🔇 {blockStatus === "RESTRICT" ? "Kısıtlamayı Kaldır" : "Kısıtla"}
+                      </button>
+                      <button onClick={() => handleBlock("BLOCK")} className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition">
+                        🚫 {blockStatus === "BLOCK" ? "Engeli Kaldır" : "Engelle"}
+                      </button>
+                      <div className="border-t border-gray-100 dark:border-gray-700 my-1" />
+                      <button onClick={() => { setDotMenuOpen(false); setReportModal(true); }} className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-sm text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition">
+                        🚩 Şikayet Et
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+              {blockStatus === "BLOCK" && (
+                <span className="text-xs text-red-500 font-medium bg-red-50 dark:bg-red-900/20 px-2.5 py-1 rounded-full">🚫 Engellendi</span>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Sekmeler */}
-      <div className="flex gap-2 border-b border-gray-200 dark:border-gray-700">
-        <button onClick={() => setActiveTab("posts")} className={`px-4 py-2 text-sm font-medium transition border-b-2 -mb-px ${activeTab === "posts" ? "border-emerald-500 text-emerald-600 dark:text-emerald-400" : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700"}`}>
-          📸 Gönderiler
-        </button>
-        <button onClick={() => setActiveTab("listings")} className={`px-4 py-2 text-sm font-medium transition border-b-2 -mb-px ${activeTab === "listings" ? "border-emerald-500 text-emerald-600 dark:text-emerald-400" : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700"}`}>
-          📋 İlanlar ({profile.activeListings.length})
-        </button>
-        <button onClick={() => setActiveTab("ratings")} className={`px-4 py-2 text-sm font-medium transition border-b-2 -mb-px ${activeTab === "ratings" ? "border-emerald-500 text-emerald-600 dark:text-emerald-400" : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700"}`}>
-          ⭐ Değerlendirmeler ({ratings.length})
-        </button>
+      {/* ── ABOUT CARD ───────────────────────────────────── */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-5 space-y-3">
+        {/* Badges */}
+        <div className="flex flex-wrap gap-1.5 items-center">
+          {badges.length > 0 && badges.map((b) => <BadgeChip key={b.id} badge={b} />)}
+          {(profile as any).currentStreak > 0 && (
+            <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300">
+              🔥 {(profile as any).currentStreak} Günlük Seri
+            </span>
+          )}
+        </div>
+
+        {/* Rating */}
+        {profile.avgRating !== null && profile.avgRating !== undefined && (
+          <div className="flex items-center gap-2">
+            <StarRating value={Math.round(profile.avgRating)} />
+            <span className="text-sm text-gray-500 dark:text-gray-400">
+              {profile.avgRating.toFixed(1)} ({profile.ratingCount} değerlendirme)
+            </span>
+          </div>
+        )}
+
+        {/* Trainer info */}
+        {(profile as any).trainerProfile?.isVerified && (
+          <div className="flex flex-wrap gap-1.5">
+            {(profile as any).trainerProfile.specialization && (
+              <span className="inline-flex items-center bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 text-xs font-semibold px-2.5 py-1 rounded-full">
+                🎯 {(profile as any).trainerProfile.specialization}
+              </span>
+            )}
+            {(profile as any).trainerProfile.experience && (
+              <span className="inline-flex items-center bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 text-xs font-semibold px-2.5 py-1 rounded-full">
+                🏆 {(profile as any).trainerProfile.experience} Yıl Deneyim
+              </span>
+            )}
+            {(profile as any).trainerProfile.hourlyRate && (
+              <span className="inline-flex items-center bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 text-xs font-semibold px-2.5 py-1 rounded-full">
+                💰 {(profile as any).trainerProfile.hourlyRate}₺/sa
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Bio */}
+        {profile.bio && (
+          <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{profile.bio}</p>
+        )}
+
+        {/* Meta */}
+        <div className="flex flex-wrap gap-3 text-xs text-gray-400">
+          <span>📅 {joinDate} tarihinden beri</span>
+        </div>
+
+        {/* Sports */}
+        {profile.sports.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            {profile.sports.map((s) => (
+              <span key={s.id} className="inline-flex items-center gap-1 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 text-xs px-2.5 py-1 rounded-full font-medium">
+                {s.icon} {s.name}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Clubs */}
+        {(profile as any).clubs?.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {(profile as any).clubs.map((c: { id: string; name: string; role: string; sport?: { icon?: string | null } | null }) => (
+              <span key={c.id} className="inline-flex items-center gap-1 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 text-xs px-2.5 py-1 rounded-full font-medium">
+                {c.sport?.icon ?? "🏅"} {c.name}
+                {c.role === "CAPTAIN" && <span className="ml-0.5 text-amber-500">👑</span>}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Follow status chips */}
+        {followsMe && (
+          <span className="inline-flex items-center text-xs text-emerald-600 dark:text-emerald-400 font-medium bg-emerald-50 dark:bg-emerald-900/20 rounded-full px-2.5 py-1">
+            👤 Seni takip ediyor
+          </span>
+        )}
       </div>
+
+      {/* ── STICKY TABS ──────────────────────────────────── */}
+      <div className="sticky top-[60px] z-30 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
+        <div className="flex">
+          {[
+            { key: "posts",    label: "📸 Gönderiler" },
+            { key: "listings", label: `📋 İlanlar ${profile.activeListings.length > 0 ? `(${profile.activeListings.length})` : ""}` },
+            { key: "ratings",  label: `⭐ Değerlendirmeler ${ratings.length > 0 ? `(${ratings.length})` : ""}` },
+          ].map(t => (
+            <button
+              key={t.key}
+              onClick={() => setActiveTab(t.key as typeof activeTab)}
+              className={`flex-1 py-3 text-xs sm:text-sm font-semibold transition-colors relative ${
+                activeTab === t.key
+                  ? "text-emerald-600 dark:text-emerald-400"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+              }`}
+            >
+              {t.label}
+              {activeTab === t.key && (
+                <span className="absolute bottom-0 left-4 right-4 h-0.5 bg-emerald-500 rounded-full" />
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+
 
       {/* Posts Tab */}
       {activeTab === "posts" && (
