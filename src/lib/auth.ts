@@ -68,6 +68,7 @@ const config: NextAuthConfig = {
           name: user.name,
           email: user.email,
           isAdmin: user.isAdmin,
+          userType: user.userType,
         };
       },
     }),
@@ -109,13 +110,15 @@ const config: NextAuthConfig = {
         if (account?.provider === "google" || account?.provider === "github") {
           const dbUser = await prisma.user.findUnique({
             where: { email: token.email! },
-            select: { id: true, isAdmin: true },
+            select: { id: true, isAdmin: true, userType: true },
           });
           token.id = dbUser?.id ?? token.sub;
           token.isAdmin = dbUser?.isAdmin ?? false;
+          token.userType = dbUser?.userType ?? "INDIVIDUAL";
         } else {
           token.id = user.id;
           token.isAdmin = (user as { id: string; isAdmin?: boolean }).isAdmin ?? false;
+          token.userType = (user as { id: string; userType?: string }).userType ?? "INDIVIDUAL";
         }
       }
       return token;
@@ -124,6 +127,7 @@ const config: NextAuthConfig = {
       if (session.user) {
         session.user.id = token.id as string;
         session.user.isAdmin = token.isAdmin as boolean;
+        session.user.userType = token.userType as string;
       }
       return session;
     },

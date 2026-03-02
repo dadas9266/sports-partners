@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import toast from "react-hot-toast";
@@ -50,6 +50,15 @@ export default function CommunityDetailPage() {
   const [joining, setJoining] = useState(false);
   const [activeTab, setActiveTab] = useState<"overview" | "posts" | "manage">("overview");
   const [memberActionLoading, setMemberActionLoading] = useState<string | null>(null);
+
+  // Bildirimden gelen ?tab=manage parametresini oku
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    const tab = searchParams?.get("tab");
+    if (tab === "manage" || tab === "overview" || tab === "posts") {
+      setActiveTab(tab as "overview" | "posts" | "manage");
+    }
+  }, [searchParams]);
   const [editMode, setEditMode] = useState(false);
   const [editForm, setEditForm] = useState({ name: "", description: "", website: "", isPrivate: false });
   const [editSaving, setEditSaving] = useState(false);

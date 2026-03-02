@@ -22,6 +22,7 @@ interface VenueDetail {
   capacity: number | null;
   sports: string[];
   equipment: string[];
+  amenities: string[];
   images: string[];
   openingHours: string | null;
   isVerified: boolean;
@@ -246,6 +247,20 @@ export default function MekanDetailPage() {
                     )}
                   </div>
                 </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Amenities */}
+        {venue.amenities.length > 0 && (
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 mb-6">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-3">Tesis Olanakları</h2>
+            <div className="flex flex-wrap gap-2">
+              {venue.amenities.map(a => (
+                <span key={a} className="px-3 py-1.5 rounded-full text-sm bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300 font-medium">
+                  {a}
+                </span>
               ))}
             </div>
           </div>

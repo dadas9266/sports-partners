@@ -165,15 +165,25 @@ export default function PublicProfilePage({
 
   const handleFollow = async () => {
     if (!session) { toast.error("Takip etmek için giriş yapın"); return; }
+    // Optimistic update — hemen butonu güncelle
+    const next = !isFollowing;
+    setIsFollowing(next);
+    setFollowerCount((prev) => next ? prev + 1 : prev - 1);
     setFollowLoading(true);
     try {
-      const res = await toggleFollow(id);
-      if (res.success && res.data) {
-        setIsFollowing(res.data.following);
-        setFollowerCount((prev) => res.data!.following ? prev + 1 : prev - 1);
-        toast.success(res.data.following ? "Takip edildi" : "Takipten çıkıldı");
-      }
+      const res = await toggleFollow(id) as any;
+      // API { success, following } şeklinde flat döndürüyor
+      const actualFollowing = res.following ?? res.data?.following ?? next;
+      setIsFollowing(actualFollowing);
+      setFollowerCount((prev) => {
+        const diff = actualFollowing !== next ? (actualFollowing ? 1 : -1) : 0;
+        return prev + diff;
+      });
+      toast.success(actualFollowing ? "✓ Takip edildi" : "Takipten çıkıldı");
     } catch (err) {
+      // Hata durumunda optimistic update'i geri al
+      setIsFollowing(!next);
+      setFollowerCount((prev) => next ? prev - 1 : prev + 1);
       toast.error(err instanceof Error ? err.message : "Hata oluştu");
     } finally {
       setFollowLoading(false);

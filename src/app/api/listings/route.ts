@@ -274,7 +274,7 @@ export async function POST(request: Request) {
     // Banned kullanıcı ilan oluşturamaz
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { isBanned: true, currentStreak: true },
+      select: { isBanned: true, currentStreak: true, userType: true },
     });
 
     if (user?.isBanned) {
@@ -308,6 +308,14 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { success: false, error: parsed.error.issues[0].message },
         { status: 400 }
+      );
+    }
+
+    // Sadece TRAINER tipindeki kullanıcılar Eğitmen ilanı verebilir
+    if (parsed.data.type === "TRAINER" && user?.userType !== "TRAINER") {
+      return NextResponse.json(
+        { success: false, error: "Eğitmen ilanı verebilmek için profilinizin Eğitmen tipine sahip olması gereklidir." },
+        { status: 403 }
       );
     }
 

@@ -14,8 +14,20 @@ export async function GET() {
 
     const profile = await prisma.venueProfile.findUnique({
       where: { userId },
-      include: { user: { select: { name: true, avatarUrl: true, coverUrl: true, email: true } } },
+      include: {
+        user: { select: { name: true, avatarUrl: true, coverUrl: true, email: true } },
+        facilities: { orderBy: { sportName: "asc" } },
+      },
     });
+
+    // Compute sportDetails map from VenueFacility records (for isletme edit form)
+    const sportDetails = profile?.facilities?.reduce(
+      (acc: Record<string, Record<string, string>>, f) => {
+        acc[f.sportName] = { sahaType: f.equipment[0] ?? "", sahaCount: String(f.count) };
+        return acc;
+      },
+      {}
+    ) ?? {};
 
     // Mekan istatistikleri
     let stats = null;
@@ -26,7 +38,7 @@ export async function GET() {
       stats = { approvedMatches };
     }
 
-    return NextResponse.json({ profile, stats });
+    return NextResponse.json({ profile: { ...profile, sportDetails }, stats });
   } catch (err) {
     log.error("Venue GET hatası", err);
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
@@ -58,6 +70,7 @@ export async function PUT(request: NextRequest) {
     const {
       businessName, address, description, phone, website,
       capacity, sports, images, openingHours, logoUrl,
+      sportDetails, amenities,
     } = body;
 
     if (!businessName?.trim())
@@ -69,6 +82,7 @@ export async function PUT(request: NextRequest) {
         businessName, address, description, phone, website,
         capacity: capacity ? Number(capacity) : null,
         sports: sports ?? [],
+        amenities: amenities ?? [],
         images: images ?? [],
         openingHours,
         ...(logoUrl !== undefined ? { logoUrl } : {}),
@@ -78,11 +92,31 @@ export async function PUT(request: NextRequest) {
         businessName, address, description, phone, website,
         capacity: capacity ? Number(capacity) : null,
         sports: sports ?? [],
+        amenities: amenities ?? [],
         images: images ?? [],
         openingHours,
         logoUrl: logoUrl ?? null,
       },
     });
+
+    // Sync VenueFacility records from sportDetails form data
+    if (sportDetails && typeof sportDetails === "object") {
+      await prisma.venueFacility.deleteMany({ where: { profileId: profile.id } });
+      const facilityRows = Object.entries(
+        sportDetails as Record<string, Record<string, string>>
+      )
+        .filter(([, d]) => d && (d.sahaCount || d.sahaType))
+        .map(([sportName, d]) => ({
+          profileId: profile.id,
+          sportName,
+          facilityType: "saha",
+          count: parseInt(d.sahaCount ?? "1") || 1,
+          equipment: d.sahaType ? [d.sahaType] : [],
+        }));
+      if (facilityRows.length > 0) {
+        await prisma.venueFacility.createMany({ data: facilityRows });
+      }
+    }
 
     log.info("Venue profili güncellendi", { userId });
     return NextResponse.json({ profile });

@@ -216,6 +216,16 @@ export default function CreateListingPage() {
               </button>
             ))}
           </div>
+          {/* TRAINER role warning */}
+          {form.type === "TRAINER" && session?.user?.userType !== "TRAINER" && (
+            <div className="mt-3 flex items-start gap-2 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 p-3 text-sm text-amber-800 dark:text-amber-300">
+              <span className="flex-shrink-0 text-base">⚠️</span>
+              <span>
+                E\u011fitmen ilan\u0131 verebilmek i\u00e7in hesap tipinizin <strong>E\u011fitmen</strong> olmas\u0131 gerekir.
+                Profil ayarlar\u0131ndan hesap tipinizi g\u00fcncelleyebilirsiniz.
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Spor Dalı */}

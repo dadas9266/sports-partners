@@ -135,8 +135,10 @@ export default function KayitPage() {
         router.push("/onboarding");
         router.refresh();
       }
-    } catch {
-      toast.error("Bir hata oluştu, tekrar deneyiniz");
+    } catch (err: unknown) {
+      // API'den gelen spesifik hata mesajını göster (ör: email zaten kayıtlı)
+      const message = err instanceof Error ? err.message : "Bir hata oluştu, tekrar deneyiniz";
+      toast.error(message);
     } finally {
       setLoading(false);
     }

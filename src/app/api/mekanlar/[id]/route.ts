@@ -21,6 +21,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
         capacity:     true,
         sports:       true,
         equipment:    true,
+        amenities:    true,
         images:       true,
         openingHours: true,
         isVerified:   true,

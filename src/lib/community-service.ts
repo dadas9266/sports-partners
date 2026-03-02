@@ -286,7 +286,7 @@ export async function joinCommunity(
       type: "COMMUNITY_JOIN_REQUEST" as Parameters<typeof createNotification>[0]["type"],
       title: "Yeni Üyelik Talebi",
       body: `Topluluk "${community.name}" için yeni üyelik talebi var.`,
-      link: `/topluluklar/${communityId}`,
+      link: `/topluluklar/${communityId}?tab=manage`,
     }).catch(() => {});
   }
 

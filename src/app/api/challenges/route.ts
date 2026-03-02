@@ -134,7 +134,7 @@ export async function POST(request: Request) {
       type: "DIRECT_CHALLENGE",
       title: `${challengeType === "RIVAL" ? "⚔️ Rakip" : "🤝 Partner"} Teklifi!`,
       body: `${challenger?.name} sana ${sport?.icon ?? ""} ${sport?.name} için ${challengeType === "RIVAL" ? "rakip" : "partner"} teklifi gönderdi.`,
-      link: `/profil`, // TODO: challenges sayfasına yönlendir
+      link: `/teklifler`,
     });
 
     log.info("Teklif gönderildi", { challengeId: challenge.id, from: userId, to: targetId, sport: sportId });

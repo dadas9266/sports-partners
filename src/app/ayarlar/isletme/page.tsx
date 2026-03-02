@@ -43,6 +43,12 @@ const SPORT_DETAILS_CONFIG: Record<string, SportDetailField[]> = {
   Badminton: [{ key: "kortCount", label: "Kort Sayısı", type: "number", placeholder: "4" }],
 };
 
+const AMENITY_OPTIONS = [
+  "☕ Kafeterya", "♨️ Sauna", "🛍 Soyunma Odası", "🚶 Duş",
+  "🅿️ Otopark", "📶 Wi-Fi", "🚿 Tuvalet", "🚴 Bisiklet Parkı",
+  "💊 İlk Yardım", "🎯 Ekipman Kiralama",
+];
+
 type VenueProfile = {
   id: string;
   businessName: string;
@@ -96,6 +102,7 @@ export default function IsletmeYonetimiPage() {
     sports: [] as string[],
   });
   const [sportDetails, setSportDetails] = useState<Record<string, Record<string, string>>>({});
+  const [amenities, setAmenities] = useState<string[]>([]);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/auth/giris");
@@ -122,6 +129,7 @@ export default function IsletmeYonetimiPage() {
           sports: p.sports || [],
         });
         if ((p as any).sportDetails) setSportDetails((p as any).sportDetails);
+        if (Array.isArray(p.amenities)) setAmenities(p.amenities);
       }
       if (listingData.listings) setListings(listingData.listings);
     }).catch(() => toast.error("Veriler yüklenemedi"))
@@ -141,6 +149,7 @@ export default function IsletmeYonetimiPage() {
           images: profile?.images ?? [],
           logoUrl: profile?.logoUrl,
           sportDetails,
+          amenities,
         }),
       });
       const json = await res.json();
@@ -534,6 +543,26 @@ export default function IsletmeYonetimiPage() {
               ))}
             </div>
           )}
+
+          {/* Amenities checkboxes */}
+          <div className="space-y-3 pt-2 border-t border-gray-100 dark:border-gray-700">
+            <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400">Tesis Olanakları</label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {AMENITY_OPTIONS.map(opt => (
+                <label key={opt} className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={amenities.includes(opt)}
+                    onChange={e => setAmenities(prev =>
+                      e.target.checked ? [...prev, opt] : prev.filter(a => a !== opt)
+                    )}
+                    className="w-4 h-4 accent-emerald-500"
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">{opt}</span>
+                </label>
+              ))}
+            </div>
+          </div>
 
           <div className="flex gap-3 pt-2 border-t border-gray-100 dark:border-gray-700">
             <button

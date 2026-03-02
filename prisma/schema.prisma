@@ -550,6 +550,7 @@ model VenueProfile {
   capacity     Int?                              // Toplam kişi kapasitesi
   sports       String[] @default([])             // Faaliyet gösterilen sporlar (hızlı filtre)
   equipment    String[] @default([])             // Mevcut spor malzemeleri
+  amenities    String[] @default([])             // Tesis olanakları (kafeterya, sauna, otopark…)
   images       String[] @default([])             // Tesis görselleri
   logoUrl      String?                           // Logo / profil fotoğrafı
   openingHours String?                           // "09:00-22:00" formatı
