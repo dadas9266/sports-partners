@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { useState, useEffect, useRef } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useNotifications } from "@/hooks/useNotifications";
 import Dropdown from "@/components/ui/Dropdown";
 import Button from "@/components/ui/Button";
@@ -15,6 +15,7 @@ import { useTranslations } from "next-intl";
 export default function Navbar() {
   const { data: session } = useSession();
   const pathname = usePathname();
+  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -327,11 +328,13 @@ export default function Navbar() {
                 </div>
               ) : (
                 notifications.map((n) => (
-                  <a
+                  <button
                     key={n.id}
-                    href={n.link ?? "#"}
-                    className={`flex gap-3 px-5 py-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition border-b border-gray-50 dark:border-gray-700/50 last:border-0 ${!n.read ? "bg-emerald-50/70 dark:bg-emerald-900/10" : ""}`}
-                    onClick={() => setNotifOpen(false)}
+                    className={`w-full text-left flex gap-3 px-5 py-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition border-b border-gray-50 dark:border-gray-700/50 last:border-0 ${!n.read ? "bg-emerald-50/70 dark:bg-emerald-900/10" : ""}`}
+                    onClick={() => {
+                      setNotifOpen(false);
+                      if (n.link && n.link !== "#") router.push(n.link);
+                    }}
                   >
                     <div className="shrink-0 w-9 h-9 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center text-base">
                       {n.type === "NEW_MESSAGE" ? "💬" : n.type === "NEW_MATCH" ? "🤝" : n.type === "NEW_RATING" ? "⭐" : n.type === "NEW_FOLLOWER" ? "👤" : n.type === "NO_SHOW_WARNING" ? "⚠️" : n.type === "TRAINER_VERIFIED" ? "✓" : "🔔"}
@@ -342,7 +345,7 @@ export default function Navbar() {
                       <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">{new Date(n.createdAt).toLocaleDateString("tr-TR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</p>
                     </div>
                     {!n.read && <span className="shrink-0 w-2 h-2 bg-emerald-500 rounded-full mt-1.5" />}
-                  </a>
+                  </button>
                 ))
               )}
             </div>
