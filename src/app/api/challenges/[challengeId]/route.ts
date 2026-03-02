@@ -60,63 +60,64 @@ export async function PATCH(
 
     const { action } = parsed.data;
 
-    // Teklifi güncelle
-    await prisma.directChallenge.update({
-      where: { id: challengeId },
-      data: { status: action },
-    });
-
     if (action === "ACCEPTED") {
-      // Teklif kabul edilince otomatik ilan + eşleşme oluştur
       const districtId = challenge.districtId ?? challenge.challenger.districtId;
+
       if (!districtId) {
-        // District yoksa sadece teklifi kabul et, ilanı manuel oluştursun
+        // District yoksa sadece teklifi kabul et
+        await prisma.directChallenge.update({ where: { id: challengeId }, data: { status: "ACCEPTED" } });
+        const accepterName = (await prisma.user.findUnique({ where: { id: userId }, select: { name: true } }))?.name;
         await createNotification({
           userId: challenge.challengerId,
           type: "DIRECT_CHALLENGE",
           title: "✅ Teklif Kabul Edildi!",
-          body: `${(await prisma.user.findUnique({ where: { id: userId }, select: { name: true } }))?.name} teklifinizi kabul etti! Şimdi bir ilan oluşturarak eşleşin.`,
+          body: `${accepterName} teklifinizi kabul etti! Şimdi bir ilan oluşturarak eşleşin.`,
           link: "/ilan/olustur",
         });
         return NextResponse.json({ success: true, action, matchCreated: false });
       }
 
-      // İlan + Response + Match zinciri oluştur
+      // İlan + Response + Match + Challenge güncelleme — tek transaction
       const proposedDate = challenge.proposedDateTime ?? new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-      const listing = await prisma.listing.create({
-        data: {
-          type: challenge.challengeType as "RIVAL" | "PARTNER",
-          sportId: challenge.sportId,
-          districtId,
-          userId: challenge.challengerId,
-          dateTime: proposedDate,
-          level: "BEGINNER",
-          description: challenge.message ?? `${challenge.challengeType === "RIVAL" ? "Rakip" : "Partner"} teklifi üzerinden oluşturuldu`,
-          status: "MATCHED",
-        },
+      const { match } = await prisma.$transaction(async (tx) => {
+        await tx.directChallenge.update({ where: { id: challengeId }, data: { status: "ACCEPTED" } });
+
+        const listing = await tx.listing.create({
+          data: {
+            type: challenge.challengeType as "RIVAL" | "PARTNER",
+            sportId: challenge.sportId,
+            districtId,
+            userId: challenge.challengerId,
+            dateTime: proposedDate,
+            level: "BEGINNER",
+            description: challenge.message ?? `${challenge.challengeType === "RIVAL" ? "Rakip" : "Partner"} teklifi üzerinden oluşturuldu`,
+            status: "MATCHED",
+          },
+        });
+
+        const response = await tx.response.create({
+          data: {
+            listingId: listing.id,
+            userId,
+            message: "Teklif kabul edildi ✅",
+            status: "ACCEPTED",
+          },
+        });
+
+        const match = await tx.match.create({
+          data: {
+            listingId: listing.id,
+            responseId: response.id,
+            user1Id: challenge.challengerId,
+            user2Id: userId,
+            scheduledAt: proposedDate,
+          },
+        });
+
+        return { match };
       });
 
-      const response = await prisma.response.create({
-        data: {
-          listingId: listing.id,
-          userId,
-          message: "Teklif kabul edildi ✅",
-          status: "ACCEPTED",
-        },
-      });
-
-      const match = await prisma.match.create({
-        data: {
-          listingId: listing.id,
-          responseId: response.id,
-          user1Id: challenge.challengerId,
-          user2Id: userId,
-          scheduledAt: proposedDate,
-        },
-      });
-
-      // Teklif sahibine bildirim
       const accepterName = (await prisma.user.findUnique({ where: { id: userId }, select: { name: true } }))?.name;
       await createNotification({
         userId: challenge.challengerId,
@@ -130,7 +131,8 @@ export async function PATCH(
       return NextResponse.json({ success: true, action, matchCreated: true, matchId: match.id });
     }
 
-    // Reddedildi
+    // REJECTED — transaction kullanarak atomik yap
+    await prisma.directChallenge.update({ where: { id: challengeId }, data: { status: "REJECTED" } });
     const rejecterName = (await prisma.user.findUnique({ where: { id: userId }, select: { name: true } }))?.name;
     await createNotification({
       userId: challenge.challengerId,
