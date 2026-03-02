@@ -35,8 +35,11 @@ export default function ProfesyonelPage() {
   });
 
   const userType = (data?.user as any)?.userType;
-  const isTrainer = userType === "TRAINER";
-  const isVenue = userType === "VENUE";
+  const trainerProfile = (data?.user as any)?.trainerProfile;
+  const venueProfile = (data?.user as any)?.venueProfile;
+  const isTrainer = userType === "TRAINER" || !!trainerProfile;
+  const isVenue = userType === "VENUE" || !!venueProfile;
+  const isDual = isTrainer && isVenue;
 
   const handleTrainerSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,33 +96,43 @@ export default function ProfesyonelPage() {
     );
   }
 
-  // Zaten profesyonel kullanıcı
-  if (isTrainer || isVenue) {
-    return (
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-8 text-center">
-        <span className="text-5xl">{isTrainer ? "🎯" : "🏟️"}</span>
-        <h2 className="mt-4 text-xl font-bold text-gray-800 dark:text-gray-100">
-          {isTrainer ? "Antrenör Hesabı Aktif" : "Tesis Hesabı Aktif"}
-        </h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-          {isTrainer
-            ? "Antrenör profiliniz zaten aktif. Profilinizden branşlarınızı ve fiyatlarınızı güncelleyebilirsiniz."
-            : "Tesis profiliniz zaten aktif. Tesis bilgilerinizi profilinizden güncelleyebilirsiniz."}
-        </p>
-      </div>
-    );
-  }
+  // Zaten her iki profil de aktifse — bilgi göster, her iki forma da erişimi engelleme
+  // (Kullanıcı tab'ları açıp formu yeniden gönderebilir — upsert olduğu için sorun yok)
 
   return (
     <div className="space-y-6">
+      {/* Aktif Roller Göstergesi */}
+      {(isTrainer || isVenue) && (
+        <div className="flex flex-wrap gap-2">
+          {isTrainer && (
+            <span className="inline-flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300 text-sm font-semibold px-4 py-2 rounded-full">
+              🏅 Antrenör hesabı aktif
+              <span className="w-2 h-2 bg-green-500 rounded-full" />
+            </span>
+          )}
+          {isVenue && (
+            <span className="inline-flex items-center gap-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-300 text-sm font-semibold px-4 py-2 rounded-full">
+              🏟️ Tesis hesabı aktif
+              <span className="w-2 h-2 bg-green-500 rounded-full" />
+            </span>
+          )}
+          {isDual && (
+            <span className="text-xs text-gray-500 dark:text-gray-400 self-center ml-1">
+              Her iki role de sahipsin 🎉
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Bilgi kartı */}
       <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-2xl p-5">
         <h2 className="text-base font-semibold text-emerald-800 dark:text-emerald-300 mb-1">
-          Profesyonel Hesaba Yükselt
+          {isDual ? "Profesyonel Hesap Yönetimi" : "Profesyonel Hesaba Yükselt"}
         </h2>
         <p className="text-sm text-emerald-700 dark:text-emerald-400">
-          Sporcu hesabın tüm özellikleri korunur. Antrenör veya tesis hesabı ekleyerek ek araçlara erişirsin.
-          Başvurun 1-3 iş günü içinde incelenir.
+          {isDual
+            ? "Hem Antrenör hem Tesis İşletmecisi olarak işaretlendiniz. Her iki formu güncelleyebilirsiniz."
+            : "Sporcu hesabın tüm özellikleri korunur. Antrenör veya tesis hesabı ekleyerek ek araçlara erişirsin. Ayrıca ikisine birden sahip olabilirsin!"}
         </p>
       </div>
 
@@ -130,13 +143,19 @@ export default function ProfesyonelPage() {
             key={t}
             type="button"
             onClick={() => setTab(t)}
-            className={`flex-1 py-3 text-sm font-medium transition ${
+            className={`flex-1 py-3 text-sm font-medium transition relative ${
               tab === t
                 ? "bg-emerald-500 text-white"
                 : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
             }`}
           >
-            {t === "trainer" ? "🎯 Antrenör Ol" : "🏟️ Tesis İşletmecisi Ol"}
+            {t === "trainer" ? "🎯 Antrenör" : "🏟️ Tesis İşletmecisi"}
+            {t === "trainer" && isTrainer && (
+              <span className="ml-1.5 inline-block w-2 h-2 bg-green-400 rounded-full" title="Aktif" />
+            )}
+            {t === "venue" && isVenue && (
+              <span className="ml-1.5 inline-block w-2 h-2 bg-green-400 rounded-full" title="Aktif" />
+            )}
           </button>
         ))}
       </div>

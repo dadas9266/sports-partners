@@ -48,11 +48,19 @@ export default function CommunityDetailPage() {
   const [myRole, setMyRole] = useState<"ADMIN" | "MEMBER">("MEMBER");
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
-  const [activeTab, setActiveTab] = useState<"overview" | "manage">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "posts" | "manage">("overview");
   const [memberActionLoading, setMemberActionLoading] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [editForm, setEditForm] = useState({ name: "", description: "", website: "", isPrivate: false });
   const [editSaving, setEditSaving] = useState(false);
+  // Avatar upload
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  // Posts
+  const [posts, setPosts] = useState<any[]>([]);
+  const [postsLoading, setPostsLoading] = useState(false);
+  const [postContent, setPostContent] = useState("");
+  const [postSubmitting, setPostSubmitting] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -109,6 +117,69 @@ export default function CommunityDetailPage() {
       });
     }
   }, [community]);
+
+  // Posts tab
+  useEffect(() => {
+    if (activeTab !== "posts" || !id) return;
+    setPostsLoading(true);
+    fetch(`/api/communities/${id}/posts?limit=15`)
+      .then(r => r.json())
+      .then(j => {
+        if (j.success) {
+          setPosts(j.data ?? []);
+          setNextCursor(j.nextCursor ?? null);
+        }
+      })
+      .catch(() => toast.error("Gönderiler yüklenemedi"))
+      .finally(() => setPostsLoading(false));
+  }, [activeTab, id]);
+
+  const handleAvatarUpload = useCallback(async (file: File) => {
+    setUploadingAvatar(true);
+    try {
+      const fd = new FormData();
+      fd.append("type", "community-avatar");
+      fd.append("file", file);
+      const uploadRes = await fetch("/api/upload", { method: "POST", body: fd });
+      const uploadJson = await uploadRes.json();
+      if (!uploadJson.url) throw new Error(uploadJson.error || "Yükleme başarısız");
+
+      const patchRes = await fetch(`/api/communities/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ avatarUrl: uploadJson.url }),
+      });
+      const patchJson = await patchRes.json();
+      if (!patchRes.ok) throw new Error(patchJson.error);
+      setCommunity(patchJson.data);
+      toast.success("Profil fotoğrafı güncellendi");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Bir hata oluştu");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  }, [id]);
+
+  const handlePostSubmit = useCallback(async () => {
+    if (!postContent.trim()) return;
+    setPostSubmitting(true);
+    try {
+      const res = await fetch(`/api/communities/${id}/posts`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: postContent.trim() }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error);
+      setPosts(prev => [json.data, ...prev]);
+      setPostContent("");
+      toast.success("Gönderi paylaşıldı");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Bir hata oluştu");
+    } finally {
+      setPostSubmitting(false);
+    }
+  }, [id, postContent]);
 
   const handleJoin = async () => {
     if (!session) { router.push("/auth/giris"); return; }
@@ -251,13 +322,31 @@ export default function CommunityDetailPage() {
         {/* Header card */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 mb-6">
           <div className="flex items-start gap-4">
-            {/* Avatar */}
-            <div className="flex-shrink-0 w-20 h-20 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-4xl overflow-hidden">
-              {community.avatarUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={community.avatarUrl} alt={community.name} className="w-full h-full object-cover" />
-              ) : (
-                typeInfo.emoji
+            {/* Avatar — admin için yükleme butonu */}
+            <div className="relative flex-shrink-0 group">
+              <div className="w-20 h-20 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-4xl overflow-hidden">
+                {community.avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={community.avatarUrl} alt={community.name} className="w-full h-full object-cover" />
+                ) : (
+                  typeInfo.emoji
+                )}
+              </div>
+              {isAdmin && (
+                <label className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-2xl opacity-0 group-hover:opacity-100 transition cursor-pointer">
+                  {uploadingAvatar ? (
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <span className="text-white text-xs font-bold text-center px-1">📷<br/>Değiştir</span>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    disabled={uploadingAvatar}
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) handleAvatarUpload(f); }}
+                  />
+                </label>
               )}
             </div>
 
@@ -357,27 +446,43 @@ export default function CommunityDetailPage() {
           </div>
         </div>
 
-        {/* Tabs — show "Yönet" only for admin/creator */}
-        {isAdmin && (
-          <div className="flex gap-1 mb-4 bg-white dark:bg-gray-900 p-1 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm">
-            {[
-              { key: "overview", label: "👥 Genel Bakış" },
-              { key: "manage",   label: `⚙️ Yönet${pendingMembers.length > 0 ? ` (${pendingMembers.length})` : ""}` },
-            ].map(t => (
-              <button
-                key={t.key}
-                onClick={() => setActiveTab(t.key as typeof activeTab)}
-                className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === t.key
-                    ? "bg-emerald-500 text-white shadow-sm"
-                    : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-        )}
+        {/* Tabs — Yönet her zaman ilk sırada admin için, Posts tüm üyelere */}
+        <div className="flex gap-1 mb-4 bg-white dark:bg-gray-900 p-1 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-x-auto">
+          {isAdmin && (
+            <button
+              onClick={() => setActiveTab("manage")}
+              className={`flex-shrink-0 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
+                activeTab === "manage"
+                  ? "bg-emerald-500 text-white shadow-sm"
+                  : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
+              }`}
+            >
+              ⚙️ Yönet{pendingMembers.length > 0 ? ` (${pendingMembers.length})` : ""}
+            </button>
+          )}
+          <button
+            onClick={() => setActiveTab("overview")}
+            className={`flex-shrink-0 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === "overview"
+                ? "bg-emerald-500 text-white shadow-sm"
+                : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
+            }`}
+          >
+            👥 Üyeler
+          </button>
+          {(myStatus === "APPROVED" || isAdmin) && (
+            <button
+              onClick={() => setActiveTab("posts")}
+              className={`flex-shrink-0 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
+                activeTab === "posts"
+                  ? "bg-emerald-500 text-white shadow-sm"
+                  : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
+              }`}
+            >
+              📢 Gönderi Panosu
+            </button>
+          )}
+        </div>
 
         {/* Tab Content */}
         {activeTab === "overview" && (
@@ -418,6 +523,86 @@ export default function CommunityDetailPage() {
                   </Link>
                 ))}
               </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === "posts" && (
+          <div className="space-y-4">
+            {/* Post oluştur */}
+            {(myStatus === "APPROVED" || isAdmin) && (
+              <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-sm font-bold flex-shrink-0">
+                    {session?.user?.name?.[0]?.toUpperCase() ?? "?"}
+                  </div>
+                  <div className="flex-1">
+                    <textarea
+                      value={postContent}
+                      onChange={e => setPostContent(e.target.value)}
+                      placeholder={`${community.name} topluluğuyla paylaş...`}
+                      rows={3}
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm text-gray-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-emerald-400 transition"
+                    />
+                    <div className="flex justify-end mt-2">
+                      <button
+                        onClick={handlePostSubmit}
+                        disabled={postSubmitting || !postContent.trim()}
+                        className="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold rounded-lg transition disabled:opacity-50"
+                      >
+                        {postSubmitting ? "Paylaşılıyor..." : "Paylaş"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Post Listesi */}
+            {postsLoading ? (
+              <div className="flex justify-center py-10">
+                <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : posts.length === 0 ? (
+              <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-10 text-center">
+                <div className="text-4xl mb-3">📢</div>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">Henüz gönderi yok. İlk paylaşımı sen yap!</p>
+              </div>
+            ) : (
+              posts.map(post => (
+                <div key={post.id} className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-4">
+                  <div className="flex items-center gap-2.5 mb-3">
+                    <Link href={`/profil/${post.user.id}`}>
+                      <div className="w-9 h-9 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-sm font-bold overflow-hidden">
+                        {post.user.avatarUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={post.user.avatarUrl} alt="" className="w-full h-full object-cover" />
+                        ) : (post.user.name?.[0] ?? "?").toUpperCase()}
+                      </div>
+                    </Link>
+                    <div className="flex-1 min-w-0">
+                      <Link href={`/profil/${post.user.id}`} className="text-sm font-semibold text-gray-900 dark:text-white hover:text-emerald-600 transition">
+                        {post.user.name ?? "Kullanıcı"}
+                      </Link>
+                      <p className="text-xs text-gray-400">{new Date(post.createdAt).toLocaleDateString("tr-TR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</p>
+                    </div>
+                  </div>
+                  {post.content && <p className="text-sm text-gray-700 dark:text-gray-200 whitespace-pre-line leading-relaxed">{post.content}</p>}
+                  {post.images?.length > 0 && (
+                    <div className={`mt-2 grid gap-1 ${post.images.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
+                      {post.images.slice(0, 4).map((img: string, i: number) => (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img key={i} src={img} alt="" className="rounded-lg w-full h-40 object-cover" />
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex items-center gap-4 mt-3 pt-2 border-t border-gray-100 dark:border-gray-800 text-xs text-gray-400">
+                    <span>❤️ {post._count?.likes ?? 0}</span>
+                    <span>💬 {post._count?.comments ?? 0}</span>
+                    <Link href={`/sosyal`} className="ml-auto hover:text-emerald-500 transition">Sosyal akışta görüntüle →</Link>
+                  </div>
+                </div>
+              ))
             )}
           </div>
         )}
@@ -632,6 +817,56 @@ export default function CommunityDetailPage() {
                 </div>
               )}
             </div>
+
+            {/* Davet Bağlantısı */}
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6">
+              <h2 className="text-base font-bold text-gray-900 dark:text-white mb-3">🔗 Davet Bağlantısı</h2>
+              <p className="text-xs text-gray-400 mb-3">Bu bağlantıyı paylaşarak topluluğa üye davet edebilirsiniz.</p>
+              <div className="flex gap-2">
+                <div className="flex-1 px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-xs text-gray-600 dark:text-gray-300 truncate font-mono">
+                  {typeof window !== "undefined" ? `${window.location.origin}/topluluklar/${id}` : `/topluluklar/${id}`}
+                </div>
+                <button
+                  onClick={() => {
+                    const url = typeof window !== "undefined" ? `${window.location.origin}/topluluklar/${id}` : "";
+                    if (url) { navigator.clipboard.writeText(url); toast.success("Bağlantı kopyalandı!"); }
+                  }}
+                  className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold rounded-xl transition shrink-0"
+                >
+                  Kopyala
+                </button>
+              </div>
+            </div>
+
+            {/* Tehlikeli Bölge — sadece kurucu */}
+            {isCreator && (
+              <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-red-100 dark:border-red-800/30 p-6">
+                <h2 className="text-base font-bold text-red-600 dark:text-red-400 mb-3">⚠️ Tehlikeli Bölge</h2>
+                <div className="flex items-center justify-between py-2">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white">Topluluğu Sil</p>
+                    <p className="text-xs text-gray-400 mt-0.5">Bu işlem geri alınamaz. Tüm üyeler ve içerik silinecektir.</p>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      if (!confirm(`"${community.name}" topluluğunu silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`)) return;
+                      try {
+                        const res = await fetch(`/api/communities/${id}`, { method: "DELETE" });
+                        const json = await res.json();
+                        if (!res.ok) throw new Error(json.error);
+                        toast.success("Topluluk silindi");
+                        router.push("/topluluklar");
+                      } catch (e: unknown) {
+                        toast.error(e instanceof Error ? e.message : "Bir hata oluştu");
+                      }
+                    }}
+                    className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded-xl transition shrink-0"
+                  >
+                    Sil
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

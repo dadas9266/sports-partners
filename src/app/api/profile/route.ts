@@ -48,6 +48,7 @@ export async function GET() {
           ratingsReceived: { select: { score: true } },
           ratingsGiven: { select: { matchId: true } },
           trainerProfile: { select: { isVerified: true, gymName: true, specializations: { select: { sportName: true, years: true } } } },
+          venueProfile: { select: { isVerified: true, businessName: true, address: true, phone: true, website: true, logoUrl: true } },
           instagram: true,
           tiktok: true,
           facebook: true,

@@ -42,11 +42,13 @@ export async function POST(request: Request) {
         },
       });
 
-      // Kullanıcı tipini güncelle
-      await prisma.user.update({
-        where: { id: userId },
-        data: { userType: "TRAINER" },
-      });
+      // Kullanıcı tipini güncelle — zaten VENUE ise değiştirme (dual rol)
+      if (user.userType === "INDIVIDUAL") {
+        await prisma.user.update({
+          where: { id: userId },
+          data: { userType: "TRAINER" },
+        });
+      }
 
       // Kullanıcıya başarı bildirimi
       await createNotification({
@@ -87,11 +89,13 @@ export async function POST(request: Request) {
         },
       });
 
-      // Kullanıcı tipini güncelle
-      await prisma.user.update({
-        where: { id: userId },
-        data: { userType: "VENUE" },
-      });
+      // Kullanıcı tipini güncelle — zaten TRAINER ise değiştirme (dual rol)
+      if (user.userType === "INDIVIDUAL") {
+        await prisma.user.update({
+          where: { id: userId },
+          data: { userType: "VENUE" },
+        });
+      }
 
       await createNotification({
         userId,

@@ -25,6 +25,12 @@ const MENU = [
     desc: "Antrenör veya tesis başvurusu",
   },
   {
+    href: "/ayarlar/isletme",
+    icon: "🏟️",
+    label: "İşletme Yönetimi",
+    desc: "Tesis profili, ilanlar, galeri",
+  },
+  {
     href: "/ayarlar/gizlilik",
     icon: "🛡️",
     label: "Gizlilik",

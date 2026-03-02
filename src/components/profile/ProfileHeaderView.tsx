@@ -118,16 +118,16 @@ export default function ProfileHeaderView({
           <div className="flex-1">
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{user.name}</h1>
-              {/* Antrenör Rozeti */}
-              {user.userType === "TRAINER" && (
+              {/* Antrenör Rozeti — userType=TRAINER VEYA trainerProfile mevcutsa */}
+              {(user.userType === "TRAINER" || user.trainerProfile) && (
                 <span className="inline-flex items-center gap-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-xs font-bold px-2.5 py-1 rounded-full border border-blue-200 dark:border-blue-700 whitespace-nowrap">
                   🏅 Antrenör{user.trainerProfile?.isVerified ? " ✓" : ""}
                 </span>
               )}
-              {/* Tesis Rozeti */}
-              {user.userType === "VENUE" && (
+              {/* Tesis Rozeti — userType=VENUE VEYA venueProfile mevcutsa */}
+              {(user.userType === "VENUE" || user.venueProfile) && (
                 <span className="inline-flex items-center gap-1 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-xs font-bold px-2.5 py-1 rounded-full border border-amber-200 dark:border-amber-700 whitespace-nowrap">
-                  🏟️ Tesis{user.trainerProfile?.isVerified ? " ✓" : ""}
+                  🏟️ Tesis{user.venueProfile?.isVerified ? " ✓" : ""}
                 </span>
               )}
               <span className={`inline-flex items-center text-xs font-bold px-2.5 py-1 rounded-full border whitespace-nowrap ${levelCfg.cls}`}>

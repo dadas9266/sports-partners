@@ -5,7 +5,13 @@ import { prisma } from "@/lib/prisma";
  * GET /api/cron/cleanup-expired
  *
  * Vercel Cron Job — her gece 03:00 UTC çalışır.
- * Süresi dolmuş ilanları kapatır.
+ * 1. Tarih/saati geçmiş ya da 30+ gün eski OPEN ilanları EXPIRED yapar.
+ * 2. EXPIRED ilanların PENDING tekliflerini (Response) REJECTED olarak işaretler
+ *    ve teklif göndericiye bildirim gönderir.
+ * 3. expiresAt geçmiş PENDING DirectChallenge'ları EXPIRED yapar +
+ *    tepki verilmemiş DirectChallenge'ları alıcı listesinden temizler.
+ * 4. Eski bildirimleri / şifre tokenlarını temizler.
+ *
  * Güvenlik: CRON_SECRET header kontrolü.
  */
 export async function GET(req: NextRequest) {
@@ -21,8 +27,18 @@ export async function GET(req: NextRequest) {
   const now = new Date();
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-  // 30 günden eski açık ilanları EXPIRED olarak işaretle
-  const expiredListings = await prisma.listing.updateMany({
+  // ── 1. Süresi dolmuş ilanları EXPIRED yap ─────────────────────────────────
+  // a) Etkinlik tarihi/saati geçmiş açık ilanlar
+  const expiredByDate = await prisma.listing.updateMany({
+    where: {
+      status: "OPEN",
+      dateTime: { lt: now },
+    },
+    data: { status: "EXPIRED" },
+  });
+
+  // b) 30 günden eski ama henüz EXPIRED olmamış açık ilanlar (güvenlik ağı)
+  const expiredByAge = await prisma.listing.updateMany({
     where: {
       status: "OPEN",
       createdAt: { lt: thirtyDaysAgo },
@@ -30,7 +46,79 @@ export async function GET(req: NextRequest) {
     data: { status: "EXPIRED" },
   });
 
-  // 90 günden eski okunmuş bildirimleri temizle
+  // c) Hızlı ilan (isQuick) — expiresAt geçmişse kapat
+  const expiredQuick = await prisma.listing.updateMany({
+    where: {
+      status: "OPEN",
+      expiresAt: { not: null, lt: now },
+    },
+    data: { status: "EXPIRED" },
+  });
+
+  const totalExpiredListings = expiredByDate.count + expiredByAge.count + expiredQuick.count;
+
+  // ── 2. EXPIRED ilanların PENDING tekliflerini REJECTED yap ────────────────
+  // Önce hangi ilanların EXPIRED olduğunu bul (cevap verilen hariç)
+  const expiredListingIds = await prisma.listing.findMany({
+    where: { status: "EXPIRED" },
+    select: { id: true },
+  });
+  const expiredIds = expiredListingIds.map((l: { id: string }) => l.id);
+
+  let rejectedResponses = { count: 0 };
+  if (expiredIds.length > 0) {
+    // PENDING teklifleri bul (bildirim için)
+    const pendingResponses = await prisma.response.findMany({
+      where: {
+        listingId: { in: expiredIds },
+        status: "PENDING",
+      },
+      select: {
+        id: true,
+        userId: true, // teklifi gönderen
+        listing: { select: { id: true, sport: { select: { name: true } }, dateTime: true } },
+      },
+    });
+
+    if (pendingResponses.length > 0) {
+      // Toplu REJECTED yap
+      rejectedResponses = await prisma.response.updateMany({
+        where: {
+          listingId: { in: expiredIds },
+          status: "PENDING",
+        },
+        data: { status: "REJECTED" },
+      });
+
+      // Her göndericiye bildirim
+      for (const resp of pendingResponses) {
+        try {
+          await (prisma as any).notification.create({
+            data: {
+              userId: resp.userId,
+              type: "SYSTEM",
+              title: "📅 İlan süresi doldu",
+              body: `Teklif gönderdiğiniz "${resp.listing.sport?.name ?? "Spor"}" ilanının süresi doldu. Teklif otomatik olarak iptal edildi.`,
+              link: `/ilan/${resp.listing.id}`,
+            },
+          });
+        } catch {
+          // bildirim hatası kritik değil
+        }
+      }
+    }
+  }
+
+  // ── 3. DirectChallenge — süresi geçmiş PENDING'leri EXPIRED yap ──────────
+  const expiredChallenges = await (prisma as any).directChallenge.updateMany({
+    where: {
+      status: "PENDING",
+      expiresAt: { lt: now },
+    },
+    data: { status: "EXPIRED" },
+  });
+
+  // ── 4. Eski bildirimleri temizle ──────────────────────────────────────────
   const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
   const deletedNotifs = await prisma.notification.deleteMany({
     where: {
@@ -39,7 +127,7 @@ export async function GET(req: NextRequest) {
     },
   });
 
-  // Süresi dolmuş şifre sıfırlama tokenlarını temizle
+  // ── 5. Süresi dolmuş şifre tokenlarını temizle ─────────────────────────────
   const deletedTokens = await prisma.passwordResetToken.deleteMany({
     where: {
       expiresAt: { lt: now },
@@ -49,7 +137,14 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     ok: true,
     summary: {
-      expiredListings: expiredListings.count,
+      expiredListings: {
+        byDate: expiredByDate.count,
+        byAge: expiredByAge.count,
+        quickExpired: expiredQuick.count,
+        total: totalExpiredListings,
+      },
+      rejectedResponses: rejectedResponses.count,
+      expiredChallenges: expiredChallenges.count,
       deletedNotifications: deletedNotifs.count,
       deletedPasswordTokens: deletedTokens.count,
     },
