@@ -176,7 +176,7 @@ export default function IsletmeYonetimiPage() {
       const putRes = await fetch("/api/venue-profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, logoUrl: json.url, images: profile?.images ?? [], capacity: form.capacity ? parseInt(form.capacity) : null }),
+        body: JSON.stringify({ ...form, logoUrl: json.url, images: profile?.images ?? [], capacity: form.capacity ? parseInt(form.capacity) : null, amenities, sportDetails }),
       });
       const putJson = await putRes.json();
       if (!putRes.ok) throw new Error(putJson.error);
@@ -202,7 +202,7 @@ export default function IsletmeYonetimiPage() {
       const putRes = await fetch("/api/venue-profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, images: newImages, logoUrl: profile?.logoUrl, capacity: form.capacity ? parseInt(form.capacity) : null }),
+        body: JSON.stringify({ ...form, images: newImages, logoUrl: profile?.logoUrl, capacity: form.capacity ? parseInt(form.capacity) : null, amenities, sportDetails }),
       });
       const putJson = await putRes.json();
       if (!putRes.ok) throw new Error(putJson.error);
@@ -221,7 +221,7 @@ export default function IsletmeYonetimiPage() {
       const res = await fetch("/api/venue-profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, images: newImages, logoUrl: profile?.logoUrl, capacity: form.capacity ? parseInt(form.capacity) : null }),
+        body: JSON.stringify({ ...form, images: newImages, logoUrl: profile?.logoUrl, capacity: form.capacity ? parseInt(form.capacity) : null, amenities, sportDetails }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error);

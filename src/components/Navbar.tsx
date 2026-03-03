@@ -22,6 +22,7 @@ export default function Navbar() {
   const [discoverOpen, setDiscoverOpen] = useState(false);
   const navRef = useRef<HTMLElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
+  const notifPanelRef = useRef<HTMLDivElement>(null);
   const discoverRef = useRef<HTMLDivElement>(null);
 
   // Gerçek zamanlı bildirimler — NotificationContext'ten (SSE Providers.tsx'de açık)
@@ -43,7 +44,10 @@ export default function Navbar() {
   useEffect(() => {
     if (!menuOpen && !notifOpen && !discoverOpen) return;
     const handleClick = (e: MouseEvent) => {
-      if (navRef.current && !navRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      // Bildirim paneli navRef dışında render edilir; panel içi tıklamaları yoksay
+      if (notifPanelRef.current && notifPanelRef.current.contains(target)) return;
+      if (navRef.current && !navRef.current.contains(target)) {
         setMenuOpen(false);
         setNotifOpen(false);
         setDiscoverOpen(false);
@@ -309,7 +313,7 @@ export default function Navbar() {
       {notifOpen && session && (
         <>
           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[9998]" onClick={() => setNotifOpen(false)} aria-hidden="true" />
-          <div className="fixed top-0 right-0 h-full w-full max-w-sm bg-white dark:bg-gray-900 shadow-2xl z-[9999] flex flex-col" role="dialog" aria-label={t("notifications")}>
+          <div ref={notifPanelRef} className="fixed top-0 right-0 h-full w-full max-w-sm bg-white dark:bg-gray-900 shadow-2xl z-[9999] flex flex-col" role="dialog" aria-label={t("notifications")}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700 shrink-0">
               <div className="flex items-center gap-2">
                 <span className="text-lg">🔔</span>
