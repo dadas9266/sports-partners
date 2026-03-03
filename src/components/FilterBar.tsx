@@ -4,14 +4,21 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocations, useSports } from "@/hooks/useLocations";
 import { useDebounce } from "@/hooks/useDebounce";
 import LocationSelector from "./LocationSelector";
+import type { Country, Sport } from "@/types";
 
 type FilterBarProps = {
   onFilterChange: (filters: Record<string, string>) => void;
+  initialLocations?: Country[];
+  initialSports?: Sport[];
 };
 
-export default function FilterBar({ onFilterChange }: FilterBarProps) {
-  const { locations, error: locError } = useLocations();
-  const { sports, error: sportError } = useSports();
+export default function FilterBar({ onFilterChange, initialLocations, initialSports }: FilterBarProps) {
+  // Use SSR data if provided, otherwise fallback to client-side fetch
+  const { locations: fetchedLocations, error: locError } = useLocations();
+  const { sports: fetchedSports, error: sportError } = useSports();
+  
+  const locations = initialLocations?.length ? initialLocations : fetchedLocations;
+  const sports = initialSports?.length ? initialSports : fetchedSports;
 
   const [selectedCountry, setSelectedCountry] = useState("");
   const [selectedCity, setSelectedCity] = useState("");
