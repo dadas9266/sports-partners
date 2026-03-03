@@ -72,6 +72,32 @@ export async function GET(request: Request) {
 
     const now = new Date();
 
+    // Kullanıcı bilgilerini al (cinsiyet filtresi + uyumluluk skoru için)
+    let viewerGender: string | null = null;
+    let viewerProfile: {
+      cityId: string | null;
+      gender: string | null;
+      preferredTime: string | null;
+      preferredStyle: string | null;
+      userLevel: string | null;
+      sports: { id: string }[];
+    } | null = null;
+
+    if (userId) {
+      viewerProfile = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          gender: true,
+          cityId: true,
+          preferredTime: true,
+          preferredStyle: true,
+          userLevel: true,
+          sports: { select: { id: true } },
+        },
+      });
+      viewerGender = viewerProfile?.gender ?? null;
+    }
+
     const where: Prisma.ListingWhereInput = {
       status: "OPEN",
       AND: [
@@ -106,6 +132,24 @@ export async function GET(request: Request) {
 
     if (level) where.level = level;
     if (type) where.type = type;
+
+    // Cinsiyet filtresi: ilanın izin verdiği cinsiyete göre görünürlük
+    if (viewerGender === "FEMALE") {
+      // Bayan kullanıcı: ANY ve FEMALE_ONLY ilanları görür
+      (where.AND as Prisma.ListingWhereInput[]).push({
+        allowedGender: { in: ["ANY", "FEMALE_ONLY"] },
+      });
+    } else if (viewerGender === "MALE") {
+      // Erkek kullanıcı: ANY ve MALE_ONLY ilanları görür
+      (where.AND as Prisma.ListingWhereInput[]).push({
+        allowedGender: { in: ["ANY", "MALE_ONLY"] },
+      });
+    } else {
+      // Giriş yapmamış veya cinsiyet belirsiz → sadece herkese açık ilanlar
+      (where.AND as Prisma.ListingWhereInput[]).push({
+        allowedGender: "ANY",
+      });
+    }
     if (upcoming === "true") {
       const weekLater = new Date();
       weekLater.setDate(weekLater.getDate() + 7);
@@ -163,7 +207,7 @@ export async function GET(request: Request) {
     }
 
     const [total, listings] = await withCache(
-      cacheKey.listings({ sportId, districtId, cityId, level, type, upcoming, quickOnly, isRecurring, dateFrom, dateTo, minPrice, maxPrice, page, pageSize }),
+      cacheKey.listings({ sportId, districtId, cityId, level, type, upcoming, quickOnly, isRecurring, dateFrom, dateTo, minPrice, maxPrice, page, pageSize, gender: viewerGender ?? "ANY" }),
       CACHE_TTL.LISTINGS,
       async () => {
         return Promise.all([
@@ -198,35 +242,22 @@ export async function GET(request: Request) {
       }
     );
 
-    // Uyumluluk skoru — sadece giriş yapan kullanıcılar için
-    let viewer: { cityId: string | null; sportIds: string[]; preferredTime: string | null; preferredStyle: string | null; level?: string | null } | null = null;
-
-    if (userId) {
-      const profile = await prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-          cityId: true,
-          preferredTime: true,
-          preferredStyle: true,
-          userLevel: true,
-          sports: { select: { id: true } },
-        },
-      });
-      if (profile) {
-        viewer = {
-          cityId: profile.cityId,
-          sportIds: profile.sports.map((s) => s.id),
-          preferredTime: profile.preferredTime,
-          preferredStyle: profile.preferredStyle,
-          level: profile.userLevel,
-        };
-      }
-    }
+    // Uyumluluk skoru — daha önce çekilen viewerProfile kullanılır (ekstra DB sorgusu yok)
+    const viewer = viewerProfile
+      ? {
+          cityId: viewerProfile.cityId,
+          sportIds: viewerProfile.sports.map((s) => s.id),
+          preferredTime: viewerProfile.preferredTime,
+          preferredStyle: viewerProfile.preferredStyle,
+          level: viewerProfile.userLevel,
+        }
+      : null;
 
     const listingsWithScore = listings.map((l: any) => ({
       ...l,
       compatibilityScore: viewer ? computeCompatibility(
-        { sportId: l.sportId, level: l.level, district: { cityId: l.district.cityId }, user: l.user },
+        // l.district null olabilir (districtId olmayan ilanlar) → null-safe erişim
+        { sportId: l.sportId, level: l.level, district: { cityId: l.district?.cityId ?? l.cityId ?? "" }, user: l.user },
         viewer
       ) : undefined,
     }));
