@@ -28,6 +28,13 @@ enum Gender {
   PREFER_NOT_TO_SAY
 }
 
+// Gizlilik seviyesi — Mesaj, Teklif, Profil görünürlüğü için
+enum PrivacyLevel {
+  EVERYONE    // Herkes
+  FOLLOWERS   // Sadece takipçiler
+  NOBODY      // Kimse
+}
+
 model User {
   id           String    @id @default(cuid())
   name         String
@@ -65,6 +72,11 @@ model User {
   facebook       String?                              // Facebook URL
   twitterX       String?                              // X (Twitter) kullanıcı adı
   vk             String?                              // VK URL
+  // Gizlilik Ayarları
+  whoCanMessage   PrivacyLevel  @default(EVERYONE)   // Bana kim mesaj yazabilir
+  whoCanChallenge PrivacyLevel  @default(EVERYONE)   // Bana kim teklif gönderebilir
+  profileVisibility PrivacyLevel @default(EVERYONE)  // Profilim kimler tarafından görülebilir
+  showOnLeaderboard Boolean     @default(true)       // Liderlik tablosunda göster
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 

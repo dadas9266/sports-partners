@@ -45,6 +45,7 @@ export async function GET(
           },
         },
         coverUrl: true,
+        profileVisibility: true,
         clubMemberships: {
           select: {
             role: true,
@@ -87,6 +88,24 @@ export async function GET(
 
     if (!user) return notFound("Kullanıcı bulunamadı");
 
+    // Profil gizlilik kontrolü (kendi profilini her zaman görebilir)
+    const isOwnProfileCheck = currentUserId === id;
+    if (!isOwnProfileCheck && user.profileVisibility) {
+      if (user.profileVisibility === "NOBODY") {
+        return NextResponse.json({ success: false, error: "Bu profil gizlidir", code: "PRIVATE_PROFILE" }, { status: 403 });
+      }
+      if (user.profileVisibility === "FOLLOWERS" && currentUserId) {
+        const isFollowing = await prisma.follow.findUnique({
+          where: { followerId_followingId: { followerId: currentUserId, followingId: id } },
+        });
+        if (!isFollowing) {
+          return NextResponse.json({ success: false, error: "Bu profil yalnızca takipçilere açık", code: "PRIVATE_PROFILE" }, { status: 403 });
+        }
+      } else if (user.profileVisibility === "FOLLOWERS" && !currentUserId) {
+        return NextResponse.json({ success: false, error: "Bu profil yalnızca takipçilere açık", code: "PRIVATE_PROFILE" }, { status: 403 });
+      }
+    }
+
     // Ortalama puan hesapla
     const ratings = user.ratingsReceived || [];
     const avgRating =
@@ -109,7 +128,7 @@ export async function GET(
     ]);
 
     // Kendi profilinde ekstra bilgiler
-    const isOwnProfile = currentUserId === id;
+    const isOwnProfile = isOwnProfileCheck;
 
     log.info("Kullanıcı profili görüntülendi", { targetId: id, viewerId: currentUserId });
 

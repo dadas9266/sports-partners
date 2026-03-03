@@ -15,6 +15,7 @@ export async function GET(req: NextRequest) {
     // En yüksek puan ortalaması olan kullanıcılar (min 3 değerlendirme)
     const users = await prisma.user.findMany({
       where: {
+        showOnLeaderboard: true,
         ...(sportId
           ? { sports: { some: { id: sportId } } }
           : {}),

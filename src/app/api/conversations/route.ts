@@ -121,10 +121,23 @@ export async function POST(req: NextRequest) {
     // Hedef kullanıcı var mı?
     const targetUser = await prisma.user.findUnique({
       where: { id: targetUserId },
-      select: { id: true, name: true, avatarUrl: true },
+      select: { id: true, name: true, avatarUrl: true, whoCanMessage: true },
     });
     if (!targetUser) {
       return NextResponse.json({ success: false, error: "Kullanıcı bulunamadı" }, { status: 404 });
+    }
+
+    // Gizlilik kontrolü: bu kullanıcıya mesaj yazabilir miyiz?
+    if (targetUser.whoCanMessage === "NOBODY") {
+      return NextResponse.json({ success: false, error: "Bu kullanıcı mesaj almıyor" }, { status: 403 });
+    }
+    if (targetUser.whoCanMessage === "FOLLOWERS") {
+      const isFollowing = await prisma.follow.findUnique({
+        where: { followerId_followingId: { followerId: userId, followingId: targetUserId } },
+      });
+      if (!isFollowing) {
+        return NextResponse.json({ success: false, error: "Bu kullanıcı yalnızca takipçilerinden mesaj kabul ediyor" }, { status: 403 });
+      }
     }
 
     // Canonical order: user1Id < user2Id (unique constraint)

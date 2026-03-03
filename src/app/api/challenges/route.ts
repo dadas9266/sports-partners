@@ -72,13 +72,26 @@ export async function POST(request: Request) {
     // Hedef kullanıcı var mı?
     const target = await prisma.user.findUnique({
       where: { id: targetId },
-      select: { id: true, name: true, isBanned: true },
+      select: { id: true, name: true, isBanned: true, whoCanChallenge: true },
     });
     if (!target) {
       return NextResponse.json({ success: false, error: "Kullanıcı bulunamadı" }, { status: 404 });
     }
     if (target.isBanned) {
       return NextResponse.json({ success: false, error: "Bu kullanıcıya teklif gönderemezsiniz" }, { status: 403 });
+    }
+
+    // Gizlilik kontrolü: bu kullanıcıya teklif gönderebilir miyiz?
+    if (target.whoCanChallenge === "NOBODY") {
+      return NextResponse.json({ success: false, error: "Bu kullanıcı teklif kabul etmiyor" }, { status: 403 });
+    }
+    if (target.whoCanChallenge === "FOLLOWERS") {
+      const isFollowing = await prisma.follow.findUnique({
+        where: { followerId_followingId: { followerId: userId, followingId: targetId } },
+      });
+      if (!isFollowing) {
+        return NextResponse.json({ success: false, error: "Bu kullanıcı yalnızca takipçilerinden teklif kabul ediyor" }, { status: 403 });
+      }
     }
 
     // Aynı spor dalı için zaten bekleyen bir teklif var mı?
