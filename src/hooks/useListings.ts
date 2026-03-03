@@ -44,6 +44,9 @@ export function useListings(initialPageSize = 12): UseListingsReturn {
         if (data.success) {
           setListings(data.data);
           setPagination(data.pagination);
+        } else {
+          setListings([]);
+          setError((data as any).error || "İlanlar yüklenemedi");
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : "İlanlar yüklenemedi");

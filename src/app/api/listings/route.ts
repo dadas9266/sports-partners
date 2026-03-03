@@ -68,19 +68,7 @@ export async function GET(request: Request) {
       );
     }
 
-    let { sportId, districtId, cityId, countryId, level, type, upcoming, quickOnly, isRecurring, dateFrom, dateTo, minPrice, maxPrice, page, pageSize } = parsed.data;
-
-    // OTOMATİK ŞEHİR FİLTRELEMESİ (Sadece "Sana Uygun" veya genel aramalar için)
-    // Eğer kullanıcı giriş yapmışsa ve manuel bir şehir/ilçe/ülke seçmemişse, kendi şehrini baz al.
-    if (userId && !cityId && !districtId && !countryId) {
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { cityId: true }
-      });
-      if (user?.cityId) {
-        cityId = user.cityId;
-      }
-    }
+    const { sportId, districtId, cityId, countryId, level, type, upcoming, quickOnly, isRecurring, dateFrom, dateTo, minPrice, maxPrice, page, pageSize } = parsed.data;
 
     const now = new Date();
 
