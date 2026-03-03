@@ -29,6 +29,14 @@ export default function FilterBar({ onFilterChange }: FilterBarProps) {
 
   const isFirstRender = useRef(true);
 
+  // Auto-select Turkey when locations load (works across any DB environment)
+  useEffect(() => {
+    if (locations.length > 0 && !selectedCountry) {
+      const turkey = locations.find((l) => l.name === "Türkiye");
+      if (turkey) setSelectedCountry(turkey.id);
+    }
+  }, [locations, selectedCountry]);
+
   const filterInput = useMemo(
     () => ({ selectedSport, selectedDistrict, selectedCity, selectedCountry, selectedLevel, selectedType, minPrice, maxPrice, isRecurring, datePreset }),
     [selectedSport, selectedDistrict, selectedCity, selectedCountry, selectedLevel, selectedType, minPrice, maxPrice, isRecurring, datePreset]
