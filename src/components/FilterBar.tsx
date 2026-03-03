@@ -49,8 +49,8 @@ export default function FilterBar({ onFilterChange }: FilterBarProps) {
     const filters: Record<string, string> = {};
     if (debouncedFilters.selectedSport) filters.sportId = debouncedFilters.selectedSport;
     if (debouncedFilters.selectedDistrict) filters.districtId = debouncedFilters.selectedDistrict;
-    else if (debouncedFilters.selectedCity) filters.cityId = debouncedFilters.selectedCity;
-    else if (debouncedFilters.selectedCountry) filters.countryId = debouncedFilters.selectedCountry;
+    if (debouncedFilters.selectedCity) filters.cityId = debouncedFilters.selectedCity;
+    if (debouncedFilters.selectedCountry) filters.countryId = debouncedFilters.selectedCountry;
     if (debouncedFilters.selectedLevel) filters.level = debouncedFilters.selectedLevel;
     if (debouncedFilters.selectedType) filters.type = debouncedFilters.selectedType;
     if (debouncedFilters.minPrice) filters.minPrice = debouncedFilters.minPrice;
