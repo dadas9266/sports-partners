@@ -137,19 +137,15 @@ export async function GET(request: Request) {
     if (viewerGender === "FEMALE") {
       // Bayan kullanıcı: ANY ve FEMALE_ONLY ilanları görür
       (where.AND as Prisma.ListingWhereInput[]).push({
-        allowedGender: { in: ["ANY", "FEMALE_ONLY"] },
+        OR: [{ allowedGender: "ANY" }, { allowedGender: "FEMALE_ONLY" }],
       });
     } else if (viewerGender === "MALE") {
       // Erkek kullanıcı: ANY ve MALE_ONLY ilanları görür
       (where.AND as Prisma.ListingWhereInput[]).push({
-        allowedGender: { in: ["ANY", "MALE_ONLY"] },
-      });
-    } else {
-      // Giriş yapmamış veya cinsiyet belirsiz → sadece herkese açık ilanlar
-      (where.AND as Prisma.ListingWhereInput[]).push({
-        allowedGender: "ANY",
+        OR: [{ allowedGender: "ANY" }, { allowedGender: "MALE_ONLY" }],
       });
     }
+    // Giriş yapmamış veya cinsiyet belirsiz → tüm ilanlar görünür (ANY + cinsiyetli)
     if (upcoming === "true") {
       const weekLater = new Date();
       weekLater.setDate(weekLater.getDate() + 7);
