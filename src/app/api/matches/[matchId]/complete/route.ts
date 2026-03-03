@@ -105,7 +105,7 @@ export async function POST(
           type: "MATCH_STATUS_CHANGED",
           title: "Maç Tamamlama İsteği ⏳",
           body: "Rakibiniz maçın tamamlandığını bildirdi. Siz de onaylayın!",
-          link: `/mesajlar/${matchId}`,
+          link: `/eslesmeler/${matchId}`,
         });
         log.info("Maç tamamlama isteği (1/2)", { matchId, requestedBy: userId });
         return NextResponse.json({
@@ -167,7 +167,7 @@ export async function POST(
         type: "MATCH_STATUS_CHANGED",
         title: "Maç Tamamlandı ✓",
         body: "Maçınız başarıyla tamamlandı. Rakibinizi değerlendirmeyi unutmayın!",
-        link: `/mesajlar/${matchId}`,
+        link: `/eslesmeler/${matchId}`,
       });
     }
 

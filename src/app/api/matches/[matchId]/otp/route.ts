@@ -67,9 +67,9 @@ export async function POST(
     await createNotification({
       userId: otherId,
       type: "MATCH_OTP_REQUESTED",
-      title: "Maç Doğrulama Talebi",
-      body: "Rakibiniz maçı doğrulamak istiyor. OTP kodunu girerek onaylayın.",
-      link: `/mesajlar/${matchId}`,
+      title: "Маç Doğrulama Talebi",
+      body: "Rakibiniz maçı doğrulamak istiyor. Onaylamak için tıklayın.",
+      link: `/eslesmeler/${matchId}`,
     });
 
     log.info("OTP oluşturuldu", { matchId, userId });

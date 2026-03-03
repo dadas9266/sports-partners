@@ -95,10 +95,12 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      followerCount,
-      followingCount,
-      isFollowing: !!isFollowing,
-      followsMe: !!followsMe,
+      data: {
+        followerCount,
+        followingCount,
+        isFollowing: !!isFollowing,
+        followsMe: !!followsMe,
+      },
     });
   } catch (error) {
     log.error("Follow GET hatası", error);

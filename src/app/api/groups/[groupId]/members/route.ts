@@ -78,7 +78,11 @@ export async function POST(req: NextRequest, { params }: Params) {
       if (existing.status === "PENDING") {
         return NextResponse.json({ error: "Üyelik talebiniz zaten beklemede" }, { status: 409 });
       }
-      return NextResponse.json({ error: "Zaten bu grubun üyesisiniz" }, { status: 409 });
+      if (existing.status === "APPROVED") {
+        return NextResponse.json({ error: "Zaten bu grubun üyesisiniz" }, { status: 409 });
+      }
+      // REJECTED veya başka bir durum → eski kaydı sil, yeni talep oluştur
+      await prisma.groupMembership.delete({ where: { userId_groupId: { userId, groupId } } });
     }
 
     const isPending = !group.isPublic;
