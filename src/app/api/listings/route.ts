@@ -95,15 +95,19 @@ export async function GET(request: Request) {
     };
 
     if (sportId) where.sportId = sportId;
-    if (districtId) where.districtId = districtId;
+    
+    // Konum filtrelerini (ülke/şehir/ilçe) birbirini kapsayacak şekilde (AND) uygula
+    if (districtId) {
+      where.districtId = districtId;
+    }
     if (cityId) {
       // ilçesi olan ilanlar district.cityId ile, ilçesiz ilanlar doğrudan cityId ile filtrelenir
       (where.AND as Prisma.ListingWhereInput[]).push({
         OR: [{ cityId }, { district: { cityId } }],
       });
     }
-    if (countryId && !cityId && !districtId) {
-      // Sadece ülke seçilmiş, şehir/ilçe yok → ülkedeki tüm ilanları getir
+    if (countryId) {
+      // Sadece ülke seçilmiş olsa bile, o ülkeye ait tüm şehir ve ilçelerdeki ilanları getir
       (where.AND as Prisma.ListingWhereInput[]).push({
         OR: [
           { district: { city: { countryId } } },
@@ -111,6 +115,7 @@ export async function GET(request: Request) {
         ],
       });
     }
+
     if (level) where.level = level;
     if (type) where.type = type;
     if (upcoming === "true") {
