@@ -22,7 +22,7 @@ export async function GET(
         sport: true,
         district: { include: { city: { include: { country: true } } } },
         venue: true,
-        user: { select: { id: true, name: true, avatarUrl: true } },
+        user: { select: { id: true, name: true, avatarUrl: true, phone: true, email: true } },
         trainerProfile: {
           include: { specializations: true },
         },
@@ -35,8 +35,8 @@ export async function GET(
         },
         match: {
           include: {
-            user1: { select: { id: true, name: true, avatarUrl: true } },
-            user2: { select: { id: true, name: true, avatarUrl: true } },
+            user1: { select: { id: true, name: true, avatarUrl: true, phone: true, email: true } },
+            user2: { select: { id: true, name: true, avatarUrl: true, phone: true, email: true } },
             ratings: { select: { id: true, ratedById: true } },
           },
         },
@@ -56,15 +56,22 @@ export async function GET(
       listing.match &&
       (currentUserId === listing.match.user1Id || currentUserId === listing.match.user2Id);
 
+    // Kör Maç: eşleşme gerçekleşmeden ilan sahibi gizlenir (ilan sahibi kendi ilanını görebilir)
+    const isAnonymousListing = (listing as any).isAnonymous && !isOwner && !isMatchParticipant;
+
     // İlan sahibinin telefon/email bilgisini gizle (eşleşme yoksa)
     const sanitizedListing = {
       ...listing,
-      user: {
-        id: listing.user.id,
-        name: listing.user.name,
-        phone: isOwner || isMatchParticipant ? listing.user.phone : null,
-        email: isOwner || isMatchParticipant ? listing.user.email : null,
-      },
+      // Anonim ilan: userId'yi "anonymous" yap ki profil linki çalışmasın
+      userId: isAnonymousListing ? "anonymous" : listing.userId,
+      user: isAnonymousListing
+        ? { id: "anonymous", name: "🕵️ Anonim Kullanıcı", avatarUrl: null, phone: null, email: null }
+        : {
+            id: listing.user.id,
+            name: listing.user.name,
+            phone: isOwner || isMatchParticipant ? listing.user.phone : null,
+            email: isOwner || isMatchParticipant ? listing.user.email : null,
+          },
       // Match bilgilerini sadece taraflara göster
       match: listing.match
         ? {

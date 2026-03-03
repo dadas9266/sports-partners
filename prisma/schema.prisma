@@ -225,7 +225,9 @@ model Listing {
   maxParticipants Int           @default(2)       // 2=1v1, 3+=grup
   allowedGender   AllowedGender @default(ANY)     // Cinsiyet kısıtı
   isQuick         Boolean       @default(false)   // "Hadi Gel" hızlı ilan
-  expiresAt       DateTime?                       // Hızlı ilan bitiş zamanı
+  isUrgent        Boolean       @default(false)   // 30 dakikalık anlık eşleşme talebi
+  isAnonymous     Boolean       @default(false)   // Kör maç: profil eşleşmeye kadar gizli
+  expiresAt       DateTime?                       // Hızlı/acil ilan bitiş zamanı
   isRecurring     Boolean       @default(false)   // Tekrarlayan etkinlik
   recurringDays   String?                         // "MON,WED,FRI" formatında
   minAge          Int?                            // Başvuru için minimum yaş (opsiyonel)
@@ -365,6 +367,8 @@ enum NotificationType {
   TOURNAMENT_INVITE     // Turnuvaya davet
   TOURNAMENT_RESULT     // Turnuva sonucu açıklandı
   USER_REPORT           // Admin'e kullanıcı şikayeti
+  URGENT_LISTING_NEARBY // Anlık eşleşme talebi yakında
+  MATCH_REVEAL          // Kör maç: profil açıldı
 }
 
 model Notification {

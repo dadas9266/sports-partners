@@ -6,6 +6,7 @@ import { getCurrentUserId } from "@/lib/api-utils";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { createLogger } from "@/lib/logger";
 import { withCache, cacheDel, cacheKey, CACHE_TTL, cacheDelPattern } from "@/lib/cache";
+import { sendPushToUser } from "@/lib/push";
 
 const log = createLogger("listings");
 
@@ -320,8 +321,11 @@ export async function POST(request: Request) {
     }
 
     // Hızlı ilan ise expiresAt hesapla (şu andan 2 saat sonra)
+    // Acil ilan ise expiresAt = şu andan 30 dakika sonra
     let expiresAt: Date | null = null;
-    if (parsed.data.isQuick) {
+    if (parsed.data.isUrgent) {
+      expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 dakika
+    } else if (parsed.data.isQuick) {
       if (parsed.data.expiresAt) {
         expiresAt = new Date(parsed.data.expiresAt);
       } else {
@@ -348,6 +352,8 @@ export async function POST(request: Request) {
         maxParticipants: parsed.data.maxParticipants ?? 2,
         allowedGender: parsed.data.allowedGender ?? "ANY",
         isQuick: parsed.data.isQuick ?? false,
+        isUrgent: parsed.data.isUrgent ?? false,
+        isAnonymous: parsed.data.isAnonymous ?? false,
         expiresAt,
         isRecurring: parsed.data.isRecurring ?? false,
         recurringDays: parsed.data.recurringDays?.length
@@ -403,10 +409,18 @@ export async function POST(request: Request) {
       },
     });
 
-    log.info("İlan oluşturuldu", { listingId: listing.id, userId, isQuick: listing.isQuick });
+    log.info("İlan oluşturuldu", { listingId: listing.id, userId, isQuick: listing.isQuick, isUrgent: listing.isUrgent, isAnonymous: listing.isAnonymous });
 
     // İlan listesi cache'ini temizle - yeni ilan eklendi
     await cacheDelPattern("listings:*");
+
+    // --- ACİL EŞLEŞME: aynı semt + spor kullanıcılarına push yolla ---
+    if (listing.isUrgent && listing.districtId) {
+      // Fire-and-forget: cevap bekleme
+      broadcastUrgentListing(listing, userId).catch((e) =>
+        log.error("Acil ilan broadcast hatası", e)
+      );
+    }
 
     return NextResponse.json(
       { success: true, data: listing },
@@ -421,3 +435,58 @@ export async function POST(request: Request) {
   }
 }
 
+// ─── Acil ilan: aynı semt + spor → push + DB bildirim broadcast ────────────────
+async function broadcastUrgentListing(
+  listing: { id: string; districtId: string | null; sportId: string; sport: { name: string; icon: string | null } },
+  ownerId: string
+) {
+  if (!listing.districtId) return;
+
+  // Aynı bölgede o sporu oynayan, giriş yapmış (push aboneliği olan veya bildirim alabilecek) kullanıcılar
+  const targets = await prisma.user.findMany({
+    where: {
+      id: { not: ownerId },
+      isBanned: false,
+      sports: { some: { id: listing.sportId } },
+      OR: [
+        { districtId: listing.districtId },
+        { district: { cityId: { not: undefined } } },
+      ],
+    },
+    select: {
+      id: true,
+      pushSubscriptions: { select: { endpoint: true, p256dh: true, auth: true } },
+    },
+    take: 100, // max 100 kullanıcıya bildirim
+  });
+
+  if (targets.length === 0) return;
+
+  const sportLabel = `${listing.sport.icon ?? ""} ${listing.sport.name}`.trim();
+  const link = `/ilan/${listing.id}`;
+  const title = "⚡ Anlık Eşleşme Talebi!";
+  const body = `${sportLabel} için 30 dakika içinde oyun arayan biri var!`;
+
+  // DB bildirimleri toplu oluştur
+  await prisma.notification.createMany({
+    data: targets.map((u) => ({
+      userId: u.id,
+      type: "URGENT_LISTING_NEARBY",
+      title,
+      body,
+      link,
+    })),
+    skipDuplicates: true,
+  });
+
+  // Push bildirimleri gönder
+  await Promise.allSettled(
+    targets.map((u) =>
+      u.pushSubscriptions.length > 0
+        ? sendPushToUser(u.pushSubscriptions, { title, body, link, tag: `urgent-${listing.id}` })
+        : Promise.resolve()
+    )
+  );
+
+  log.info("Acil ilan broadcast tamamlandı", { listingId: listing.id, targetCount: targets.length });
+}

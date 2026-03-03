@@ -250,6 +250,8 @@ export interface CreateListingForm {
   maxParticipants: number;
   allowedGender: AllowedGender;
   isQuick: boolean;
+  isUrgent: boolean;
+  isAnonymous: boolean;
   expiresAt: string;
   isRecurring: boolean;
   recurringDays: string[];  // ["MON","WED","FRI"]

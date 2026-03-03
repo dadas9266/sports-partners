@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 
-export function useActivityCount() {
+export function useActivityCount(enabled = true) {
   const [count, setCount] = useState<number>(0);
 
   useEffect(() => {
+    if (!enabled) { setCount(0); return; }
     let cancelled = false;
     async function fetchCounts() {
       try {
@@ -33,7 +34,7 @@ export function useActivityCount() {
     // Her 60sn'de bir güncelle
     const interval = setInterval(fetchCounts, 60000);
     return () => { cancelled = true; clearInterval(interval); };
-  }, []);
+  }, [enabled]);
 
   return count;
 }

@@ -52,6 +52,8 @@ export const createListingSchema = z
   maxParticipants: z.number().int().min(2).max(20).optional().default(2),
   allowedGender: z.enum(["ANY", "FEMALE_ONLY", "MALE_ONLY"]).optional().default("ANY"),
   isQuick: z.boolean().optional().default(false),
+  isUrgent: z.boolean().optional().default(false),
+  isAnonymous: z.boolean().optional().default(false),
   expiresAt: z
     .string()
     .optional()

@@ -76,7 +76,10 @@ export async function POST(
 
     const { matchId } = await params;
 
-    const match = await prisma.match.findUnique({ where: { id: matchId } });
+    const match = await prisma.match.findUnique({
+      where: { id: matchId },
+      include: { listing: { select: { isAnonymous: true } } },
+    });
     if (!match)
       return NextResponse.json({ error: "Maç bulunamadı" }, { status: 404 });
 
@@ -169,6 +172,21 @@ export async function POST(
         body: "Maçınız başarıyla tamamlandı. Rakibinizi değerlendirmeyi unutmayın!",
         link: `/eslesmeler/${matchId}`,
       });
+    }
+
+    // Kör Maç: anonim ilan ise profil açıldı bildirimi gönder
+    if ((match as any).listing?.isAnonymous) {
+      for (const uid of [match.user1Id, match.user2Id]) {
+        const otherId = uid === match.user1Id ? match.user2Id : match.user1Id;
+        const other = await prisma.user.findUnique({ where: { id: otherId }, select: { name: true } });
+        await createNotification({
+          userId: uid,
+          type: "MATCH_REVEAL",
+          title: "🕵️ Kör Maç Profili Açıldı!",
+          body: `Rakibinizin kimliği açıklandı: ${other?.name ?? "İsimsiz"}. Onlara göz at!`,
+          link: `/profil/${otherId}`,
+        });
+      }
     }
 
     log.info("Maç tamamlandı", { matchId, trustScore: match.trustScore });

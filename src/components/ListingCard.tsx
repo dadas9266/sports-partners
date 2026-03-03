@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { format, formatDistanceToNow, differenceInYears } from "date-fns";
 import { tr } from "date-fns/locale";
@@ -9,6 +9,28 @@ import toast from "react-hot-toast";
 import type { ListingSummary } from "@/types";
 import { LEVEL_LABELS, LEVEL_COLORS, GENDER_LABELS } from "@/types";
 import { toggleFavorite } from "@/services/api";
+
+// Acil ilan geri sayım
+function UrgentCountdown({ expiresAt }: { expiresAt: string }) {
+  const [remaining, setRemaining] = useState("");
+  useEffect(() => {
+    function update() {
+      const diff = new Date(expiresAt).getTime() - Date.now();
+      if (diff <= 0) { setRemaining("Süresi doldu"); return; }
+      const mins = Math.floor(diff / 60000);
+      const secs = Math.floor((diff % 60000) / 1000);
+      setRemaining(`${mins}:${secs.toString().padStart(2, "0")} kaldı`);
+    }
+    update();
+    const id = setInterval(update, 1000);
+    return () => clearInterval(id);
+  }, [expiresAt]);
+  return (
+    <span className="text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 px-2 py-0.5 rounded-full font-bold tabular-nums">
+      🔴 {remaining}
+    </span>
+  );
+}
 
 // ─── Tür bazlı görsel konfigürasyonu ─────────────────────────────────────────
 const LISTING_TYPE_CONFIG = {
@@ -120,13 +142,28 @@ export default function ListingCard({
     >
       {/* Tür başlık şeridi */}
       <div className={`flex items-center justify-between px-4 py-2 ${typeConfig.headerBg}`}>
-        <span className={`text-xs font-bold tracking-wide ${typeConfig.iconColor}`}>
-          {typeConfig.label}
-        </span>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className={`text-xs font-bold tracking-wide ${typeConfig.iconColor}`}>
+            {typeConfig.label}
+          </span>
+          {(listing as any).isUrgent && (
+            <span className="text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 px-2 py-0.5 rounded-full font-bold animate-pulse">
+              ⚡ ACİL
+            </span>
+          )}
+          {(listing as any).isAnonymous && (
+            <span className="text-xs bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full font-semibold">
+              🕵️ Anonim
+            </span>
+          )}
+        </div>
         {listing.isQuick && timeLeft && (
           <span className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-full font-semibold">
             ⚡ {timeLeft} kaldı
           </span>
+        )}
+        {(listing as any).isUrgent && (listing as any).expiresAt && (
+          <UrgentCountdown expiresAt={(listing as any).expiresAt} />
         )}
       </div>
 

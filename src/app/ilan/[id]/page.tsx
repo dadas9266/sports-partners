@@ -15,6 +15,28 @@ import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import Modal from "@/components/ui/Modal";
 
+// Acil ilan geri sayım badge
+function UrgentBadge({ expiresAt }: { expiresAt: string }) {
+  const [remaining, setRemaining] = useState("");
+  useEffect(() => {
+    function update() {
+      const diff = new Date(expiresAt).getTime() - Date.now();
+      if (diff <= 0) { setRemaining("Süresi doldu"); return; }
+      const mins = Math.floor(diff / 60000);
+      const secs = Math.floor((diff % 60000) / 1000);
+      setRemaining(`${mins}:${secs.toString().padStart(2, "0")} kaldı`);
+    }
+    update();
+    const id = setInterval(update, 1000);
+    return () => clearInterval(id);
+  }, [expiresAt]);
+  return (
+    <span className="inline-flex items-center gap-1 text-sm bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 font-bold px-3 py-1 rounded-full animate-pulse tabular-nums">
+      ⚡ ACİL · {remaining}
+    </span>
+  );
+}
+
 export default function ListingDetailPage({
   params,
 }: {
@@ -250,6 +272,14 @@ export default function ListingDetailPage({
             <span className={`inline-block text-sm font-medium px-3 py-1 rounded-full ${STATUS_LABELS[listing.status]?.className || ""}`}>
               {isMatched ? "✅ Eşleşti" : isClosed ? "Kapatıldı" : "🟢 Açık"}
             </span>
+            {(listing as any).isUrgent && (listing as any).expiresAt && new Date((listing as any).expiresAt) > new Date() && (
+              <UrgentBadge expiresAt={(listing as any).expiresAt} />
+            )}
+            {(listing as any).isAnonymous && (
+              <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-semibold px-3 py-1 rounded-full">
+                🕵️ Kör Maç
+              </span>
+            )}
           </div>
         </div>
 
@@ -281,9 +311,16 @@ export default function ListingDetailPage({
             </div>
             <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
               <span role="img" aria-label="kullanıcı">👤</span>
-              <Link href={`/profil/${listing.userId}`} className="hover:text-emerald-600 dark:hover:text-emerald-400 transition font-medium">
-                {listing.user?.name}
-              </Link>
+              {listing.userId === "anonymous" ? (
+                <span className="flex items-center gap-1.5 font-medium text-gray-500 dark:text-gray-400">
+                  🕵️ Anonim Kullanıcı
+                  <span className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">Kör Maç</span>
+                </span>
+              ) : (
+                <Link href={`/profil/${listing.userId}`} className="hover:text-emerald-600 dark:hover:text-emerald-400 transition font-medium">
+                  {listing.user?.name}
+                </Link>
+              )}
             </div>
             <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
               <span role="img" aria-label="mesaj">💬</span>

@@ -108,6 +108,7 @@ export default function AktivitelerimPage() {
   const [matches, setMatches]     = useState<MyMatch[]>([]);
   const [challenges, setChallenges] = useState<{ received: Challenge[]; sent: Challenge[] }>({ received: [], sent: [] });
   const [loading, setLoading] = useState(true);
+  const [closingId, setClosingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (authStatus === "unauthenticated") router.push("/auth/giris");
@@ -139,6 +140,29 @@ export default function AktivitelerimPage() {
   }, [session]);
 
   useEffect(() => { load(); }, [load]);
+
+  const handleCloseListing = async (id: string) => {
+    if (!confirm("Bu ilanı kapatmak istediğinize emin misiniz? Bekleyen başvurular reddedilecek.")) return;
+    setClosingId(id);
+    try {
+      const res = await fetch(`/api/listings/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "close" }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        toast.success("İlan kapatıldı");
+        setListings((prev) => prev.map((l) => l.id === id ? { ...l, status: "CLOSED" } : l));
+      } else {
+        toast.error(json.error ?? "İşlem başarısız");
+      }
+    } catch {
+      toast.error("Bir hata oluştu");
+    } finally {
+      setClosingId(null);
+    }
+  };
 
   const handleChallengeAction = async (id: string, action: "ACCEPTED" | "REJECTED") => {
     try {
@@ -276,30 +300,47 @@ export default function AktivitelerimPage() {
             <EmptyState icon="📋" text="Henüz ilan açmadın." />
           ) : (
             listings.map((l) => (
-              <Link key={l.id} href={`/ilan/${l.id}`} className="block">
-                <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm p-4 hover:shadow-md transition">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <span className="font-semibold text-gray-800 dark:text-gray-100 text-sm">
-                          {l.sport.icon} {l.sport.name}
-                        </span>
-                        <span className="text-xs text-gray-500 dark:text-gray-400">{TYPE_LABELS[l.type] ?? l.type}</span>
-                      </div>
-                      {l.district && (
-                        <p className="text-xs text-gray-400 dark:text-gray-500">📍 {l.district.name}, {l.district.city.name}</p>
-                      )}
-                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                        📅 {format(new Date(l.dateTime), "d MMM yyyy, HH:mm", { locale: tr })}
-                      </p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                        📩 {l._count.responses} başvuru
-                      </p>
+              <div key={l.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm p-4 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <span className="font-semibold text-gray-800 dark:text-gray-100 text-sm">
+                        {l.sport.icon} {l.sport.name}
+                      </span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">{TYPE_LABELS[l.type] ?? l.type}</span>
                     </div>
-                    <StatusBadge status={l.status} />
+                    {l.district && (
+                      <p className="text-xs text-gray-400 dark:text-gray-500">📍 {l.district.name}, {l.district.city.name}</p>
+                    )}
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                      📅 {format(new Date(l.dateTime), "d MMM yyyy, HH:mm", { locale: tr })}
+                    </p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                      📩 {l._count.responses} başvuru
+                    </p>
                   </div>
+                  <StatusBadge status={l.status} />
                 </div>
-              </Link>
+                <div className="flex gap-2 pt-1 border-t border-gray-100 dark:border-gray-700">
+                  <Link
+                    href={`/ilan/${l.id}`}
+                    className="flex-1 text-center text-xs font-semibold py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 transition"
+                  >
+                    📋 Detay / Başvurular
+                  </Link>
+                  {l.status === "OPEN" && (
+                    <button
+                      disabled={closingId === l.id}
+                      onClick={() => handleCloseListing(l.id)}
+                      className="flex-1 flex items-center justify-center gap-1 text-xs font-semibold py-1.5 rounded-lg bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 transition disabled:opacity-50"
+                    >
+                      {closingId === l.id
+                        ? <div className="w-3.5 h-3.5 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+                        : "🔒 İlanı Kapat"}
+                    </button>
+                  )}
+                </div>
+              </div>
             ))
           )}
         </div>

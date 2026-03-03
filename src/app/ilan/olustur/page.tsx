@@ -36,6 +36,8 @@ export default function CreateListingPage() {
     maxParticipants: 2,
     allowedGender: "ANY",
     isQuick: false,
+    isUrgent: false,
+    isAnonymous: false,
     expiresAt: "",
     isRecurring: false,
     recurringDays: [],
@@ -155,10 +157,12 @@ export default function CreateListingPage() {
       }
       if (form.type !== "EQUIPMENT") {
         payload.isQuick = form.isQuick;
+        payload.isUrgent = form.isUrgent;
         payload.expiresAt = form.isQuick && form.expiresAt ? form.expiresAt : undefined;
         payload.isRecurring = form.isRecurring;
         payload.recurringDays = form.recurringDays;
       }
+      payload.isAnonymous = form.isAnonymous;
       const data = await createListing(payload);
       toast.success("İlan başarıyla oluşturuldu!");
       if (data.data) router.push(`/ilan/${data.data.id}`);
@@ -647,7 +651,7 @@ export default function CreateListingPage() {
             </div>
             <button
               type="button"
-              onClick={() => setForm({ ...form, isQuick: !form.isQuick })}
+              onClick={() => setForm({ ...form, isQuick: !form.isQuick, isUrgent: false })}
               className={`relative w-12 h-6 rounded-full transition-colors ${
                 form.isQuick ? "bg-amber-500" : "bg-gray-300 dark:bg-gray-600"
               }`}
@@ -661,6 +665,78 @@ export default function CreateListingPage() {
               />
             </button>
           </div>
+        </div>
+        )}
+
+        {/* ⚡ ACİL EŞleşme — 30 dakika, yakındakilere push bildirim */}
+        {form.type !== "EQUIPMENT" && form.type !== "TRAINER" && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium text-red-800 dark:text-red-200">⚡ Anlık Eşleşme — Gece Yarısı Maçı</p>
+              <p className="text-xs text-red-600 dark:text-red-400 mt-0.5">
+                Şu an müsaitim! 30 dakikalık acil ilan açılır, aynı semtteki uygun kullanıcılara anında bildirim gider. İlk kabul eden eşleşir.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setForm({ ...form, isUrgent: !form.isUrgent, isQuick: false })}
+              className={`relative w-12 h-6 rounded-full transition-colors ${
+                form.isUrgent ? "bg-red-500" : "bg-gray-300 dark:bg-gray-600"
+              }`}
+              role="switch"
+              aria-checked={form.isUrgent}
+            >
+              <span
+                className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+                  form.isUrgent ? "translate-x-7" : "translate-x-1"
+                }`}
+              />
+            </button>
+          </div>
+          {form.isUrgent && (
+            <div className="mt-2 bg-red-100 dark:bg-red-900/30 rounded-lg px-3 py-2">
+              <p className="text-xs text-red-700 dark:text-red-300 font-medium">
+                🔴 İlan oluşturulunca 30 dakika sayacı başlar. Bildirim gönderilen kullanıcıların başvurusu beklenir.
+              </p>
+            </div>
+          )}
+        </div>
+        )}
+
+        {/* 🕵️ KÖR MAÇ — Anonim İlan */}
+        {form.type !== "EQUIPMENT" && form.type !== "TRAINER" && (
+        <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium text-gray-800 dark:text-gray-200">🕵️ Kör Maç — Anonim İlan</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                Eşleşme gerçekleşene kadar profil bilgilerin gizlenir. Kadın kullanıcılar için güvenli eşleşme!
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setForm({ ...form, isAnonymous: !form.isAnonymous })}
+              className={`relative w-12 h-6 rounded-full transition-colors ${
+                form.isAnonymous ? "bg-gray-600" : "bg-gray-300 dark:bg-gray-600"
+              }`}
+              role="switch"
+              aria-checked={form.isAnonymous}
+            >
+              <span
+                className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+                  form.isAnonymous ? "translate-x-7" : "translate-x-1"
+                }`}
+              />
+            </button>
+          </div>
+          {form.isAnonymous && (
+            <div className="mt-2 bg-gray-100 dark:bg-gray-700/50 rounded-lg px-3 py-2">
+              <p className="text-xs text-gray-600 dark:text-gray-300 font-medium">
+                🔒 Başvuranlar sadece seviye, yaş aralığı ve spor bilgini görecek. Eşleşme onaylanan profil açılır.
+              </p>
+            </div>
+          )}
         </div>
         )}
 
