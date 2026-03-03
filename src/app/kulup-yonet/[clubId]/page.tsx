@@ -152,32 +152,6 @@ export default function ClubManagePage() {
       const patchJson = await patchRes.json();
       if (patchJson.success) {
         setLogoUrl(uploadJson.url);
-        toast.success("Kulüb logoso güncellendi!");
-      } else {
-        toast.error(patchJson.error ?? "Güncellenemedi");
-      }
-    } catch { toast.error("Sunucu hatası"); }
-    finally { setUploadingLogo(false); e.target.value = ""; }
-  };
-
-  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploadingLogo(true);
-    try {
-      const fd = new FormData();
-      fd.append("file", file);
-      const uploadRes = await fetch("/api/upload", { method: "POST", body: fd });
-      const uploadJson = await uploadRes.json();
-      if (!uploadRes.ok || !uploadJson.url) { toast.error(uploadJson.error ?? "Yükleme başarısız"); return; }
-      const patchRes = await fetch(`/api/clubs/${clubId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ logoUrl: uploadJson.url }),
-      });
-      const patchJson = await patchRes.json();
-      if (patchJson.success) {
-        setLogoUrl(uploadJson.url);
         toast.success("Kulüp logosu güncellendi!");
       } else {
         toast.error(patchJson.error ?? "Güncellenemedi");
