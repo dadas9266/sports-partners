@@ -100,7 +100,7 @@ export default function AktivitelerimPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const tabParam = (searchParams.get("tab") as TabKey) ?? "matches";
+  const tabParam = ((searchParams?.get("tab") ?? "") as TabKey) || "matches";
   const [activeTab, setActiveTab] = useState<TabKey>(tabParam);
 
   const [listings, setListings]   = useState<MyListing[]>([]);

@@ -19,7 +19,7 @@ export async function GET() {
     const userId = await getCurrentUserId();
     if (!userId) return unauthorized();
 
-    const user = await prisma.user.findUnique({
+    const user = await (prisma.user as any).findUnique({
       where: { id: userId },
       select: {
         whoCanMessage: true,
@@ -49,7 +49,7 @@ export async function PUT(request: Request) {
       return NextResponse.json({ success: false, error: parsed.error.issues[0].message }, { status: 400 });
     }
 
-    const updated = await prisma.user.update({
+    const updated = await (prisma.user as any).update({
       where: { id: userId },
       data: parsed.data,
       select: {
