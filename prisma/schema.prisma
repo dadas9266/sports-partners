@@ -142,10 +142,11 @@ model Sport {
 
 // ========== KONUM ==========
 model Country {
-  id     String @id @default(cuid())
-  name   String @unique
-  code   String @unique
-  cities City[]
+  id       String    @id @default(cuid())
+  name     String    @unique
+  code     String    @unique
+  cities   City[]
+  listings Listing[]
 }
 
 model City {
@@ -223,6 +224,8 @@ model Listing {
   type            ListingType
   sportId         String
   sport           Sport         @relation(fields: [sportId], references: [id])
+  countryId       String?
+  country         Country?      @relation(fields: [countryId], references: [id])
   cityId          String?
   city            City?         @relation(fields: [cityId], references: [id])
   districtId      String?
@@ -266,6 +269,7 @@ model Listing {
   @@index([status, sportId, dateTime])
   @@index([expiresAt])
   @@index([cityId])
+  @@index([countryId])
   @@index([type])
 }
 

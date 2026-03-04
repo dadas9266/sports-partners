@@ -112,10 +112,10 @@ export async function GET(request: Request) {
     
     // Konum filtrelerini (ülke/şehir/ilçe) birbirini kapsayacak şekilde (AND) uygula
     if (districtId) {
+      // İlçe seçilince sadece o ilçedeki ilanlar
       where.districtId = districtId;
-    }
-    if (cityId) {
-      // ilçesi olan ilanlar district.cityId ile, ilçesiz ilanlar doğrudan cityId ile filtrelenir
+    } else if (cityId) {
+      // Şehir seçilince: o şehirdeki (cityId) veya o şehrin ilçelerindeki (district.cityId) ilanlar
       (where.AND as Prisma.ListingWhereInput[]).push({
         OR: [{ cityId }, { district: { cityId } }],
       });
@@ -124,8 +124,9 @@ export async function GET(request: Request) {
       // Sadece ülke seçilmiş olsa bile, o ülkeye ait tüm şehir ve ilçelerdeki ilanları getir
       (where.AND as Prisma.ListingWhereInput[]).push({
         OR: [
-          { district: { city: { countryId } } },
+          { countryId },
           { city: { countryId } },
+          { district: { city: { countryId } } },
         ],
       });
     }
@@ -357,7 +358,8 @@ export async function POST(request: Request) {
       data: {
         type: parsed.data.type,
         sportId: parsed.data.sportId,
-        cityId: parsed.data.cityId,
+        countryId: (parsed.data as any).countryId || null,
+        cityId: parsed.data.cityId || null,
         districtId: parsed.data.districtId || null,
         venueId: parsed.data.venueId || null,
         userId,

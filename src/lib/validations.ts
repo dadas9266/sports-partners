@@ -42,7 +42,8 @@ export const createListingSchema = z
   .object({
   type: z.enum(["RIVAL", "PARTNER", "TRAINER", "EQUIPMENT"], { message: "İlan tipi seçiniz" }),
   sportId: z.string().min(1, "Spor dalı seçiniz"),
-  cityId: z.string().min(1, "Lütfen şehir seçiniz"),
+  countryId: z.string().optional().nullable(),
+  cityId: z.string().optional().nullable(),
   districtId: z.string().optional().nullable(),
   venueId: z.string().optional().nullable(),
   // dateTime: RIVAL ve PARTNER için zorunlu ve gelecekte olmalı; TRAINER opsiyonel; EQUIPMENT gerekmez

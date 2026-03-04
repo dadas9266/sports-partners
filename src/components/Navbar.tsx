@@ -20,10 +20,12 @@ export default function Navbar() {
   const [darkMode, setDarkMode] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [discoverOpen, setDiscoverOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const navRef = useRef<HTMLElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   const notifPanelRef = useRef<HTMLDivElement>(null);
   const discoverRef = useRef<HTMLDivElement>(null);
+  const moreRef = useRef<HTMLDivElement>(null);
 
   // Gerçek zamanlı bildirimler — NotificationContext'ten (SSE Providers.tsx'de açık)
   const { notifications, unreadCount, unreadMessages, markAllRead, refresh: refreshNotifs } = useNotifications();
@@ -43,19 +45,20 @@ export default function Navbar() {
   }, []);
 
   useEffect(() => {
-    if (!notifOpen && !discoverOpen) return;
+    if (!notifOpen && !discoverOpen && !moreOpen) return;
     const handleClick = (e: MouseEvent) => {
       const target = e.target as Node;
-      // Bildirim paneli navRef dışında render edilir; panel içi tıklamaları yoksay
       if (notifPanelRef.current && notifPanelRef.current.contains(target)) return;
+      if (moreRef.current && moreRef.current.contains(target)) return;
       if (navRef.current && !navRef.current.contains(target)) {
         setNotifOpen(false);
         setDiscoverOpen(false);
+        setMoreOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
-  }, [notifOpen, discoverOpen]);
+  }, [notifOpen, discoverOpen, moreOpen]);
 
   const handleOpenNotif = async () => {
     const opening = !notifOpen;
@@ -181,7 +184,7 @@ export default function Navbar() {
           <div className="flex-1 flex justify-center">
             {session && (
               <Link href="/ilan/olustur" className="group">
-                <Button variant="primary" size="lg" className="shadow-md px-5 py-1.5 text-sm font-bold tracking-wide relative overflow-hidden transition-all group-hover:scale-105 bg-gradient-to-r from-emerald-500 to-teal-600 border-0 rounded-xl">
+                <Button variant="primary" size="sm" className="shadow-md px-3 py-1 text-xs sm:px-5 sm:py-1.5 sm:text-sm font-bold tracking-wide relative overflow-hidden transition-all group-hover:scale-105 bg-gradient-to-r from-emerald-500 to-teal-600 border-0 rounded-xl">
                   <span className="relative z-10">{t("createListing")}</span>
                 </Button>
               </Link>
@@ -252,6 +255,45 @@ export default function Navbar() {
                     </svg>
                   )}
                 </button>
+
+                {/* ─── Mobil üç nokta (...) menüsü ─── */}
+                <div className="relative md:hidden" ref={moreRef}>
+                  <button
+                    onClick={() => setMoreOpen(v => !v)}
+                    className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400"
+                    aria-label="Daha Fazla"
+                  >
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                      <circle cx="5" cy="12" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="19" cy="12" r="1.5" />
+                    </svg>
+                  </button>
+                  {moreOpen && (
+                    <>
+                      <div className="fixed inset-0 z-[88]" onClick={() => setMoreOpen(false)} />
+                      <div className="absolute right-0 top-full mt-1.5 w-60 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-xl z-[89] overflow-hidden py-1.5">
+                        {[
+                          { href: "/ayarlar/profil", icon: "👤", label: "Profili Düzenle" },
+                          { href: "/ayarlar/guvenlik", icon: "🔒", label: "Hesap Güvenliği" },
+                          { href: "/ayarlar/profesyonel", icon: "⭐", label: "Profesyonel Hesap" },
+                          ...((session.user as any)?.userType === "VENUE" ? [{ href: "/ayarlar/isletme", icon: "🏟️", label: "İşletme Yönetimi" }] : []),
+                          { href: "/ayarlar/gizlilik", icon: "🛡️", label: "Gizlilik" },
+                          { href: "/topluluklar", icon: "🌐", label: "Topluluklar" },
+                          { href: "/turnuvalar", icon: "🏆", label: "Turnuvalar" },
+                        ].map(item => (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            onClick={() => setMoreOpen(false)}
+                            className={`flex items-center gap-3 px-4 py-2.5 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition ${pathname?.startsWith(item.href) ? "bg-emerald-50 dark:bg-emerald-900/20" : ""}`}
+                          >
+                            <span className="text-lg">{item.icon}</span>
+                            <span className="text-sm font-medium text-gray-800 dark:text-gray-100">{item.label}</span>
+                          </Link>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
               </>
             ) : (
               <>

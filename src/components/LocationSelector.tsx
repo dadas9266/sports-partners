@@ -69,7 +69,7 @@ export default function LocationSelector({
 
       {/* Şehir Seçimi */}
       <div>
-        {showLabels && <label className={labelClass}>Şehir</label>}
+        {showLabels && <label className={labelClass}>Şehir <span className="font-normal text-xs text-gray-400">(opsiyonel)</span></label>}
         <select
           value={cityId}
           onChange={(e) => onChange({ cityId: e.target.value, districtId: "" })}

@@ -119,7 +119,8 @@ export default function CreateListingPage() {
       const payload: any = {
         type: form.type as string,
         sportId: form.sportId,
-        cityId: form.cityId,
+        countryId: form.countryId || undefined,
+        cityId: form.cityId || undefined,
         districtId: form.districtId || undefined,
         venueId: form.venueId || null,
         latitude: form.latitude ?? undefined,
