@@ -53,7 +53,6 @@ export default function ProfileStreakCard({ currentStreak, longestStreak }: Prof
           <span className="text-[10px] text-gray-400 shrink-0">{toNext} gün kaldı</span>
         </div>
       )}
-        </div>
       {nextMilestone === null && currentStreak >= 30 && (
         <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 text-center">
           🌋 Efsane seri! {currentStreak} gün kesintisiz
