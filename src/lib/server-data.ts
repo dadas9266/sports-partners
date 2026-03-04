@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { ListingSummary, Country, Sport } from "@/types";
 
@@ -12,11 +13,11 @@ export async function getInitialListings(countryId?: string): Promise<{
   const pageSize = 12;
 
   // Default filter: Turkey + open listings + not expired
-  const where = {
+  const where: Prisma.ListingWhereInput = {
     status: "OPEN" as const,
     AND: [
       { OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
-      { OR: [{ type: { in: ["TRAINER", "EQUIPMENT"] } }, { dateTime: { gte: now } }] },
+      { OR: [{ type: { in: ["TRAINER", "EQUIPMENT"] as Prisma.EnumListingTypeFilter["in"] } }, { dateTime: { gte: now } }] },
       // Tüm ilanları göster (cinsiyet filtresi client-side uygulanacak)
     ],
     ...(countryId
@@ -98,7 +99,7 @@ export async function getPopularListings(limit = 6): Promise<ListingSummary[]> {
       AND: [
         { OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
         // TRAINER/EQUIPMENT ilanları tarihe göre filtrelenmez; etkinlik ilanları geçmişse çıkarılır
-        { OR: [{ type: { in: ["TRAINER", "EQUIPMENT"] } }, { dateTime: { gte: now } }] },
+        { OR: [{ type: { in: ["TRAINER", "EQUIPMENT"] as Prisma.EnumListingTypeFilter["in"] } }, { dateTime: { gte: now } }] },
       ],
     },
     include: {

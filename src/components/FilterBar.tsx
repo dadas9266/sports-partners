@@ -278,6 +278,7 @@ export default function FilterBar({ onFilterChange, initialLocations, initialSpo
           >
             Filtrele
           </button>
+          </div>
         </div>
       </div>
     </>
