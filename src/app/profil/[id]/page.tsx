@@ -333,97 +333,108 @@ export default function PublicProfilePage({
   return (
     <div className="max-w-3xl mx-auto">
 
-      {/* ── COVER ── */}
-      <div className="relative h-36 sm:h-44 rounded-2xl overflow-hidden bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600">
-        {(profile as any).coverUrl && (
-          <img src={(profile as any).coverUrl} alt="Kapak" className="w-full h-full object-cover" />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
-        {session && !profile.isOwnProfile && blockStatus !== "BLOCK" && (
-          <div className="absolute top-3 right-3 z-20">
-            <button
-              onClick={handleFollow}
-              disabled={followLoading}
-              className={`text-xs font-semibold px-3.5 py-1.5 rounded-full backdrop-blur-sm border transition ${
-                isFollowing
-                  ? "bg-white/25 text-white border-white/40 hover:bg-white/15"
-                  : "bg-white text-emerald-700 border-white/80 hover:bg-emerald-50 shadow"
-              }`}
-            >
-              {followLoading ? "..." : isFollowing ? "✓ Takip" : "+ Takip Et"}
-            </button>
-          </div>
-        )}
-        {profile.isOwnProfile && (
-          <div className="absolute top-3 right-3 z-20">
-            <Link href="/profil"
-              className="text-xs font-semibold px-3.5 py-1.5 rounded-full bg-white/25 text-white border border-white/40 hover:bg-white/35 backdrop-blur-sm transition">
-              Düzenle
-            </Link>
-          </div>
-        )}
-      </div>
+      {/* ── HERO CARD: Cover + Avatar + Floating Actions ── */}
+      <div className="relative rounded-2xl overflow-hidden shadow-sm">
 
-      {/* ── IDENTITY: Avatar + Ad + Konum ── */}
-      <div className="flex items-end gap-4 -mt-8 px-2 relative z-10 mb-1">
-        <button
-          onClick={() => storyGroups.length > 0 ? setStoryViewerOpen(true) : undefined}
-          disabled={storyGroups.length === 0}
-          className={`relative flex-shrink-0 w-20 h-20 rounded-2xl border-4 border-white dark:border-gray-900 shadow-lg overflow-visible ${storyGroups.length > 0 ? "cursor-pointer" : ""}`}
-        >
-          {storyGroups.length > 0 && (
-            <span className={`absolute inset-[-4px] rounded-2xl ${storyGroups[0].hasUnread ? "bg-gradient-to-br from-pink-500 via-orange-400 to-yellow-300" : "bg-gray-300 dark:bg-gray-600"}`} />
+        {/* Cover */}
+        <div className="relative h-52 sm:h-60 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600">
+          {(profile as any).coverUrl && (
+            <img src={(profile as any).coverUrl} alt="Kapak" className="w-full h-full object-cover" />
           )}
-          <span className="absolute inset-0 rounded-2xl overflow-hidden bg-emerald-100 dark:bg-emerald-900/30 z-[1] flex items-center justify-center text-2xl font-semibold text-emerald-600">
-            {profile.avatarUrl ? (
-              <img src={profile.avatarUrl} alt={profile.name} className="w-full h-full object-cover" />
-            ) : profile.name.charAt(0).toUpperCase()}
-          </span>
-        </button>
-        <div className="pb-2 min-w-0 flex-1">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <h1 className="text-xl font-semibold text-gray-900 dark:text-white leading-tight">{profile.name}</h1>
-            {(profile as any).trainerProfile?.isVerified && (
-              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 whitespace-nowrap">🏅 Antrenör</span>
-            )}
-            {(profile as any).userType === "VENUE" && (
-              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 whitespace-nowrap">🏟️ Tesis</span>
-            )}
-            {profile.isOwnProfile && (
-              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">Sen</span>
-            )}
-          </div>
-          <div className="flex items-center gap-3 mt-0.5 flex-wrap">
+          {/* Bottom gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent pointer-events-none" />
+
+          {/* Name + badges on cover — bottom left */}
+          <div className="absolute bottom-4 left-[108px] sm:left-[120px] right-3 z-10 pointer-events-none">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <h1 className="text-xl sm:text-2xl font-bold text-white drop-shadow-lg leading-tight">{profile.name}</h1>
+              {profile.isOwnProfile && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/80 text-white backdrop-blur-sm">Sen</span>
+              )}
+              {(profile as any).trainerProfile?.isVerified && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/80 text-white backdrop-blur-sm whitespace-nowrap">🏅 Antrenör ✓</span>
+              )}
+              {(profile as any).userType === "VENUE" && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/80 text-white backdrop-blur-sm whitespace-nowrap">🏟️ Tesis</span>
+              )}
+              {profile.birthDate && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-black/30 text-white backdrop-blur-sm">
+                  {differenceInYears(new Date(), new Date(profile.birthDate))} Yaş
+                </span>
+              )}
+            </div>
             {profile.city && (
-              <p className="text-xs text-gray-400 dark:text-gray-500">
+              <p className="text-white/80 text-xs mt-0.5 drop-shadow">
                 📍 {profile.city.name}{profile.city.country ? `, ${profile.city.country.name}` : ""}
               </p>
             )}
-            {profile.birthDate && (
-              <span className="text-xs text-gray-400 dark:text-gray-500">
-                {differenceInYears(new Date(), new Date(profile.birthDate))} yaş
-              </span>
-            )}
           </div>
+
+          {/* Floating action buttons — top right */}
+          {session && !profile.isOwnProfile && blockStatus !== "BLOCK" && (
+            <div className="absolute top-3 right-3 z-20 flex gap-1.5">
+              <button
+                onClick={handleFollow}
+                disabled={followLoading}
+                className={`text-xs font-bold px-3.5 py-1.5 rounded-full backdrop-blur-sm border transition ${
+                  isFollowing
+                    ? "bg-white/25 text-white border-white/40 hover:bg-white/15"
+                    : "bg-white text-emerald-700 border-white/80 hover:bg-emerald-50 shadow"
+                }`}
+              >
+                {followLoading ? "..." : isFollowing ? "✓ Takip" : "+ Takip Et"}
+              </button>
+            </div>
+          )}
+          {profile.isOwnProfile && (
+            <div className="absolute top-3 right-3 z-20">
+              <Link href="/profil"
+                className="text-xs font-bold px-3.5 py-1.5 rounded-full bg-white/25 text-white border border-white/40 hover:bg-white/35 backdrop-blur-sm transition">
+                ✏️ Profili Düzenle
+              </Link>
+            </div>
+          )}
         </div>
+
+        {/* Avatar — overlaps cover, bottom-left */}
+        <div className="absolute left-5 z-20" style={{ bottom: "-44px" }}>
+          <button
+            onClick={() => storyGroups.length > 0 ? setStoryViewerOpen(true) : undefined}
+            disabled={storyGroups.length === 0}
+            className={`relative block w-24 h-24 rounded-2xl border-4 border-white dark:border-gray-900 shadow-xl overflow-visible ${storyGroups.length > 0 ? "cursor-pointer" : ""}`}
+          >
+            {storyGroups.length > 0 && (
+              <span className={`absolute inset-[-4px] rounded-2xl ${storyGroups[0].hasUnread ? "bg-gradient-to-br from-pink-500 via-orange-400 to-yellow-300" : "bg-gray-400"}`} />
+            )}
+            <span className="absolute inset-0 rounded-2xl overflow-hidden bg-emerald-100 dark:bg-emerald-900/30 z-[1] flex items-center justify-center text-3xl font-black text-emerald-600">
+              {profile.avatarUrl ? (
+                <img src={profile.avatarUrl} alt={profile.name} className="w-full h-full object-cover" />
+              ) : profile.name.charAt(0).toUpperCase()}
+            </span>
+          </button>
+        </div>
+
+        {/* White bottom bar of hero card */}
+        <div className="h-14 bg-white dark:bg-gray-800" />
       </div>
 
       {/* ── STATS + ACTION BAR ───────────────────────────── */}
-      <div className="px-2 pt-1 pb-4">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm px-5 py-4 mt-2">
         <div className="flex items-center justify-between gap-3 flex-wrap">
 
           {/* Stats row */}
-          <div className="flex items-center gap-4 sm:gap-5 flex-wrap">
+          <div className="flex items-center gap-4 sm:gap-6 flex-wrap">
             {[
               { val: profile.totalMatches, label: "Maç" },
               { val: followerCount, label: "Takipçi" },
               { val: followingCount, label: "Takip" },
-              { val: profile.avgRating ? `${profile.avgRating.toFixed(1)} ⭐` : "—", label: "Puan" },
+              { val: profile.avgRating ? `${profile.avgRating.toFixed(1)}⭐` : "—", label: "Puan" },
               { val: profile.totalListings, label: "İlan" },
             ].map(s => (
-              <span key={s.label} className="text-sm text-gray-500 dark:text-gray-400">
-                <span className="font-semibold text-gray-900 dark:text-white">{s.val}</span>{" "}{s.label}
-              </span>
+              <div key={s.label} className="text-center">
+                <p className="text-lg font-bold text-gray-900 dark:text-white leading-none">{s.val}</p>
+                <p className="text-[10px] text-gray-400 uppercase tracking-wider mt-0.5">{s.label}</p>
+              </div>
             ))}
           </div>
 
@@ -491,8 +502,8 @@ export default function PublicProfilePage({
         </div>
       </div>
 
-      {/* ── ABOUT ── */}
-      <div className="px-2 pt-3 pb-6 space-y-3">
+      {/* ── ABOUT CARD ───────────────────────────────────── */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-5 space-y-3 mt-3">
         {/* Badges */}
         <div className="flex flex-wrap gap-1.5 items-center">
           {badges.length > 0 && badges.map((b) => <BadgeChip key={b.id} badge={b} />)}
@@ -576,7 +587,7 @@ export default function PublicProfilePage({
       </div>
 
       {/* ── STICKY TABS ──────────────────────────────────── */}
-      <div className="sticky top-[60px] z-30 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-b border-gray-100 dark:border-gray-800 overflow-hidden mt-2">
+      <div className="sticky top-[60px] z-30 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden mt-3">
         <div className="flex">
           {[
             { key: "posts",    label: "📸 Gönderiler" },
