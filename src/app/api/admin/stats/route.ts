@@ -29,6 +29,7 @@ export async function GET() {
       totalClubs,
       totalGroups,
       totalRatings,
+      onlineUsersCount,
     ] = await Promise.all([
       prisma.user.count(),
       prisma.user.count({ where: { createdAt: { gte: last30 } } }),
@@ -41,12 +42,13 @@ export async function GET() {
       prisma.club.count(),
       prisma.group.count(),
       prisma.rating.count(),
+      prisma.user.count({ where: { lastSeenAt: { gte: new Date(Date.now() - 5 * 60 * 1000) } } }),
     ]);
 
     return NextResponse.json({
       success: true,
       stats: {
-        users: { total: totalUsers, new30d: newUsers30d, new7d: newUsers7d, banned: bannedUsers },
+        users: { total: totalUsers, new30d: newUsers30d, new7d: newUsers7d, banned: bannedUsers, online: onlineUsersCount },
         listings: { total: totalListings, open: openListings },
         matches: { total: totalMatches, completed: completedMatches },
         clubs: { total: totalClubs },

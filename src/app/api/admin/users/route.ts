@@ -26,6 +26,7 @@ export async function GET(req: NextRequest) {
         isBanned: true,
         noShowCount: true,
         warnCount: true,
+        lastSeenAt: true,
         createdAt: true,
       },
     }),

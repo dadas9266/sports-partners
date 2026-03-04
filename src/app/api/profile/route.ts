@@ -21,9 +21,9 @@ export async function GET() {
     }
 
     const [user, myListings, myResponses, myMatches, myFavorites, unreadNotifications, followersCount, followingCount, myClubs, myGroups] = await Promise.all([
-      prisma.user.findUnique({
+      prisma.user.update({
         where: { id: userId },
-        // @ts-ignore
+        data: { lastSeenAt: new Date() },
         select: {
           id: true, name: true, email: true, phone: true, createdAt: true,
           bio: true, avatarUrl: true, coverUrl: true,
@@ -37,6 +37,7 @@ export async function GET() {
           onboardingDone: true,
           userType: true,
           userLevel: true,
+          lastSeenAt: true,
           currentStreak: true,
           longestStreak: true,
           totalMatches: true,

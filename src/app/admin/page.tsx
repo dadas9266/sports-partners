@@ -16,6 +16,7 @@ interface AdminUser {
   isBanned: boolean;
   noShowCount: number;
   warnCount: number;
+  lastSeenAt: string | null;
   createdAt: string;
 }
 
@@ -103,7 +104,7 @@ export default function AdminPage() {
   const [reportsLoading, setReportsLoading] = useState(false);
   const [reportFilter, setReportFilter] = useState<"PENDING" | "ALL">("PENDING");
   const [dbStats, setDbStats] = useState<{
-    users: { total: number; new30d: number; new7d: number; banned: number };
+    users: { total: number; new30d: number; new7d: number; banned: number; online: number };
     listings: { total: number; open: number };
     matches: { total: number; completed: number };
     clubs: { total: number };
@@ -352,8 +353,8 @@ export default function AdminPage() {
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <StatCard label="Aktif İlanlar" value={dbStats?.listings.open ?? 0} color="emerald" icon="📋" />
-        <StatCard label="Toplam Maç" value={dbStats?.matches.total ?? 0} color="blue" icon="⚔️" />
-        <StatCard label="Tamamlanan" value={dbStats?.matches.completed ?? 0} color="emerald" icon="✅" />
+        <StatCard label="Çevrimiçi Üyeler" value={dbStats?.users.online ?? 0} color="blue" icon="🟢" />
+        <StatCard label="Tamamlanan Maç" value={dbStats?.matches.completed ?? 0} color="emerald" icon="✅" />
         <StatCard label="Kulüpler / Gruplar" value={(dbStats?.clubs.total ?? 0) + (dbStats?.groups.total ?? 0)} color="purple" icon="🏛️" />
       </div>
 
@@ -751,7 +752,7 @@ export default function AdminPage() {
             <table className="min-w-full divide-y divide-gray-100 dark:divide-gray-700 text-sm">
               <thead className="bg-gray-50 dark:bg-gray-900/50">
                 <tr>
-                  {["Kullanıcı", "Tür", "Kayıt", "No-Show / Uyarı", "Durum", "İşlemler"].map(
+                  {["Kullanıcı", "Tür", "Durum", "Son Görülme", "No-Show / Uyarı", "Kayıt", "İşlemler"].map(
                     (h) => (
                       <th
                         key={h}
@@ -788,17 +789,32 @@ export default function AdminPage() {
 
                     {/* Tür */}
                     <td className="px-4 py-3">
-                      <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-1 rounded-full">
+                      <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-1 rounded-full whitespace-nowrap">
                         {USER_TYPE_LABELS[user.userType] ?? user.userType}
                       </span>
                     </td>
 
-                    {/* Kayıt Tarihi */}
-                    <td className="px-4 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                      {format(new Date(user.createdAt), "d MMM yyyy", { locale: tr })}
+                    {/* Durum */}
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-flex items-center gap-1 text-[10px] sm:text-xs px-2.5 py-1 rounded-full font-medium ${
+                          user.isBanned
+                            ? "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"
+                            : (user.lastSeenAt && new Date(user.lastSeenAt).getTime() > Date.now() - 5 * 60 * 1000)
+                              ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 animate-pulse"
+                              : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
+                        }`}
+                      >
+                         {user.isBanned ? "🚫 Yasaklı" : (user.lastSeenAt && new Date(user.lastSeenAt).getTime() > Date.now() - 5 * 60 * 1000) ? "🟢 Online" : "⚪ Offline"}
+                      </span>
                     </td>
 
-                    {/* Sayaçlar */}
+                    {/* Son Görülme */}
+                    <td className="px-4 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap text-xs">
+                      {user.lastSeenAt ? format(new Date(user.lastSeenAt), "d MMM HH:mm", { locale: tr }) : "-"}
+                    </td>
+
+                    {/* No-Show / Uyarı */}
                     <td className="px-4 py-3">
                       <div className="flex gap-2">
                         <span
@@ -822,17 +838,9 @@ export default function AdminPage() {
                       </div>
                     </td>
 
-                    {/* Durum */}
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-medium ${
-                          user.isBanned
-                            ? "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"
-                            : "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400"
-                        }`}
-                      >
-                        {user.isBanned ? "🚫 Yasaklı" : "✅ Aktif"}
-                      </span>
+                    {/* Kayıt */}
+                    <td className="px-4 py-3 text-gray-400 dark:text-gray-500 whitespace-nowrap text-xs">
+                      {format(new Date(user.createdAt), "d MMM yyyy", { locale: tr })}
                     </td>
 
                     {/* İşlemler */}
