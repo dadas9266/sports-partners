@@ -320,6 +320,8 @@ export type NotificationType =
   | "NEW_MATCH"
   | "NEW_RATING"
   | "NEW_FOLLOWER"
+  | "FOLLOW_REQUEST"
+  | "FOLLOW_ACCEPTED"
   | "NEW_MESSAGE"
   | "NO_SHOW_WARNING"
   | "NEW_POST_LIKE"
@@ -329,7 +331,15 @@ export type NotificationType =
   | "STREAK_MILESTONE"
   | "LEVEL_UP"
   | "MATCH_OTP_REQUESTED"
-  | "VENUE_VERIFIED";
+  | "VENUE_VERIFIED"
+  | "DIRECT_CHALLENGE"
+  | "COMMUNITY_JOIN_REQUEST"
+  | "COMMUNITY_UPDATE"
+  | "TOURNAMENT_INVITE"
+  | "TOURNAMENT_RESULT"
+  | "USER_REPORT"
+  | "URGENT_LISTING_NEARBY"
+  | "MATCH_REVEAL";
 
 export interface Notification {
   id: string;

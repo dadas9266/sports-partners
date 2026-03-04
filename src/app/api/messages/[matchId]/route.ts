@@ -106,6 +106,22 @@ export async function POST(
 
     const receiverId = match.user1Id === userId ? match.user2Id : match.user1Id;
 
+    // Engel kontrolü — blocked users cannot message each other
+    const block = await prisma.userBlock.findFirst({
+      where: {
+        OR: [
+          { blockerId: userId, blockedId: receiverId },
+          { blockerId: receiverId, blockedId: userId },
+        ],
+      },
+    });
+    if (block) {
+      return NextResponse.json(
+        { success: false, error: "Bu kullanıcıyla mesajlaşamazsınız" },
+        { status: 403 }
+      );
+    }
+
     const message = await prisma.message.create({
       data: { matchId, senderId: userId, receiverId, content },
       select: {

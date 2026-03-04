@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { createListingSchema, listingFilterSchema } from "@/lib/validations";
-import { getCurrentUserId } from "@/lib/api-utils";
+import { getCurrentUserId, sanitizeText } from "@/lib/api-utils";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { createLogger } from "@/lib/logger";
 import { withCache, cacheDel, cacheKey, CACHE_TTL, cacheDelPattern } from "@/lib/cache";
@@ -368,7 +368,7 @@ export async function POST(request: Request) {
           ? new Date(parsed.data.dateTime)
           : new Date(),
         level: parsed.data.level ?? "BEGINNER",
-        description: parsed.data.description || null,
+        description: parsed.data.description ? sanitizeText(parsed.data.description) : null,
         maxParticipants: parsed.data.maxParticipants ?? 2,
         allowedGender: parsed.data.allowedGender ?? "ANY",
         isQuick: parsed.data.isQuick ?? false,

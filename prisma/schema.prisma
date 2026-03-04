@@ -264,6 +264,8 @@ model Listing {
   @@index([userId])
   @@index([status, sportId, dateTime])
   @@index([expiresAt])
+  @@index([cityId])
+  @@index([type])
 }
 
 // ========== KARŞILIK ==========

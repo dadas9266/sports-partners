@@ -16,6 +16,7 @@ export async function GET(req: NextRequest) {
       const rows = await prisma.follow.findMany({
         where: { followingId: userId },
         orderBy: { createdAt: "desc" },
+        take: 100,
         include: {
           follower: {
             select: {
@@ -38,6 +39,7 @@ export async function GET(req: NextRequest) {
       const rows = await prisma.follow.findMany({
         where: { followerId: userId },
         orderBy: { createdAt: "desc" },
+        take: 100,
         include: {
           following: {
             select: {

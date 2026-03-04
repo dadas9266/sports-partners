@@ -39,6 +39,7 @@ export async function GET(req: NextRequest) {
           },
         },
       },
+      take: 200,
     });
 
     // Puan hesapla, sırala, filtrele (min 1 değerlendirme)

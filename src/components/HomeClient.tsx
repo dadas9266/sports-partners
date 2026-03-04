@@ -83,9 +83,6 @@ export default function HomeClient({
   const [gpsGranted, setGpsGranted] = useState(false);
   const [userCoords, setUserCoords] = useState<{ lat: number; lon: number } | null>(null);
 
-  // Filtre Drawer
-  const [filterOpen, setFilterOpen] = useState(false);
-
   // Client-side fetch function
   const fetchListings = useCallback(
     async (filters: Record<string, string> = {}, page = 1) => {
@@ -314,32 +311,17 @@ export default function HomeClient({
       {/* Tüm İlanlar Sekmesi */}
       {activeTab === "all" && (
         <>
-          {/* Filtre Tetikleyici Buton */}
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              {pagination.total > 0 ? `${pagination.total} ilan bulundu` : ""}
-            </p>
-            <button
-              onClick={() => setFilterOpen(true)}
-              className="flex items-center gap-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-emerald-400 dark:hover:border-emerald-500 text-gray-600 dark:text-gray-300 text-sm font-medium px-4 py-2 rounded-xl shadow-sm transition-all"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h18M7 8h10M11 12h2M15 16h-6" />
-              </svg>
-              Filtrele
-              {Object.keys(currentFilters).some(k => k !== "countryId") && (
-                <span className="w-2 h-2 bg-emerald-500 rounded-full" />
-              )}
-            </button>
-          </div>
-
           <FilterBar
             onFilterChange={fetchWithFilters}
             initialLocations={initialLocations}
             initialSports={initialSports}
-            isOpen={filterOpen}
-            onClose={() => setFilterOpen(false)}
           />
+
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {pagination.total > 0 ? `${pagination.total} ilan bulundu` : ""}
+            </p>
+          </div>
           {error && (
             <div className="text-center py-8" role="alert">
               <p className="text-red-500">{error}</p>

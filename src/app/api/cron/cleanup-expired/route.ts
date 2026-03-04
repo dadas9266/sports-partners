@@ -16,12 +16,10 @@ import { getSupabaseAdminClient } from "@/lib/storage";
  * Güvenlik: CRON_SECRET header kontrolü.
  */
 export async function GET(req: NextRequest) {
-  // Vercel Cron Security
+  // Vercel Cron Security — fail-closed: block if no secret configured
   const authHeader = req.headers.get("authorization");
-  if (
-    process.env.CRON_SECRET &&
-    authHeader !== `Bearer ${process.env.CRON_SECRET}`
-  ) {
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: "Yetkisiz" }, { status: 401 });
   }
 

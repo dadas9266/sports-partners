@@ -71,6 +71,7 @@ export async function GET() {
           responses: {
             include: { user: { select: { id: true, name: true } } },
             orderBy: { createdAt: "desc" },
+            take: 20,
           },
           match: {
             include: {
@@ -79,6 +80,7 @@ export async function GET() {
           },
         },
         orderBy: { createdAt: "desc" },
+        take: 50,
       }),
       prisma.response.findMany({
         where: { userId },
@@ -91,6 +93,7 @@ export async function GET() {
           },
         },
         orderBy: { createdAt: "desc" },
+        take: 50,
       }),
       prisma.match.findMany({
         where: { OR: [{ user1Id: userId }, { user2Id: userId }] },
@@ -100,6 +103,7 @@ export async function GET() {
           user2: { select: { id: true, name: true, avatarUrl: true } },
         },
         orderBy: { createdAt: "desc" },
+        take: 50,
       }),
       // Favoriler
       prisma.favorite.findMany({
@@ -115,6 +119,7 @@ export async function GET() {
           },
         },
         orderBy: { createdAt: "desc" },
+        take: 50,
       }),
       // Okunmamış bildirim sayısı
       prisma.notification.count({ where: { userId, read: false } }),
@@ -134,6 +139,7 @@ export async function GET() {
           },
         },
         orderBy: { joinedAt: "desc" },
+        take: 50,
       }),
       // Grup üyelikleri
       prisma.groupMembership.findMany({
@@ -149,6 +155,7 @@ export async function GET() {
           },
         },
         orderBy: { joinedAt: "desc" },
+        take: 50,
       }),
     ]);
 

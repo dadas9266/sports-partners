@@ -34,6 +34,7 @@ export async function GET(_req: NextRequest) {
         },
       },
       orderBy: { createdAt: "desc" },
+      take: 50,
     });
 
     const matchConversations = matches.map((m) => {
@@ -69,6 +70,7 @@ export async function GET(_req: NextRequest) {
         },
       },
       orderBy: { createdAt: "desc" },
+      take: 50,
     });
 
     const directConversations = directConvs.map((c) => {
@@ -138,6 +140,22 @@ export async function POST(req: NextRequest) {
       if (!isFollowing) {
         return NextResponse.json({ success: false, error: "Bu kullanıcı yalnızca takipçilerinden mesaj kabul ediyor" }, { status: 403 });
       }
+    }
+
+    // Engel kontrolü — blocked users cannot start conversations
+    const block = await prisma.userBlock.findFirst({
+      where: {
+        OR: [
+          { blockerId: userId, blockedId: targetUserId },
+          { blockerId: targetUserId, blockedId: userId },
+        ],
+      },
+    });
+    if (block) {
+      return NextResponse.json(
+        { success: false, error: "Bu kullanıcıyla mesajlaşamazsınız" },
+        { status: 403 }
+      );
     }
 
     // Canonical order: user1Id < user2Id (unique constraint)

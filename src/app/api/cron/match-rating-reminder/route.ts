@@ -14,12 +14,10 @@ const log = createLogger("cron-match-rating");
  */
 export async function GET(request: Request) {
   try {
-    // Güvenlik: Sadece Vercel Cron veya CRON_SECRET ile gelen istekler
+    // Güvenlik: fail-closed — CRON_SECRET zorunlu
     const authHeader = request.headers.get("Authorization");
-    if (
-      process.env.CRON_SECRET &&
-      authHeader !== `Bearer ${process.env.CRON_SECRET}`
-    ) {
+    const cronSecret = process.env.CRON_SECRET;
+    if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

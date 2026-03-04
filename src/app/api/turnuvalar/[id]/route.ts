@@ -62,7 +62,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
   if (!tournament) return NextResponse.json({ error: "Bulunamadı" }, { status: 404 });
 
-  const isAdmin = (session.user as any).role === "ADMIN";
+  const isAdmin = (session.user as any).isAdmin === true;
   if (tournament.creatorId !== session.user.id && !isAdmin) {
     return NextResponse.json({ error: "Yetkisiz" }, { status: 403 });
   }
@@ -94,7 +94,7 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
 
   if (!tournament) return NextResponse.json({ error: "Bulunamadı" }, { status: 404 });
 
-  const isAdmin = (session.user as any).role === "ADMIN";
+  const isAdmin = (session.user as any).isAdmin === true;
   if (tournament.creatorId !== session.user.id && !isAdmin) {
     return NextResponse.json({ error: "Yetkisiz" }, { status: 403 });
   }

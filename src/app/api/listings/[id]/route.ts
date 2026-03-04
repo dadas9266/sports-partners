@@ -290,6 +290,10 @@ export async function DELETE(
 
     // İlişkili kayıtları da sil (cascade)
     await prisma.$transaction(async (tx) => {
+      await tx.favorite.deleteMany({ where: { listingId: id } });
+      await tx.noShowReport.deleteMany({ where: { listingId: id } });
+      await (tx as any).trainerProfile.deleteMany({ where: { listingId: id } });
+      await (tx as any).equipmentDetail.deleteMany({ where: { listingId: id } });
       await tx.match.deleteMany({ where: { listingId: id } });
       await tx.response.deleteMany({ where: { listingId: id } });
       await tx.listing.delete({ where: { id } });

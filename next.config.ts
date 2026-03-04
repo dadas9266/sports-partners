@@ -16,7 +16,7 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   reactCompiler: true,
 
-  // TypeScript hatalarını build'de yoksay (known TS errors)
+  // TODO: Set to false after fixing (prisma as any) casts with prisma generate
   typescript: { ignoreBuildErrors: true },
 
   // Güvenlik başlıkları
