@@ -35,40 +35,28 @@ function UrgentCountdown({ expiresAt }: { expiresAt: string }) {
 // ─── Tür bazlı görsel konfigürasyonu ─────────────────────────────────────────
 const LISTING_TYPE_CONFIG = {
   RIVAL: {
-    label: "🥊 Rakip Arıyor",
-    borderColor: "border-l-orange-500",
-    bgGradient: "from-orange-50/60 dark:from-orange-900/10",
-    hoverBorder: "hover:border-orange-300/60 dark:hover:border-orange-700/50",
+    label: "🥊 Rakip",
+    accentColor: "border-l-orange-500",
     badgeVariant: "orange" as const,
-    headerBg: "bg-orange-50 dark:bg-orange-900/20 border-b border-orange-100 dark:border-orange-800/30",
-    iconColor: "text-orange-600 dark:text-orange-400",
+    badgeCls: "text-orange-600 dark:text-orange-400",
   },
   PARTNER: {
-    label: "🤝 Partner Arıyor",
-    borderColor: "border-l-emerald-500",
-    bgGradient: "from-emerald-50/60 dark:from-emerald-900/10",
-    hoverBorder: "hover:border-emerald-200/60 dark:hover:border-emerald-700/40",
+    label: "🤝 Partner",
+    accentColor: "border-l-emerald-500",
     badgeVariant: "emerald" as const,
-    headerBg: "bg-emerald-50 dark:bg-emerald-900/20 border-b border-emerald-100 dark:border-emerald-800/30",
-    iconColor: "text-emerald-600 dark:text-emerald-400",
+    badgeCls: "text-emerald-600 dark:text-emerald-400",
   },
   TRAINER: {
     label: "🎓 Eğitmen",
-    borderColor: "border-l-blue-500",
-    bgGradient: "from-blue-50/60 dark:from-blue-900/10",
-    hoverBorder: "hover:border-blue-300/60 dark:hover:border-blue-700/50",
+    accentColor: "border-l-blue-500",
     badgeVariant: "blue" as const,
-    headerBg: "bg-blue-50 dark:bg-blue-900/20 border-b border-blue-100 dark:border-blue-800/30",
-    iconColor: "text-blue-600 dark:text-blue-400",
+    badgeCls: "text-blue-600 dark:text-blue-400",
   },
   EQUIPMENT: {
     label: "🛒 Satılık",
-    borderColor: "border-l-purple-500",
-    bgGradient: "from-purple-50/60 dark:from-purple-900/10",
-    hoverBorder: "hover:border-purple-300/60 dark:hover:border-purple-700/50",
+    accentColor: "border-l-purple-500",
     badgeVariant: "purple" as const,
-    headerBg: "bg-purple-50 dark:bg-purple-900/20 border-b border-purple-100 dark:border-purple-800/30",
-    iconColor: "text-purple-600 dark:text-purple-400",
+    badgeCls: "text-purple-600 dark:text-purple-400",
   },
 } as const;
 
@@ -135,44 +123,17 @@ export default function ListingCard({
     <article
       onClick={() => router.push(`/ilan/${listing.id}`)}
       onKeyDown={(e) => e.key === "Enter" && router.push(`/ilan/${listing.id}`)}
-      className={`bg-gradient-to-br ${typeConfig.bgGradient} to-white dark:to-gray-800/80 rounded-2xl shadow-sm border border-gray-100/80 dark:border-gray-700/50 border-l-4 ${typeConfig.borderColor} hover:shadow-lg ${typeConfig.hoverBorder} transition-all duration-200 cursor-pointer h-full relative group overflow-hidden`}
+      className={`bg-white dark:bg-gray-800 rounded-xl border border-gray-200/80 dark:border-gray-700/60 border-l-[3px] ${typeConfig.accentColor} hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200 cursor-pointer h-full relative group`}
       role="button"
       tabIndex={0}
       aria-label={`${listing.sport.name} ilanı detayı`}
     >
-      {/* Tür başlık şeridi */}
-      <div className={`flex items-center justify-between px-4 py-2 ${typeConfig.headerBg}`}>
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className={`text-xs font-bold tracking-wide ${typeConfig.iconColor}`}>
-            {typeConfig.label}
-          </span>
-          {(listing as any).isUrgent && (
-            <span className="text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 px-2 py-0.5 rounded-full font-bold animate-pulse">
-              ⚡ ACİL
-            </span>
-          )}
-          {(listing as any).isAnonymous && (
-            <span className="text-xs bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full font-semibold">
-              🕵️ Anonim
-            </span>
-          )}
-        </div>
-        {listing.isQuick && timeLeft && (
-          <span className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-full font-semibold">
-            ⚡ {timeLeft} kaldı
-          </span>
-        )}
-        {(listing as any).isUrgent && (listing as any).expiresAt && (
-          <UrgentCountdown expiresAt={(listing as any).expiresAt} />
-        )}
-      </div>
-
-      <div className="p-5">
+      <div className="p-4">
       {/* Favori Butonu */}
       <button
         onClick={handleFavorite}
         disabled={favLoading}
-        className={`absolute top-10 right-3 text-lg transition-all hover:scale-125 disabled:opacity-60 z-10 w-8 h-8 flex items-center justify-center rounded-full ${
+        className={`absolute top-3 right-3 text-lg transition-all hover:scale-125 disabled:opacity-60 z-10 w-8 h-8 flex items-center justify-center rounded-full ${
           favorited
             ? "text-red-500 bg-red-50 dark:bg-red-900/30"
             : "text-gray-300 dark:text-gray-600 hover:text-red-400 bg-gray-50 dark:bg-gray-700/50"
@@ -183,8 +144,29 @@ export default function ListingCard({
         {favorited ? "❤️" : "🤍"}
       </button>
 
-      {/* Üst etiketler (cinsiyet filtresi, uyumluluk) */}
-      <div className="flex flex-wrap gap-1 mb-2">
+      {/* Üst etiketler */}
+      <div className="flex flex-wrap gap-1.5 mb-2 items-center">
+        <span className={`text-xs font-semibold ${typeConfig.badgeCls}`}>
+          {typeConfig.label}
+        </span>
+        {(listing as any).isUrgent && (
+          <span className="text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 px-2 py-0.5 rounded-full font-bold animate-pulse">
+            ⚡ ACİL
+          </span>
+        )}
+        {(listing as any).isAnonymous && (
+          <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">
+            🕵️ Anonim
+          </span>
+        )}
+        {listing.isQuick && timeLeft && (
+          <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+            ⚡ {timeLeft} kaldı
+          </span>
+        )}
+        {(listing as any).isUrgent && (listing as any).expiresAt && (
+          <UrgentCountdown expiresAt={(listing as any).expiresAt} />
+        )}
         {listing.allowedGender === "FEMALE_ONLY" && (
           <span className="text-xs bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300 px-2 py-0.5 rounded-full font-semibold">
             👩 Yalnızca Kadınlar
@@ -317,7 +299,7 @@ export default function ListingCard({
               {listing.trainerProfile.hourlyRate.toLocaleString("tr-TR")} ₺<span className="text-xs font-normal opacity-70">/sa</span>
             </span>
           )}
-          <span className={`inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg ${typeConfig.iconColor} bg-white/70 dark:bg-gray-700/60 border border-current/20 group-hover:brightness-110 transition`}>
+          <span className={`inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg ${typeConfig.badgeCls} bg-gray-50 dark:bg-gray-700/60 group-hover:brightness-110 transition`}>
             Detay <span className="group-hover:translate-x-0.5 transition-transform inline-block">→</span>
           </span>
         </div>

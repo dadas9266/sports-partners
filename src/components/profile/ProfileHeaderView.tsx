@@ -75,20 +75,18 @@ export default function ProfileHeaderView({
   ].filter(s => !!(user as Record<string, any>)[s.key]);
 
   return (
-    <div className="overflow-hidden rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/60 bg-white dark:bg-gray-800">
+    <div>
 
       {/* ── COVER ────────────────────────────────────────── */}
-      <div className="relative h-52 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 group">
+      <div className="relative h-40 sm:h-48 bg-gradient-to-br from-emerald-600 via-teal-500 to-cyan-500 group overflow-hidden">
         {user.coverUrl && (
           <img src={user.coverUrl} alt="Kapak" className="w-full h-full object-cover" />
         )}
-        {/* Bottom gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent pointer-events-none" />
 
         {/* Cover upload overlay */}
         <label className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 transition cursor-pointer z-10">
           <span className="text-white text-sm font-semibold bg-black/50 px-4 py-2 rounded-xl opacity-0 group-hover:opacity-100 transition backdrop-blur-sm">
-            {uploadingCover ? "⏳ Yükleniyor..." : "📷 Kapak Fotoğrafı Değiştir"}
+            {uploadingCover ? "⏳ Yükleniyor..." : "📷 Kapak Değiştir"}
           </span>
           <input type="file" accept="image/*" className="hidden" disabled={uploadingCover}
             onChange={e => { const f = e.target.files?.[0]; if (f) handleCoverUpload(f); }} />
@@ -97,97 +95,37 @@ export default function ProfileHeaderView({
         {/* Edit button — top right */}
         <div className="absolute top-3 right-3 z-20">
           <button onClick={onEditClick}
-            className="text-xs font-bold px-3 py-1.5 rounded-full bg-white/25 text-white hover:bg-white/35 backdrop-blur-sm border border-white/30 transition">
+            className="text-xs font-semibold px-3 py-1.5 rounded-full bg-black/40 text-white hover:bg-black/55 backdrop-blur-sm transition">
             ✏️ Düzenle
           </button>
         </div>
-
-        {/* Name + badges on cover, bottom-left */}
-        <div className="absolute bottom-4 left-[116px] right-4 z-20 pointer-events-none">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <h1 className="text-xl sm:text-2xl font-black text-white drop-shadow-lg leading-tight">{user.name}</h1>
-            {(user.userType === "TRAINER" || user.trainerProfile) && (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/80 text-white backdrop-blur-sm whitespace-nowrap">
-                🏅 Antrenör{user.trainerProfile?.isVerified ? " ✓" : ""}
-              </span>
-            )}
-            {(user.userType === "VENUE" || user.venueProfile) && (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/80 text-white backdrop-blur-sm whitespace-nowrap">
-                🏟️ Tesis{user.venueProfile?.isVerified ? " ✓" : ""}
-              </span>
-            )}
-            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${levelCfg.cls} opacity-90`}>
-              {levelCfg.label}
-            </span>
-          </div>
-          <div className="flex items-center gap-2 mt-0.5">
-            {user.city && (
-              <p className="text-white/80 text-xs drop-shadow">
-                📍 {user.city.name}{user.district?.name ? `, ${user.district.name}` : ""}
-              </p>
-            )}
-            {user.gender && (
-              <span className="text-white/70 text-xs" title={GENDER_LABELS[user.gender as keyof typeof GENDER_LABELS]}>
-                {GENDER_ICONS[user.gender] || ""}
-              </span>
-            )}
-            {user.birthDate && (
-              <span className="text-white/70 text-xs">{differenceInYears(new Date(), new Date(user.birthDate))} Yaş</span>
-            )}
-          </div>
-        </div>
       </div>
 
-      {/* ── AVATAR (overlaps cover) ─────────────────────── */}
-      <div className="relative px-5">
-        <div className="absolute -top-12 left-5 z-30 group">
-          <div className="relative w-24 h-24 rounded-2xl border-4 border-white dark:border-gray-800 shadow-xl overflow-hidden bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-3xl font-black text-emerald-600">
-            {user.avatarUrl ? (
-              <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
-            ) : (
-              user.name?.charAt(0)?.toUpperCase() || "?"
-            )}
-            <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-xl opacity-0 group-hover:opacity-100 transition cursor-pointer">
-              {uploadingAvatar
-                ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                : <span className="text-white text-[10px] font-bold text-center leading-tight">📷<br/>Değiştir</span>
-              }
-              <input type="file" accept="image/*" className="hidden" disabled={uploadingAvatar}
-                onChange={e => { const f = e.target.files?.[0]; if (f) handleAvatarUpload(f); }} />
-            </label>
-          </div>
-        </div>
-
-        {/* ── STATS BAR ─────────────────────────────────── */}
-        <div className="pt-14 pb-4 flex items-start justify-between gap-2 flex-wrap">
-          <div className="flex items-center gap-5 sm:gap-7">
-            <button onClick={onFollowerClick} className="text-center group">
-              <p className="text-xl font-black text-gray-900 dark:text-white group-hover:text-emerald-600 transition leading-none">
-                {user._count?.followers || 0}
-              </p>
-              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mt-0.5">Takipçi</p>
-            </button>
-            <button onClick={onFollowingClick} className="text-center group">
-              <p className="text-xl font-black text-gray-900 dark:text-white group-hover:text-emerald-600 transition leading-none">
-                {user._count?.following || 0}
-              </p>
-              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mt-0.5">Takip</p>
-            </button>
-            <div className="text-center">
-              <p className="text-xl font-black text-gray-900 dark:text-white leading-none">{user.totalMatches || 0}</p>
-              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mt-0.5">Maç</p>
+      {/* ── PROFILE INFO ─────────────────────────────────── */}
+      <div className="px-4 sm:px-5">
+        {/* Avatar row */}
+        <div className="flex items-end justify-between -mt-10 sm:-mt-12 mb-3">
+          <div className="relative group shrink-0">
+            <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full border-[3px] border-white dark:border-gray-900 shadow-md overflow-hidden bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-2xl sm:text-3xl font-bold text-emerald-600">
+              {user.avatarUrl ? (
+                <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+              ) : (
+                user.name?.charAt(0)?.toUpperCase() || "?"
+              )}
+              <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition cursor-pointer">
+                {uploadingAvatar
+                  ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  : <span className="text-white text-[10px] font-bold text-center leading-tight">📷<br/>Değiştir</span>
+                }
+                <input type="file" accept="image/*" className="hidden" disabled={uploadingAvatar}
+                  onChange={e => { const f = e.target.files?.[0]; if (f) handleAvatarUpload(f); }} />
+              </label>
             </div>
-            {(user.currentStreak || 0) > 0 && (
-              <div className="text-center">
-                <p className="text-xl font-black text-orange-500 leading-none">🔥 {user.currentStreak}</p>
-                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mt-0.5">Seri</p>
-              </div>
-            )}
           </div>
 
-          {/* Social icons */}
+          {/* Social icons — right side */}
           {socialLinks.length > 0 && (
-            <div className="flex items-center gap-1.5 flex-wrap justify-end mt-1">
+            <div className="flex items-center gap-1.5 flex-wrap justify-end pb-1">
               {socialLinks.map(s => (
                 <a key={s.key} href={s.url} target="_blank" rel="noopener noreferrer"
                   className={`w-7 h-7 flex items-center justify-center rounded-full ${s.color} text-white hover:opacity-80 transition-opacity shadow-sm`}>
@@ -198,29 +136,68 @@ export default function ProfileHeaderView({
           )}
         </div>
 
-        {/* ── BIO / INFO ────────────────────────────────── */}
-        <div className="pb-5 space-y-2">
-          {user.phone && (
-            <p className="text-sm text-gray-500 dark:text-gray-400">📞 {user.phone}</p>
-          )}
-          {user.bio && (
-            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{user.bio}</p>
-          )}
-          {user.trainerProfile?.isVerified && (
-            <div className="flex flex-wrap gap-1.5 pt-1">
-              {user.trainerProfile?.gymName && (
-                <span className="inline-flex items-center bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-xs font-semibold px-2.5 py-1 rounded-full">
-                  🏋️ {user.trainerProfile.gymName}
-                </span>
-              )}
-              {user.trainerProfile?.experience && (
-                <span className="inline-flex items-center bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 text-xs font-semibold px-2.5 py-1 rounded-full">
-                  🏆 {user.trainerProfile.experience} Yıl Deneyim
-                </span>
-              )}
-            </div>
+        {/* Name + info */}
+        <div className="mb-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white leading-tight">{user.name}</h1>
+            {(user.userType === "TRAINER" || user.trainerProfile) && (
+              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+                🏅 Antrenör{user.trainerProfile?.isVerified ? " ✓" : ""}
+              </span>
+            )}
+            {(user.userType === "VENUE" || user.venueProfile) && (
+              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">
+                🏟️ Tesis{user.venueProfile?.isVerified ? " ✓" : ""}
+              </span>
+            )}
+            <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${levelCfg.cls}`}>
+              {levelCfg.label}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 mt-0.5 text-sm text-gray-500 dark:text-gray-400">
+            {user.city && (
+              <span>{user.city.name}{user.district?.name ? `, ${user.district.name}` : ""}</span>
+            )}
+            {user.gender && (
+              <span>· {GENDER_ICONS[user.gender] || ""}</span>
+            )}
+            {user.birthDate && (
+              <span>· {differenceInYears(new Date(), new Date(user.birthDate))} yaşında</span>
+            )}
+          </div>
+        </div>
+
+        {/* Stats — clean inline row */}
+        <div className="flex items-center gap-4 text-sm mb-3">
+          <button onClick={onFollowerClick} className="hover:text-emerald-600 transition">
+            <strong className="text-gray-900 dark:text-white">{user._count?.followers || 0}</strong> <span className="text-gray-500 dark:text-gray-400">takipçi</span>
+          </button>
+          <button onClick={onFollowingClick} className="hover:text-emerald-600 transition">
+            <strong className="text-gray-900 dark:text-white">{user._count?.following || 0}</strong> <span className="text-gray-500 dark:text-gray-400">takip</span>
+          </button>
+          <span><strong className="text-gray-900 dark:text-white">{user.totalMatches || 0}</strong> <span className="text-gray-500 dark:text-gray-400">maç</span></span>
+          {(user.currentStreak || 0) > 0 && (
+            <span className="text-orange-500"><strong>🔥 {user.currentStreak}</strong> <span className="text-gray-500 dark:text-gray-400">seri</span></span>
           )}
         </div>
+
+        {/* Bio / Info */}
+        {user.phone && (
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">📞 {user.phone}</p>
+        )}
+        {user.bio && (
+          <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed mb-3">{user.bio}</p>
+        )}
+        {user.trainerProfile?.isVerified && (
+          <div className="flex flex-wrap gap-2 text-xs text-gray-600 dark:text-gray-400 mb-3">
+            {user.trainerProfile?.gymName && (
+              <span>🏋️ {user.trainerProfile.gymName}</span>
+            )}
+            {user.trainerProfile?.experience && (
+              <span>· 🏆 {user.trainerProfile.experience} yıl deneyim</span>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

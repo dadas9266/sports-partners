@@ -31,25 +31,25 @@ export default function ProfileSportsStrip({
   if (!hasContent) return null;
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 px-5 py-4 mb-4 shadow-sm">
-      <div className="flex flex-wrap gap-2 items-center">
+    <div className="px-4 sm:px-5 py-3 mb-3 border-t border-gray-100 dark:border-gray-800">
+      <div className="flex flex-wrap gap-1.5 items-center">
         {sports.map((s) => (
           <span
             key={s.id}
-            className="inline-flex items-center gap-1 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-xs font-semibold px-3 py-1.5 rounded-full border border-emerald-100 dark:border-emerald-800"
+            className="inline-flex items-center gap-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs px-2.5 py-1 rounded-full"
           >
             {s.icon} {s.name}
           </span>
         ))}
 
         {preferredTime && (
-          <span className="inline-flex items-center gap-1 bg-sky-50 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300 text-xs font-semibold px-3 py-1.5 rounded-full border border-sky-100 dark:border-sky-800">
+          <span className="inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 px-2.5 py-1">
             {TIME_LABELS[preferredTime] ?? preferredTime}
           </span>
         )}
 
         {preferredStyle && (
-          <span className="inline-flex items-center gap-1 bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 text-xs font-semibold px-3 py-1.5 rounded-full border border-violet-100 dark:border-violet-800">
+          <span className="inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 px-2.5 py-1">
             {STYLE_LABELS[preferredStyle] ?? preferredStyle}
           </span>
         )}

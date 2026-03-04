@@ -320,7 +320,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-2xl mx-auto pb-24">
       {/* Profil Tamamlanma Çemberi */}
       <div className="mb-4">
         <ProfileCompletionRing
@@ -330,7 +330,7 @@ export default function ProfilePage() {
         />
       </div>
       {/* Profil başlığı */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 mb-6 overflow-hidden">
+      <div className="mb-4">
         {!editMode ? (
           <ProfileHeaderView
             user={data.user as any}
@@ -344,7 +344,7 @@ export default function ProfilePage() {
             onFollowingClick={() => setFollowListOpen("following")}
           />
         ) : (
-          <div className="p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-6">
             <ProfileEditFormPanel
               editForm={editForm}
               setEditForm={setEditForm}
@@ -356,26 +356,25 @@ export default function ProfilePage() {
             />
           </div>
         )}
-        {/* Athlete Stats */}
+        {/* Athlete Stats — XP bar */}
         <ProfileStatsBar
           matchCount={data.myMatches?.length || 0}
           avgRating={(data.user as any).avgRating}
           followerCount={(data.user as any)._count?.followers || 0}
           totalPoints={(data.user as any).totalPoints || 0}
         />
-        {/* Streak Kartı */}
+        {/* Streak */}
         <ProfileStreakCard
           currentStreak={(data.user as any).currentStreak || 0}
           longestStreak={(data.user as any).longestStreak || 0}
         />
+        {/* Sports strip */}
+        <ProfileSportsStrip
+          sports={(data.user as any).sports ?? []}
+          preferredTime={(data.user as any).preferredTime}
+          preferredStyle={(data.user as any).preferredStyle}
+        />
       </div>
-
-      {/* Sporlar + Hedefler / Tercihler Şeridi */}
-      <ProfileSportsStrip
-        sports={(data.user as any).sports ?? []}
-        preferredTime={(data.user as any).preferredTime}
-        preferredStyle={(data.user as any).preferredStyle}
-      />
 
       {/* Tabs */}
       {(() => {

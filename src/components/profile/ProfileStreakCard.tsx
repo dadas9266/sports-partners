@@ -15,53 +15,48 @@ export default function ProfileStreakCard({ currentStreak, longestStreak }: Prof
   const toNext = nextMilestone !== null ? nextMilestone - currentStreak : 0;
 
   return (
-    <div className="mt-3 bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 border border-orange-200 dark:border-orange-800 rounded-xl p-3">
+    <div className="px-4 sm:px-5 py-3 border-t border-gray-100 dark:border-gray-800">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span
-            className={`text-2xl select-none ${currentStreak >= 7 ? "animate-bounce" : ""}`}
-          >
-            {streakEmoji}
-          </span>
+          <span className="text-lg select-none">{streakEmoji}</span>
           <div>
-            <p className="text-sm font-bold text-orange-800 dark:text-orange-200">
-              {currentStreak} Günlük Seri
+            <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+              {currentStreak} gün seri
             </p>
-            <p className="text-xs text-orange-600 dark:text-orange-400">Rekor: {longestStreak} gün</p>
+            <p className="text-xs text-gray-400">Rekor: {longestStreak} gün</p>
           </div>
         </div>
 
-        {/* Haftalık ilerleme noktaları */}
+        {/* Weekly dots */}
         <div className="flex gap-1">
           {[1, 2, 3, 4, 5, 6, 7].map((d) => (
             <div
               key={d}
-              className={`w-5 h-5 rounded-full border-2 transition-colors duration-300 ${
+              className={`w-3.5 h-3.5 rounded-full transition-colors ${
                 d <= filledDots
-                  ? "bg-orange-500 border-orange-600 shadow-sm shadow-orange-300 dark:shadow-orange-800"
-                  : "bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600"
+                  ? "bg-orange-500"
+                  : "bg-gray-200 dark:bg-gray-700"
               }`}
             />
           ))}
         </div>
       </div>
 
-      {nextMilestone !== null ? (
-        <div className="mt-2">
-          <div className="flex justify-between text-[10px] text-orange-600 dark:text-orange-400 mb-1">
-            <span>{currentStreak} / {nextMilestone} gün</span>
-            <span>🎯 {toNext} gün kaldı</span>
-          </div>
-          <div className="h-1.5 bg-orange-200 dark:bg-orange-900/50 rounded-full overflow-hidden">
+      {nextMilestone !== null && (
+        <div className="mt-2 flex items-center gap-2">
+          <div className="flex-1 h-1 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-orange-400 to-red-500 rounded-full transition-all duration-700"
+              className="h-full bg-orange-500 rounded-full transition-all duration-700"
               style={{ width: `${Math.min(100, (currentStreak / nextMilestone) * 100)}%` }}
             />
           </div>
+          <span className="text-[10px] text-gray-400 shrink-0">{toNext} gün kaldı</span>
         </div>
-      ) : (
-        <p className="mt-1.5 text-xs font-semibold text-orange-700 dark:text-orange-300 text-center">
-          🌋 Efsane Seri! {currentStreak} gün kesintisiz!
+      )}
+        </div>
+      {nextMilestone === null && currentStreak >= 30 && (
+        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 text-center">
+          🌋 Efsane seri! {currentStreak} gün kesintisiz
         </p>
       )}
     </div>
