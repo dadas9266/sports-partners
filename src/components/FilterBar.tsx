@@ -10,9 +10,11 @@ type FilterBarProps = {
   onFilterChange: (filters: Record<string, string>) => void;
   initialLocations?: Country[];
   initialSports?: Sport[];
+  isOpen: boolean;
+  onClose: () => void;
 };
 
-export default function FilterBar({ onFilterChange, initialLocations, initialSports }: FilterBarProps) {
+export default function FilterBar({ onFilterChange, initialLocations, initialSports, isOpen, onClose }: FilterBarProps) {
   // Use SSR data if provided, otherwise fallback to client-side fetch
   const { locations: fetchedLocations, error: locError } = useLocations();
   const { sports: fetchedSports, error: sportError } = useSports();
@@ -106,26 +108,54 @@ export default function FilterBar({ onFilterChange, initialLocations, initialSpo
     "border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2 text-sm text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:opacity-60 transition";
 
   return (
-    <div
-      className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 mb-6"
-      role="search"
-      aria-label="İlan filtreleri"
-    >
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="font-semibold text-gray-700 dark:text-gray-200">
-          <span role="img" aria-label="ara">🔍</span> Filtrele
-        </h2>
-        {(locError || sportError) && (
-          <span className="text-xs text-red-500">{locError || sportError}</span>
-        )}
-        <button
-          onClick={resetFilters}
-          className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition"
-          aria-label="Filtreleri temizle"
-        >
-          Temizle
-        </button>
-      </div>
+    <>
+      {/* Backdrop */}
+      <div
+        className={`fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      {/* Drawer panel */}
+      <div
+        className={`fixed inset-x-0 bottom-0 z-50 transform transition-transform duration-300 ease-in-out ${isOpen ? "translate-y-0" : "translate-y-full"}`}
+        role="dialog"
+        aria-label="İlan filtreleri"
+        aria-modal="true"
+      >
+        <div className="bg-white dark:bg-gray-900 rounded-t-3xl shadow-2xl max-h-[85svh] overflow-y-auto">
+          {/* Handle bar */}
+          <div className="flex justify-center pt-3 pb-1">
+            <div className="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full" />
+          </div>
+
+          <div className="px-5 pb-6 pt-2">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-bold text-gray-800 dark:text-gray-100 text-base">
+                🔍 İlanları Filtrele
+              </h2>
+              <div className="flex items-center gap-3">
+                {(locError || sportError) && (
+                  <span className="text-xs text-red-500">{locError || sportError}</span>
+                )}
+                <button
+                  onClick={resetFilters}
+                  className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition"
+                  aria-label="Filtreleri temizle"
+                >
+                  Temizle
+                </button>
+                <button
+                  onClick={onClose}
+                  className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition text-gray-400 hover:text-gray-600"
+                  aria-label="Kapat"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {/* Konum Seçimi (Ülke, Şehir, İlçe) */}
         <LocationSelector
@@ -240,6 +270,16 @@ export default function FilterBar({ onFilterChange, initialLocations, initialSpo
           <span className="text-xs text-gray-600 dark:text-gray-300">🔄 Tekrarlayan</span>
         </label>
       </div>
-    </div>
+
+          {/* Uygula butonu */}
+          <button
+            onClick={onClose}
+            className="mt-5 w-full bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white font-semibold py-3 rounded-2xl transition-all shadow-sm shadow-emerald-600/20 text-sm"
+          >
+            Filtrele
+          </button>
+        </div>
+      </div>
+    </>
   );
 }

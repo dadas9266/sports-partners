@@ -17,7 +17,6 @@ export default function Navbar() {
   const { data: session } = useSession();
   const pathname = usePathname();
   const router = useRouter();
-  const [menuOpen, setMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [discoverOpen, setDiscoverOpen] = useState(false);
@@ -44,25 +43,23 @@ export default function Navbar() {
   }, []);
 
   useEffect(() => {
-    if (!menuOpen && !notifOpen && !discoverOpen) return;
+    if (!notifOpen && !discoverOpen) return;
     const handleClick = (e: MouseEvent) => {
       const target = e.target as Node;
       // Bildirim paneli navRef dışında render edilir; panel içi tıklamaları yoksay
       if (notifPanelRef.current && notifPanelRef.current.contains(target)) return;
       if (navRef.current && !navRef.current.contains(target)) {
-        setMenuOpen(false);
         setNotifOpen(false);
         setDiscoverOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
-  }, [menuOpen, notifOpen, discoverOpen]);
+  }, [notifOpen, discoverOpen]);
 
   const handleOpenNotif = async () => {
     const opening = !notifOpen;
     setNotifOpen((v) => !v);
-    setMenuOpen(false); // always close mobile menu when toggling notif panel
     if (opening) {
       // Her açılışta güncel bildirimleri çek
       await refreshNotifs();
@@ -84,7 +81,6 @@ export default function Navbar() {
     }
   };
 
-  const mobileLinkClass = "block hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-2.5 rounded-xl transition text-gray-700 dark:text-gray-200 text-sm font-medium";
   const t = useTranslations("nav");
 
   return (
@@ -274,9 +270,6 @@ export default function Navbar() {
                 </button>
               </>
             )}
-            <button className="md:hidden p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition" onClick={() => setMenuOpen((v) => !v)} aria-label={t("toggleMenu")} aria-expanded={menuOpen} aria-controls="mobile-menu">
-              <span className="text-xl text-gray-600 dark:text-gray-300">{menuOpen ? "✕" : "☰"}</span>
-            </button>
             <div className="hidden md:flex">
               <LanguageSwitcher />
             </div>
@@ -284,43 +277,6 @@ export default function Navbar() {
         </div>
       </div>
 
-      {menuOpen && (
-        <div id="mobile-menu" className="md:hidden pb-4 space-y-1 px-4 border-t border-gray-100 dark:border-gray-700/50 pt-2" role="menu">
-          <Link href="/" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">🏠 İlanlar</Link>
-          <Link href="/harita" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">🗺️ Harita</Link>
-          <Link href="/sosyal" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">🌐 Sosyal Akış</Link>
-          <Link href="/arama" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">🔍 Ara</Link>
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 px-3 pt-2 pb-0.5">Keşfet</p>
-          <Link href="/topluluklar" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">🏛️ Topluluklar</Link>
-          <Link href="/mekanlar" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">🏟️ Mekanlar</Link>
-          <Link href="/turnuvalar" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">🏆 Turnuvalar</Link>
-          <Link href="/liderlik" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">🏅 Liderlik Tablosu</Link>
-          {session ? (
-            <>
-              <Link href="/ilan/olustur" className="block bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold px-3 py-2.5 rounded-xl text-sm text-center shadow-sm" onClick={() => setMenuOpen(false)} role="menuitem">{t("createListing")}</Link>
-              <Link href="/profil" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">👤 {t("profile")}</Link>
-              <Link href="/teklifler" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">⚔️ Teklifler</Link>
-              <Link href="/aktivitelerim" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">⚡ Aktivitelerim</Link>
-              <Link href="/ayarlar" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">⚙️ {t("settings")}</Link>
-              <Link href="/ayarlar/isletme" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">🏟️ İşletme Yönetimi</Link>
-              <Link href="/mesajlar" className="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-2.5 rounded-xl transition text-sm text-gray-700 dark:text-gray-200" onClick={() => setMenuOpen(false)} role="menuitem">
-                <span>💬 {t("messages")}</span>
-                {unreadMessages > 0 && <span className="bg-blue-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{unreadMessages > 9 ? "9+" : unreadMessages}</span>}
-              </Link>
-              <button onClick={() => { setMenuOpen(false); handleOpenNotif(); }} className="flex items-center gap-2 w-full text-left hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-2.5 rounded-xl transition text-sm text-gray-700 dark:text-gray-200" role="menuitem" aria-label={t("notifications")}>
-                <span>🔔 {t("notifications")}</span>
-                {unreadCount > 0 && <span className="bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{unreadCount > 9 ? "9+" : unreadCount}</span>}
-              </button>
-              <button onClick={() => { setMenuOpen(false); signOut(); }} className="block w-full text-left hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-2.5 rounded-xl transition text-sm text-red-600 dark:text-red-400 font-medium" role="menuitem">{t("signOut")}</button>
-            </>
-          ) : (
-            <>
-              <Link href="/auth/giris" className={mobileLinkClass} onClick={() => setMenuOpen(false)} role="menuitem">{t("signIn")}</Link>
-              <Link href="/auth/kayit" className="block bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold px-3 py-2.5 rounded-xl text-sm text-center shadow-sm" onClick={() => setMenuOpen(false)} role="menuitem">{t("register")}</Link>
-            </>
-          )}
-        </div>
-      )}
     </nav>
 
       {notifOpen && session && (

@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
 import Navbar from "@/components/Navbar";
+import BottomNav from "@/components/BottomNav";
 import PWAInstallBanner from "@/components/PWAInstallBanner";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
@@ -65,7 +66,8 @@ export default async function RootLayout({
         <NextIntlClientProvider locale={locale} messages={messages}>
           <Providers>
             <Navbar />
-            <main className="max-w-6xl mx-auto px-4 py-6">{children}</main>
+            <main className="max-w-6xl mx-auto px-4 py-6 pb-24 md:pb-6">{children}</main>
+            <BottomNav />
             <PWAInstallBanner />
           </Providers>
         </NextIntlClientProvider>

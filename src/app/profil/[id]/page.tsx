@@ -347,7 +347,7 @@ export default function PublicProfilePage({
           {/* Name + badges on cover — bottom left */}
           <div className="absolute bottom-4 left-[108px] sm:left-[120px] right-3 z-10 pointer-events-none">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <h1 className="text-xl sm:text-2xl font-black text-white drop-shadow-lg leading-tight">{profile.name}</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-white drop-shadow-lg leading-tight">{profile.name}</h1>
               {profile.isOwnProfile && (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/80 text-white backdrop-blur-sm">Sen</span>
               )}
@@ -423,17 +423,17 @@ export default function PublicProfilePage({
         <div className="flex items-center justify-between gap-3 flex-wrap">
 
           {/* Stats row */}
-          <div className="flex items-center divide-x divide-gray-100 dark:divide-gray-700">
+          <div className="flex items-center gap-4 sm:gap-6 flex-wrap">
             {[
-              { val: profile.totalMatches, label: "MAÇ" },
-              { val: followerCount, label: "TAKİPÇİ" },
-              { val: followingCount, label: "TAKİP" },
-              { val: profile.avgRating ? `${profile.avgRating.toFixed(1)}⭐` : "—", label: "PUAN" },
-              { val: profile.totalListings, label: "İLAN" },
+              { val: profile.totalMatches, label: "Maç" },
+              { val: followerCount, label: "Takipçi" },
+              { val: followingCount, label: "Takip" },
+              { val: profile.avgRating ? `${profile.avgRating.toFixed(1)}⭐` : "—", label: "Puan" },
+              { val: profile.totalListings, label: "İlan" },
             ].map(s => (
-              <div key={s.label} className="px-4 first:pl-0 last:pr-0 text-center">
-                <p className="text-lg font-black text-gray-900 dark:text-white leading-none">{s.val}</p>
-                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mt-0.5">{s.label}</p>
+              <div key={s.label} className="text-center">
+                <p className="text-lg font-bold text-gray-900 dark:text-white leading-none">{s.val}</p>
+                <p className="text-[10px] text-gray-400 uppercase tracking-wider mt-0.5">{s.label}</p>
               </div>
             ))}
           </div>
@@ -508,8 +508,8 @@ export default function PublicProfilePage({
         <div className="flex flex-wrap gap-1.5 items-center">
           {badges.length > 0 && badges.map((b) => <BadgeChip key={b.id} badge={b} />)}
           {(profile as any).currentStreak > 0 && (
-            <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300">
-              🔥 {(profile as any).currentStreak} Günlük Seri
+            <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-medium bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400">
+              🔥 {(profile as any).currentStreak} günlük seri
             </span>
           )}
         </div>
