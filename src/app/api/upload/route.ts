@@ -128,10 +128,22 @@ export async function POST(req: NextRequest) {
 
     // Avatar veya cover yüklenirse User tablosunu güncelle
     if (type === "avatar") {
+      // Eski dosyayı storage'dan sil (uzantı değişirse hayalet dosya oluşmasın)
+      const oldUser = await prisma.user.findUnique({ where: { id: userId }, select: { avatarUrl: true } });
+      if (oldUser?.avatarUrl) {
+        const match = oldUser.avatarUrl.match(/\/storage\/v1\/object\/public\/([^/]+)\/(.+)/);
+        if (match) void deleteFile(match[1] as StorageBucket, decodeURIComponent(match[2]));
+      }
       await prisma.user.update({ where: { id: userId }, data: { avatarUrl: url } });
       await cacheDel(cacheKey.profile(userId));
     }
     if (type === "cover") {
+      // Eski kapak fotoğrafını storage'dan sil
+      const oldUser = await prisma.user.findUnique({ where: { id: userId }, select: { coverUrl: true } });
+      if (oldUser?.coverUrl) {
+        const match = oldUser.coverUrl.match(/\/storage\/v1\/object\/public\/([^/]+)\/(.+)/);
+        if (match) void deleteFile(match[1] as StorageBucket, decodeURIComponent(match[2]));
+      }
       await prisma.user.update({ where: { id: userId }, data: { coverUrl: url } });
       await cacheDel(cacheKey.profile(userId));
     }

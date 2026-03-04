@@ -95,7 +95,11 @@ export async function getPopularListings(limit = 6): Promise<ListingSummary[]> {
   const listings = await prisma.listing.findMany({
     where: {
       status: "OPEN",
-      OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+      AND: [
+        { OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
+        // TRAINER/EQUIPMENT ilanları tarihe göre filtrelenmez; etkinlik ilanları geçmişse çıkarılır
+        { OR: [{ type: { in: ["TRAINER", "EQUIPMENT"] } }, { dateTime: { gte: now } }] },
+      ],
     },
     include: {
       sport: true,

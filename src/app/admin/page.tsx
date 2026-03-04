@@ -58,6 +58,32 @@ const USER_TYPE_LABELS: Record<string, string> = {
   VENUE: "Mekan",
 };
 
+const REPORT_REASON_LABELS: Record<string, string> = {
+  SPAM: "🗑️ Spam",
+  HARASSMENT: "🚨 Taciz / Hakaret",
+  FAKE_PROFILE: "🎭 Sahte Profil",
+  INAPPROPRIATE_CONTENT: "🔞 Uygunsuz İçerik",
+  SCAM: "💰 Dolandırıcılık",
+  OTHER: "❓ Diğer",
+};
+
+interface AdminReport {
+  id: string;
+  reason: string;
+  description: string | null;
+  resolved: boolean;
+  createdAt: string;
+  reporter: { id: string; name: string; email: string; avatarUrl: string | null };
+  reported: {
+    id: string;
+    name: string;
+    email: string;
+    avatarUrl: string | null;
+    isBanned: boolean;
+    totalActiveReports: number;
+  };
+}
+
 export default function AdminPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -68,11 +94,14 @@ export default function AdminPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"users" | "venues" | "trainers">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "venues" | "trainers" | "reports">("users");
   const [venueProfiles, setVenueProfiles] = useState<VenueProfileAdmin[]>([]);
   const [venueLoading, setVenueLoading] = useState(false);
   const [trainerProfiles, setTrainerProfiles] = useState<TrainerProfileAdmin[]>([]);
   const [trainerLoading, setTrainerLoading] = useState(false);
+  const [reports, setReports] = useState<AdminReport[]>([]);
+  const [reportsLoading, setReportsLoading] = useState(false);
+  const [reportFilter, setReportFilter] = useState<"PENDING" | "ALL">("PENDING");
   const [dbStats, setDbStats] = useState<{
     users: { total: number; new30d: number; new7d: number; banned: number };
     listings: { total: number; open: number };
@@ -184,6 +213,47 @@ export default function AdminPage() {
     if (session?.user?.isAdmin && activeTab === "trainers") fetchTrainers();
   }, [session, activeTab, fetchTrainers]);
 
+  const fetchReports = useCallback(async (filterStatus: "PENDING" | "ALL" = "PENDING") => {
+    setReportsLoading(true);
+    try {
+      const res = await fetch(`/api/admin/reports?status=${filterStatus}&limit=30`);
+      if (res.ok) {
+        const data = await res.json();
+        setReports(data.data ?? []);
+      }
+    } catch {
+      toast.error("Şikayetler yüklenemedi");
+    } finally {
+      setReportsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (session?.user?.isAdmin && activeTab === "reports") fetchReports(reportFilter);
+  }, [session, activeTab, fetchReports, reportFilter]);
+
+  const handleReportAction = async (reportId: string, action: "resolve" | "ban_user" | "dismiss") => {
+    setActionLoading(`report-${reportId}`);
+    try {
+      const res = await fetch("/api/admin/reports", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reportId, action }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "İşlem başarısız");
+      toast.success(
+        action === "ban_user" ? "Kullanıcı yasaklandı 🚫" :
+        action === "resolve" ? "Şikayet çözümlendi ✅" : "Şikayet reddedildi"
+      );
+      setReports((prev) => prev.filter((r) => r.id !== reportId));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Hata");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const handleAction = async (
     userId: string,
     field: "isBanned" | "isAdmin",
@@ -289,7 +359,7 @@ export default function AdminPage() {
 
       {/* Sekme Butonları */}
       <div className="flex gap-2 mb-6 border-b border-gray-200 dark:border-gray-700">
-        {([[ "users", "👥 Kullanıcılar"], ["venues", "🏙️ Mekan Onayları"], ["trainers", "🎓 Antrenör Onayları"]] as const).map(([tab, label]) => (
+        {([[ "users", "👥 Kullanıcılar"], ["venues", "🏙️ Mekan Onayları"], ["trainers", "🎓 Antrenör Onayları"], ["reports", "🚨 Şikayetler"]] as const).map(([tab, label]) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -310,9 +380,129 @@ export default function AdminPage() {
                 {trainerProfiles.filter(t => !t.isVerified).length}
               </span>
             )}
+            {tab === "reports" && reports.filter(r => !r.resolved).length > 0 && (
+              <span className="ml-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                {reports.filter(r => !r.resolved).length}
+              </span>
+            )}
           </button>
         ))}
       </div>
+
+      {/* ── Şikayetler Sekmesi ─────────────────────────────────────────────── */}
+      {activeTab === "reports" && (
+        <div>
+          <div className="flex gap-2 mb-4">
+            {(["PENDING", "ALL"] as const).map((s) => (
+              <button key={s} onClick={() => setReportFilter(s)}
+                className={`text-xs px-3 py-1.5 rounded-full border transition ${
+                  reportFilter === s
+                    ? "bg-emerald-600 text-white border-emerald-600"
+                    : "border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
+                }`}>
+                {s === "PENDING" ? "⏳ Bekleyenler" : "📋 Tümü"}
+              </button>
+            ))}
+          </div>
+
+          {reportsLoading ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full" />
+            </div>
+          ) : reports.length === 0 ? (
+            <div className="text-center py-16 text-gray-400 dark:text-gray-500">
+              <span className="text-4xl">✅</span>
+              <p className="mt-3 text-sm">Bekleyen şikayet yok</p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-4">
+              {reports.map((report) => (
+                <div key={report.id} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">
+                          {REPORT_REASON_LABELS[report.reason] ?? report.reason}
+                        </span>
+                        {report.reported.isBanned && (
+                          <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-500">🚫 Zaten Yasaklı</span>
+                        )}
+                        {report.reported.totalActiveReports > 1 && (
+                          <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-600">
+                            ⚠️ {report.reported.totalActiveReports} aktif şikayet
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Şikayet Eden</p>
+                          <div className="flex items-center gap-2">
+                            {report.reporter.avatarUrl && (
+                              <img src={report.reporter.avatarUrl} alt="" className="w-7 h-7 rounded-full object-cover" />
+                            )}
+                            <div>
+                              <p className="font-medium text-gray-900 dark:text-white">{report.reporter.name}</p>
+                              <p className="text-xs text-gray-400 dark:text-gray-500">{report.reporter.email}</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Şikayet Edilen</p>
+                          <div className="flex items-center gap-2">
+                            {report.reported.avatarUrl && (
+                              <img src={report.reported.avatarUrl} alt="" className="w-7 h-7 rounded-full object-cover" />
+                            )}
+                            <div>
+                              <p className="font-medium text-gray-900 dark:text-white">{report.reported.name}</p>
+                              <p className="text-xs text-gray-400 dark:text-gray-500">{report.reported.email}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {report.description && (
+                        <p className="mt-3 text-sm text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 italic">
+                          &ldquo;{report.description}&rdquo;
+                        </p>
+                      )}
+                      <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">
+                        {new Date(report.createdAt).toLocaleString("tr-TR")}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col gap-2 shrink-0">
+                      {!report.reported.isBanned && (
+                        <button
+                          disabled={!!actionLoading}
+                          onClick={() => handleReportAction(report.id, "ban_user")}
+                          className="text-xs px-3 py-1.5 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition disabled:opacity-40"
+                        >
+                          {actionLoading === `report-${report.id}` ? "..." : "🚫 Yasakla"}
+                        </button>
+                      )}
+                      <button
+                        disabled={!!actionLoading}
+                        onClick={() => handleReportAction(report.id, "resolve")}
+                        className="text-xs px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition disabled:opacity-40"
+                      >
+                        ✅ Çözümlendi
+                      </button>
+                      <button
+                        disabled={!!actionLoading}
+                        onClick={() => handleReportAction(report.id, "dismiss")}
+                        className="text-xs px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition disabled:opacity-40"
+                      >
+                        Reddet
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── Mekan Onayları Sekmesi ─────────────────────────────────────── */}
       {activeTab === "venues" && (

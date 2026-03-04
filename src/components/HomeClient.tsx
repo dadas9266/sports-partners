@@ -74,7 +74,7 @@ export default function HomeClient({
   const [feedLoading, setFeedLoading] = useState(false);
   const [feedPage, setFeedPage] = useState(1);
   const [feedHasNext, setFeedHasNext] = useState(false);
-  const [recReason, setRecReason] = useState<string>(initialRecommendations.length > 0 ? "popular" : "popular");
+  const [recReason, setRecReason] = useState<string>("popular");
 
   // Yakın ilanlar
   const [nearbyListings, setNearbyListings] = useState<NearbyListing[]>([]);

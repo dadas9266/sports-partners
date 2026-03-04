@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getSupabaseAdminClient } from "@/lib/storage";
 
 /**
  * GET /api/cron/cleanup-expired
@@ -134,6 +135,37 @@ export async function GET(req: NextRequest) {
     },
   });
 
+  // ── 6. Süresi dolmuş story'leri temizle (DB + Supabase Storage) ────────────
+  // Önce medya URL'lerini topla, sonra storage'dan sil, son olarak DB'den temizle
+  const expiredStories = await prisma.story.findMany({
+    where: { expiresAt: { lt: now } },
+    select: { id: true, mediaUrl: true },
+  });
+
+  let deletedStorageFiles = 0;
+  if (expiredStories.length > 0) {
+    try {
+      const supabase = getSupabaseAdminClient();
+      for (const story of expiredStories) {
+        if (!story.mediaUrl) continue;
+        // URL'den bucket ve path'i çıkar:
+        // Pattern: .../storage/v1/object/public/{bucket}/{path}
+        const match = story.mediaUrl.match(/\/storage\/v1\/object\/public\/([^/]+)\/(.+)/);
+        if (match) {
+          const [, bucket, path] = match;
+          const { error } = await supabase.storage.from(bucket).remove([decodeURIComponent(path)]);
+          if (!error) deletedStorageFiles++;
+        }
+      }
+    } catch {
+      // Storage hatası kritik değil, DB temizliğine devam et
+    }
+  }
+
+  const deletedStories = await prisma.story.deleteMany({
+    where: { expiresAt: { lt: now } },
+  });
+
   return NextResponse.json({
     ok: true,
     summary: {
@@ -147,6 +179,7 @@ export async function GET(req: NextRequest) {
       expiredChallenges: expiredChallenges.count,
       deletedNotifications: deletedNotifs.count,
       deletedPasswordTokens: deletedTokens.count,
+      deletedStories: { db: deletedStories.count, storage: deletedStorageFiles },
     },
     timestamp: now.toISOString(),
   });
