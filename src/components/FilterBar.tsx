@@ -238,8 +238,6 @@ export default function FilterBar({ onFilterChange, initialLocations, initialSpo
           <span className="text-xs text-gray-600 dark:text-gray-300">🔄 Tekrarlayan</span>
         </label>
       </div>
-
-      </div>
     </div>
   );
 }
