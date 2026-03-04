@@ -25,7 +25,9 @@ async function main() {
     { name: "Hiking (Doğa Yürüyüşü)", icon: "🥾" },
     { name: "Bilardo", icon: "🎱" },
     { name: "Dart", icon: "🎯" },
-    { name: "Yoga / Pilates", icon: "🧘" },
+    { name: "Yoga", icon: "🧘" },
+    { name: "Pilates", icon: "🤸" },
+    { name: "Dans", icon: "💃" },
     { name: "Fitness", icon: "💪" },
   ];
 

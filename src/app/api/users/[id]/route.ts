@@ -45,6 +45,11 @@ export async function GET(
           },
         },
         coverUrl: true,
+        instagram: true,
+        tiktok: true,
+        facebook: true,
+        twitterX: true,
+        vk: true,
         profileVisibility: true,
         clubMemberships: {
           select: {
@@ -152,6 +157,11 @@ export async function GET(
         isOwnProfile,
         trainerProfile: user.trainerProfile ?? null,
         coverUrl: user.coverUrl ?? null,
+        instagram: user.instagram ?? null,
+        tiktok: user.tiktok ?? null,
+        facebook: user.facebook ?? null,
+        twitterX: user.twitterX ?? null,
+        vk: user.vk ?? null,
         clubs: (user.clubMemberships ?? []).map((m: any) => ({ ...m.club, role: m.role })),
         followersCount,
         followingCount,

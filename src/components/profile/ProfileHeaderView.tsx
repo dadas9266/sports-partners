@@ -141,8 +141,9 @@ export default function ProfileHeaderView({
           <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white leading-tight">{user.name}</h1>
             {(user.userType === "TRAINER" || user.trainerProfile) && (
-              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
-                🏅 Antrenör{user.trainerProfile?.isVerified ? " ✓" : ""}
+              <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-sm">
+                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                Onaylı Antrenör{user.trainerProfile?.isVerified ? "" : " (Beklemede)"}
               </span>
             )}
             {(user.userType === "VENUE" || user.venueProfile) && (
@@ -189,13 +190,18 @@ export default function ProfileHeaderView({
           <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed mb-3">{user.bio}</p>
         )}
         {user.trainerProfile?.isVerified && (
-          <div className="flex flex-wrap gap-2 text-xs text-gray-600 dark:text-gray-400 mb-3">
-            {user.trainerProfile?.gymName && (
-              <span>🏋️ {user.trainerProfile.gymName}</span>
-            )}
-            {user.trainerProfile?.experience && (
-              <span>· 🏆 {user.trainerProfile.experience} yıl deneyim</span>
-            )}
+          <div className="p-3 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-100 dark:border-blue-900/40 mb-3">
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="text-sm font-bold text-blue-700 dark:text-blue-300">🏋️ Antrenör Bilgileri</span>
+            </div>
+            <div className="flex flex-wrap gap-3 text-xs">
+              {user.trainerProfile?.gymName && (
+                <span className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400">🏢 {user.trainerProfile.gymName}</span>
+              )}
+              {user.trainerProfile?.experience && (
+                <span className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400">🏆 {user.trainerProfile.experience} yıl deneyim</span>
+              )}
+            </div>
           </div>
         )}
       </div>

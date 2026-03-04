@@ -16,9 +16,8 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   reactCompiler: true,
 
-  // TypeScript ve ESLint hatalarını build'de yoksay (known TS errors)
+  // TypeScript hatalarını build'de yoksay (known TS errors)
   typescript: { ignoreBuildErrors: true },
-  eslint: { ignoreDuringBuilds: true },
 
   // Güvenlik başlıkları
   async headers() {

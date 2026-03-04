@@ -48,7 +48,7 @@ const config: NextAuthConfig = {
           throw new Error("Çok fazla giriş denemesi. 15 dakika bekleyin.");
         }
 
-        const user = await prisma.user.findUnique({ where: { email } });
+        const user = await prisma.user.findUnique({ where: { email }, select: { id: true, name: true, email: true, passwordHash: true, isAdmin: true, userType: true, avatarUrl: true } });
 
         if (!user) {
           throw new Error("E-posta veya şifre hatalı");
@@ -67,6 +67,7 @@ const config: NextAuthConfig = {
           id: user.id,
           name: user.name,
           email: user.email,
+          image: user.avatarUrl ?? null,
           isAdmin: user.isAdmin,
           userType: user.userType,
         };
@@ -110,16 +111,28 @@ const config: NextAuthConfig = {
         if (account?.provider === "google" || account?.provider === "github") {
           const dbUser = await prisma.user.findUnique({
             where: { email: token.email! },
-            select: { id: true, isAdmin: true, userType: true },
+            select: { id: true, isAdmin: true, userType: true, avatarUrl: true },
           });
           token.id = dbUser?.id ?? token.sub;
           token.isAdmin = dbUser?.isAdmin ?? false;
           token.userType = dbUser?.userType ?? "INDIVIDUAL";
+          token.avatarUrl = dbUser?.avatarUrl ?? user.image ?? null;
         } else {
           token.id = user.id;
           token.isAdmin = (user as { id: string; isAdmin?: boolean }).isAdmin ?? false;
           token.userType = (user as { id: string; userType?: string }).userType ?? "INDIVIDUAL";
+          token.avatarUrl = user.image ?? null;
         }
+      }
+      // Refresh avatarUrl periodically from DB (every token refresh)
+      if (!user && token.id) {
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.id as string },
+            select: { avatarUrl: true },
+          });
+          if (dbUser) token.avatarUrl = dbUser.avatarUrl ?? null;
+        } catch { /* ignore */ }
       }
       return token;
     },
@@ -128,6 +141,7 @@ const config: NextAuthConfig = {
         session.user.id = token.id as string;
         session.user.isAdmin = token.isAdmin as boolean;
         session.user.userType = token.userType as string;
+        session.user.image = (token.avatarUrl as string) ?? null;
       }
       return session;
     },

@@ -127,8 +127,8 @@ export default function SosyalPage() {
   };
 
   const handlePost = async () => {
-    if (!newContent.trim() && newImages.length === 0) {
-      toast.error("Bir şey yaz veya görsel ekle");
+    if (!newContent.trim()) {
+      toast.error("Bir şeyler yaz");
       return;
     }
     setPosting(true);
@@ -136,7 +136,7 @@ export default function SosyalPage() {
       const res = await fetch("/api/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: newContent.trim() || undefined, images: newImages }),
+        body: JSON.stringify({ content: newContent.trim(), images: [] }),
       });
       const json = await res.json();
       if (res.ok) {
@@ -154,7 +154,6 @@ export default function SosyalPage() {
           ...p,
         ]);
         setNewContent("");
-        setNewImages([]);
         toast.success("Gönderi paylaşıldı 🎉");
       } else {
         toast.error(json.error || "Gönderi paylaşılamadı");
@@ -353,36 +352,11 @@ export default function SosyalPage() {
               maxLength={1000}
               className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-800 dark:text-gray-200 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
             />
-            {/* Önizleme görseller */}
-            {newImages.length > 0 && (
-              <div className="flex gap-2 mt-2 flex-wrap">
-                {newImages.map((img, i) => (
-                  <div key={i} className="relative">
-                    <img src={img} alt="" className="w-20 h-20 object-cover rounded-lg border border-gray-200 dark:border-gray-600" />
-                    <button
-                      onClick={() => setNewImages((p) => p.filter((_, idx) => idx !== i))}
-                      className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-            <div className="flex items-center justify-between mt-2">
-              <div className="flex gap-2">
-                <button
-                  onClick={() => fileRef.current?.click()}
-                  disabled={uploadingImg || newImages.length >= 4}
-                  className="text-xs text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition flex items-center gap-1 disabled:opacity-40"
-                >
-                  {uploadingImg ? "⏳" : "📷"} Görsel
-                </button>
-                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleUploadImage} />
-              </div>
+            {/* Image previews removed — text-only posts */}
+            <div className="flex items-center justify-end mt-2">
               <button
                 onClick={handlePost}
-                disabled={posting || (!newContent.trim() && newImages.length === 0)}
+                disabled={posting || !newContent.trim()}
                 className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white text-sm font-semibold px-4 py-1.5 rounded-lg transition"
               >
                 {posting ? "Paylaşılıyor..." : "Paylaş"}

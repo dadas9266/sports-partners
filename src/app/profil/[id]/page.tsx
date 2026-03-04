@@ -401,6 +401,18 @@ export default function PublicProfilePage({
                   title="Mesaj Gönder"
                   className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm"
                 >💬</button>
+                {blockStatus !== "BLOCK" && (
+                  <button
+                    onClick={() => setShowChallengeModal(true)}
+                    title="Teklif Gönder"
+                    className="w-9 h-9 flex items-center justify-center rounded-lg bg-orange-50 dark:bg-orange-900/30 hover:bg-orange-100 dark:hover:bg-orange-900/50 transition text-sm text-orange-600 dark:text-orange-400"
+                  >⚔️</button>
+                )}
+                <button
+                  onClick={() => setRatingModal(true)}
+                  title="Değerlendir"
+                  className="w-9 h-9 flex items-center justify-center rounded-lg bg-yellow-50 dark:bg-yellow-900/30 hover:bg-yellow-100 dark:hover:bg-yellow-900/50 transition text-sm text-yellow-600 dark:text-yellow-400"
+                >⭐</button>
                 <div className="relative">
                   <button onClick={() => setDotMenuOpen(v => !v)}
                     className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition text-gray-500 dark:text-gray-400 text-sm font-bold">
@@ -410,22 +422,11 @@ export default function PublicProfilePage({
                     <>
                       <div className="fixed inset-0 z-[100]" onClick={() => setDotMenuOpen(false)} />
                       <div className="absolute right-0 mt-1 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-[101] overflow-hidden py-1">
-                        {blockStatus !== "BLOCK" && (
-                          <button onClick={() => setShowChallengeModal(true)}
-                            className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-                            ⚔️ Teklif Gönder
-                          </button>
-                        )}
-                        <button onClick={() => setRatingModal(true)}
-                          className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-                          ⭐ Değerlendir
-                        </button>
                         {followsMe && (
                           <button onClick={handleRemoveFollower} className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
                             👤 Takipçiyi Çıkar
                           </button>
                         )}
-                        <div className="border-t border-gray-100 dark:border-gray-700 my-1" />
                         <button onClick={() => handleBlock("RESTRICT")} className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
                           🔇 {blockStatus === "RESTRICT" ? "Kısıtlamayı Kaldır" : "Kısıtla"}
                         </button>
@@ -452,7 +453,10 @@ export default function PublicProfilePage({
           <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white leading-tight">{profile.name}</h1>
             {(profile as any).trainerProfile?.isVerified && (
-              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">🏅 Antrenör</span>
+              <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-sm">
+                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                Onaylı Antrenör
+              </span>
             )}
             {(profile as any).userType === "VENUE" && (
               <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">🏟️ Tesis</span>
@@ -472,6 +476,27 @@ export default function PublicProfilePage({
           )}
         </div>
 
+        {/* Social links */}
+        {(() => {
+          const socialLinks = [
+            { key: "instagram", color: "bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400", url: `https://instagram.com/${(profile as any).instagram}`, icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg> },
+            { key: "tiktok",    color: "bg-black dark:bg-white dark:text-black", url: `https://tiktok.com/@${(profile as any).tiktok}`,    icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.79a8.18 8.18 0 004.78 1.52V6.85a4.85 4.85 0 01-1.01-.16z"/></svg> },
+            { key: "facebook",  color: "bg-[#1877F2]",      url: `https://facebook.com/${(profile as any).facebook}`, icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg> },
+            { key: "twitterX",  color: "bg-black dark:bg-white dark:text-black", url: `https://x.com/${(profile as any).twitterX}`,        icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg> },
+            { key: "vk",        color: "bg-[#4C75A3]",      url: `https://vk.com/${(profile as any).vk}`,             icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M15.07 2H8.93C3.33 2 2 3.33 2 8.93v6.14C2 20.67 3.33 22 8.93 22h6.14C20.67 22 22 20.67 22 15.07V8.93C22 3.33 20.67 2 15.07 2zm3.08 13.5h-1.64c-.63 0-.82-.52-1.93-1.63-.96-.96-1.39-.96-1.39 0 0 1.63-.43 1.63-1.08 1.63-1.67 0-3.52-1.04-4.82-2.84-1.96-2.73-2.5-4.72-2.5-5.12 0-.18.15-.35.35-.35h1.64c.26 0 .35.15.44.38.51 1.57 1.39 2.95 1.74 2.95.14 0 .2-.06.2-.38V9.35c-.04-.62-.35-.67-.35-.89 0-.15.12-.3.3-.3h2.57c.22 0 .3.12.3.35v2.74c0 .22.09.3.16.3.14 0 .27-.08.55-.38.87-.99 1.5-2.51 1.5-2.51.09-.2.25-.38.5-.38h1.64c.49 0 .6.25.49.56-.21.64-2.08 2.66-2.08 2.66-.16.24-.22.35 0 .61.16.2.69.74 1.05 1.17.65.73 1.14 1.35 1.27 1.78.14.42-.08.64-.49.64z"/></svg> },
+          ].filter(s => !!(profile as any)[s.key]);
+          return socialLinks.length > 0 ? (
+            <div className="flex items-center gap-1.5 mb-3">
+              {socialLinks.map(s => (
+                <a key={s.key} href={s.url} target="_blank" rel="noopener noreferrer"
+                  className={`w-8 h-8 flex items-center justify-center rounded-full ${s.color} text-white hover:opacity-80 transition-opacity shadow-sm`}>
+                  {s.icon}
+                </a>
+              ))}
+            </div>
+          ) : null;
+        })()}
+
         {/* Stats — clean inline row */}
         <div className="flex items-center gap-4 text-sm mb-3">
           <span><strong className="text-gray-900 dark:text-white">{profile.totalMatches}</strong> <span className="text-gray-500 dark:text-gray-400">maç</span></span>
@@ -487,18 +512,31 @@ export default function PublicProfilePage({
           <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed mb-3">{profile.bio}</p>
         )}
 
-        {/* Trainer info */}
+        {/* Trainer info — enhanced card */}
         {(profile as any).trainerProfile?.isVerified && (
-          <div className="flex flex-wrap gap-1.5 mb-3 text-xs">
-            {(profile as any).trainerProfile.specialization && (
-              <span className="text-gray-600 dark:text-gray-400">🎯 {(profile as any).trainerProfile.specialization}</span>
-            )}
-            {(profile as any).trainerProfile.experience && (
-              <span className="text-gray-600 dark:text-gray-400">· 🏆 {(profile as any).trainerProfile.experience} yıl deneyim</span>
-            )}
-            {(profile as any).trainerProfile.hourlyRate && (
-              <span className="text-gray-600 dark:text-gray-400">· 💰 {(profile as any).trainerProfile.hourlyRate}₺/sa</span>
-            )}
+          <div className="mb-3 p-3 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-100 dark:border-blue-900/40">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-sm font-bold text-blue-700 dark:text-blue-300">🏋️ Antrenör Bilgileri</span>
+            </div>
+            <div className="flex flex-wrap gap-3 text-xs">
+              {(profile as any).trainerProfile.specialization && (
+                <span className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                  {(profile as any).trainerProfile.specialization}
+                </span>
+              )}
+              {(profile as any).trainerProfile.experience && (
+                <span className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  {(profile as any).trainerProfile.experience} yıl deneyim
+                </span>
+              )}
+              {(profile as any).trainerProfile.hourlyRate && (
+                <span className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 font-semibold">
+                  💰 {(profile as any).trainerProfile.hourlyRate}₺/sa
+                </span>
+              )}
+            </div>
           </div>
         )}
 
