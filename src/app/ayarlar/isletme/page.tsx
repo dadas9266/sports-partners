@@ -106,7 +106,8 @@ export default function IsletmeYonetimiPage() {
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/auth/giris");
-  }, [status, router]);
+    if (status === "authenticated" && (session?.user as any)?.userType !== "VENUE") router.push("/ayarlar/profesyonel");
+  }, [status, session, router]);
 
   useEffect(() => {
     if (status !== "authenticated") return;

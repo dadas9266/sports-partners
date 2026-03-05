@@ -151,7 +151,7 @@ export default function AntrenorDerslerimPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           enrollmentId: selectedEnrollment.id,
-          scheduledAt: lessonForm.scheduledAt || null,
+          scheduledAt: lessonForm.scheduledAt ? new Date(lessonForm.scheduledAt).toISOString() : null,
           trainerNotes: lessonForm.trainerNotes || null,
           homeworkText: lessonForm.homeworkText || null,
           status: lessonForm.status,

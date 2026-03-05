@@ -210,7 +210,7 @@ export default function ProfilePage() {
       districtId: profileUser.districtId ?? "",
       gender: profileUser.gender ?? "",
       birthDate: profileUser.birthDate ? format(new Date(profileUser.birthDate), "yyyy-MM-dd") : "",
-      sportIds: sports.map((s) => s.id),
+      sportIds: (data.user.sports ?? []).map((s) => s.id),
       instagram: (data.user as any).instagram ?? "",
       tiktok: (data.user as any).tiktok ?? "",
       facebook: (data.user as any).facebook ?? "",
@@ -374,6 +374,20 @@ export default function ProfilePage() {
           preferredTime={(data.user as any).preferredTime}
           preferredStyle={(data.user as any).preferredStyle}
         />
+        {/* Antrenör Hızlı Erişim */}
+        {(session?.user as any)?.userType === "TRAINER" && (
+          <a
+            href="/antrenor/derslerim"
+            className="mt-3 flex items-center gap-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-100 dark:border-blue-900/40 rounded-xl p-3 hover:from-blue-100 hover:to-indigo-100 dark:hover:from-blue-900/40 dark:hover:to-indigo-900/40 transition"
+          >
+            <span className="text-2xl">📚</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-blue-700 dark:text-blue-300">Ders Takibi</p>
+              <p className="text-xs text-blue-500 dark:text-blue-400">Öğrenci kayıtlarını ve dersleri yönet</p>
+            </div>
+            <svg className="w-4 h-4 text-blue-400 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
+          </a>
+        )}
       </div>
 
       {/* Tabs */}

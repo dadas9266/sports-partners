@@ -8,14 +8,14 @@ const log = createLogger("trainer:lessons");
 
 const createLessonSchema = z.object({
   enrollmentId: z.string().min(1),
-  scheduledAt: z.string().datetime().optional().nullable(),
+  scheduledAt: z.string().optional().nullable(),
   trainerNotes: z.string().max(3000).optional().nullable(),
   homeworkText: z.string().max(3000).optional().nullable(),
   status: z.enum(["SCHEDULED", "COMPLETED", "CANCELLED", "NO_SHOW"]).default("SCHEDULED"),
 });
 
 const updateLessonSchema = createLessonSchema.partial().omit({ enrollmentId: true }).extend({
-  completedAt: z.string().datetime().optional().nullable(),
+  completedAt: z.string().optional().nullable(),
 });
 
 // POST /api/trainer/lessons — yeni ders ekle

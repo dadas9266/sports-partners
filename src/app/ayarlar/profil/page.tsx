@@ -94,7 +94,7 @@ export default function ProfilDuzenle() {
   const handleSave = async () => {
     if (!form.name.trim()) { toast.error("Ad Soyad boş olamaz"); return; }
     if (form.sportIds.length === 0) { toast.error("En az 1 spor dalı seçmelisiniz"); return; }
-    if (form.sportIds.length > 5) { toast.error("En fazla 5 spor dalı seçebilirsiniz"); return; }
+    if (form.sportIds.length > 10) { toast.error("En fazla 10 spor dalı seçebilirsiniz"); return; }
 
     setSaving(true);
     try {
@@ -313,9 +313,9 @@ export default function ProfilDuzenle() {
       {/* ─── Spor Seçimi ─────────────────────────────────────────── */}
       <div>
         <label className={labelClass}>
-          Spor Dalları <span className="text-gray-400 font-normal">(maks 5)</span>
+          Spor Dalları <span className="text-gray-400 font-normal">(maks 10)</span>
           {form.sportIds.length > 0 && (
-            <span className="ml-2 text-emerald-600 dark:text-emerald-400 font-semibold">{form.sportIds.length}/5 seçili</span>
+            <span className="ml-2 text-emerald-600 dark:text-emerald-400 font-semibold">{form.sportIds.length}/10 seçili</span>
           )}
         </label>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
@@ -328,8 +328,8 @@ export default function ProfilDuzenle() {
                 onClick={() => {
                   if (selected) {
                     setForm({ ...form, sportIds: form.sportIds.filter((id) => id !== sport.id) });
-                  } else if (form.sportIds.length >= 5) {
-                    toast.error("En fazla 5 spor dalı seçebilirsiniz");
+                  } else if (form.sportIds.length >= 10) {
+                    toast.error("En fazla 10 spor dalı seçebilirsiniz");
                   } else {
                     setForm({ ...form, sportIds: [...form.sportIds, sport.id] });
                   }

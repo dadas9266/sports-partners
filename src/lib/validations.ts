@@ -180,7 +180,7 @@ export const updateProfileSchema = z
     bio: z.string().max(300, "Bio en fazla 300 karakter olabilir").optional().nullable(),
     cityId: z.string().optional().nullable(),
     districtId: z.string().optional().nullable(),
-    sportIds: z.array(z.string()).max(5, "En fazla 5 spor seçebilirsiniz").optional(),
+    sportIds: z.array(z.string()).max(10, "En fazla 10 spor seçebilirsiniz").optional(),
     avatarUrl: z.string().url("Geçerli bir URL giriniz").optional().nullable(),
     coverUrl: z.string().url("Geçerli bir URL giriniz").optional().nullable(),
     gender: z.enum(["MALE", "FEMALE", "PREFER_NOT_TO_SAY"]).optional().nullable(),

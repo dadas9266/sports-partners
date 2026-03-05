@@ -43,6 +43,8 @@ export async function GET() {
           totalMatches: true,
           totalPoints: true,
           lastActiveDate: true,
+          cityId: true,
+          districtId: true,
           city: { select: { id: true, name: true, country: { select: { id: true, name: true } } } },
           district: { select: { id: true, name: true } },
           sports: { select: { id: true, name: true, icon: true } },

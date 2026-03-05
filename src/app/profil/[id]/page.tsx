@@ -596,18 +596,17 @@ export default function PublicProfilePage({
               <span className="text-sm font-bold text-blue-700 dark:text-blue-300">🏋️ Antrenör Bilgileri</span>
             </div>
             <div className="flex flex-wrap gap-3 text-xs">
-              {(profile as any).trainerProfile.specialization && (
+              {(profile as any).trainerProfile?.gymName && (
                 <span className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400">
+                  🏢 {(profile as any).trainerProfile.gymName}
+                </span>
+              )}
+              {((profile as any).trainerProfile?.specializations ?? []).map((sp: { sportName: string; years: number }, i: number) => (
+                <span key={i} className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400">
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                  {(profile as any).trainerProfile.specialization}
+                  {sp.sportName}{sp.years ? ` · ${sp.years} yıl` : ""}
                 </span>
-              )}
-              {(profile as any).trainerProfile.experience && (
-                <span className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400">
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                  {(profile as any).trainerProfile.experience} yıl deneyim
-                </span>
-              )}
+              ))}
               {(profile as any).trainerProfile.hourlyRate && (
                 <span className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 font-semibold">
                   💰 {(profile as any).trainerProfile.hourlyRate}₺/sa

@@ -198,9 +198,9 @@ export default function ProfileHeaderView({
               {user.trainerProfile?.gymName && (
                 <span className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400">🏢 {user.trainerProfile.gymName}</span>
               )}
-              {user.trainerProfile?.experience && (
-                <span className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400">🏆 {user.trainerProfile.experience} yıl deneyim</span>
-              )}
+              {((user.trainerProfile as any)?.specializations ?? []).map((sp: { sportName: string; years: number }, i: number) => (
+                <span key={i} className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400">🏆 {sp.sportName}{sp.years ? ` · ${sp.years} yıl` : ""}</span>
+              ))}
             </div>
           </div>
         )}

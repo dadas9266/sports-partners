@@ -341,6 +341,14 @@ export async function POST(request: Request) {
       );
     }
 
+    // Sadece VENUE tipindeki kullanıcılar venueId içeren ilan oluşturabilir
+    if (parsed.data.venueId && user?.userType !== "VENUE") {
+      return NextResponse.json(
+        { success: false, error: "İşletme ilanı oluşturabilmek için İşletme hesabına sahip olmanız gereklidir." },
+        { status: 403 }
+      );
+    }
+
     // Hızlı ilan ise expiresAt hesapla (şu andan 2 saat sonra)
     // Acil ilan ise expiresAt = şu andan 30 dakika sonra
     let expiresAt: Date | null = null;

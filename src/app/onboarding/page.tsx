@@ -100,9 +100,9 @@ export default function OnboardingPage() {
         {step === 0 && (
           <div>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-3 text-center">
-              En fazla 5 spor seçebilirsin
+              En fazla 10 spor seçebilirsin
               {prefs.sportIds.length > 0 && (
-                <span className="ml-2 font-semibold text-emerald-600 dark:text-emerald-400">{prefs.sportIds.length}/5</span>
+                <span className="ml-2 font-semibold text-emerald-600 dark:text-emerald-400">{prefs.sportIds.length}/10</span>
               )}
             </p>
             <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto pr-1">
@@ -115,8 +115,8 @@ export default function OnboardingPage() {
                     onClick={() => {
                       if (selected) {
                         setPrefs({ ...prefs, sportIds: prefs.sportIds.filter((id) => id !== sport.id) });
-                      } else if (prefs.sportIds.length >= 5) {
-                        toast.error("En fazla 5 spor dalı seçebilirsiniz");
+                      } else if (prefs.sportIds.length >= 10) {
+                        toast.error("En fazla 10 spor dalı seçebilirsiniz");
                       } else {
                         setPrefs({ ...prefs, sportIds: [...prefs.sportIds, sport.id] });
                       }

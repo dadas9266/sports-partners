@@ -196,6 +196,8 @@ export interface ProfileData {
   user: User & {
     bio?: string | null;
     avatarUrl?: string | null;
+    cityId?: string | null;
+    districtId?: string | null;
     city?: { id: string; name: string; country?: { name: string } } | null;
     sports: Sport[];
     avgRating?: number | null;
