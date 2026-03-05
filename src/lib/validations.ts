@@ -190,11 +190,36 @@ export const updateProfileSchema = z
     onboardingDone: z.boolean().optional(),
     currentPassword: z.string().optional(),
     newPassword: passwordSchema.optional(),
-    instagram: z.string().max(100).optional().nullable(),
-    tiktok: z.string().max(100).optional().nullable(),
-    facebook: z.string().max(200).optional().nullable(),
-    twitterX: z.string().max(100).optional().nullable(),
-    vk: z.string().max(200).optional().nullable(),
+    instagram: z
+      .string()
+      .max(30)
+      .regex(/^[a-zA-Z0-9_.]{1,30}$/, "Instagram kullanıcı adı yalnızca harf, rakam, nokta ve alt çizgi içerebilir (max 30 karakter)")
+      .optional()
+      .nullable(),
+    tiktok: z
+      .string()
+      .max(24)
+      .regex(/^[a-zA-Z0-9_.]{1,24}$/, "TikTok kullanıcı adı yalnızca harf, rakam, nokta ve alt çizgi içerebilir (max 24 karakter)")
+      .optional()
+      .nullable(),
+    facebook: z
+      .string()
+      .max(50)
+      .regex(/^[a-zA-Z0-9.]{1,50}$/, "Facebook kullanıcı adı yalnızca harf, rakam ve nokta içerebilir (max 50 karakter)")
+      .optional()
+      .nullable(),
+    twitterX: z
+      .string()
+      .max(15)
+      .regex(/^[a-zA-Z0-9_]{1,15}$/, "X (Twitter) kullanıcı adı yalnızca harf, rakam ve alt çizgi içerebilir (max 15 karakter)")
+      .optional()
+      .nullable(),
+    vk: z
+      .string()
+      .max(32)
+      .regex(/^[a-zA-Z0-9_.]{1,32}$/, "VK kullanıcı adı yalnızca harf, rakam, nokta ve alt çizgi içerebilir (max 32 karakter)")
+      .optional()
+      .nullable(),
   })
   .refine(
     (data) => {

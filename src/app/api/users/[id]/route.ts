@@ -15,6 +15,25 @@ export async function GET(
 
     const currentUserId = await getCurrentUserId();
 
+    // Engelleme kontrolü: Hedef kullanıcı bizi engellemiş mi?
+    let isBlockedByThem = false;
+    if (currentUserId && currentUserId !== id) {
+      const block = await prisma.userBlock.findFirst({
+        where: { blockerId: id, blockedId: currentUserId },
+      });
+      if (block) {
+        return NextResponse.json(
+          { success: false, error: "Bu profili görüntüleme yetkiniz yok", code: "BLOCKED" },
+          { status: 403 }
+        );
+      }
+      // Biz mi onları engelledik?
+      const iBlockedThem = await prisma.userBlock.findFirst({
+        where: { blockerId: currentUserId, blockedId: id, type: "BLOCK" },
+      });
+      isBlockedByThem = !!iBlockedThem;
+    }
+
     const user = (await prisma.user.findUnique({
       where: { id },
       select: {
@@ -51,6 +70,8 @@ export async function GET(
         twitterX: true,
         vk: true,
         profileVisibility: true,
+        whoCanMessage: true,
+        whoCanChallenge: true,
         clubMemberships: {
           select: {
             role: true,
@@ -167,6 +188,9 @@ export async function GET(
         followingCount,
         currentStreak: user.currentStreak ?? 0,
         longestStreak: user.longestStreak ?? 0,
+        whoCanMessage: isOwnProfile ? undefined : (user.whoCanMessage ?? "EVERYONE"),
+        whoCanChallenge: isOwnProfile ? undefined : (user.whoCanChallenge ?? "EVERYONE"),
+        isBlockedByThem,
       },
     });
   } catch (error) {

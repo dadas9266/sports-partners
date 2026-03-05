@@ -74,6 +74,22 @@ export async function POST(request: Request) {
       );
     }
 
+    // Engel kontrolü — engellenen kullanıcı ilan sahibine karşılık veremez
+    const block = await prisma.userBlock.findFirst({
+      where: {
+        OR: [
+          { blockerId: listing.userId, blockedId: userId },
+          { blockerId: userId, blockedId: listing.userId },
+        ],
+      },
+    });
+    if (block) {
+      return NextResponse.json(
+        { success: false, error: "Bu ilana karşılık gönderemezsiniz" },
+        { status: 403 }
+      );
+    }
+
     // İlan banned kullanıcı engeli + cinsiyet kısıtı + yaş kısıtı kontrolü
     const applicant = await prisma.user.findUnique({
       where: { id: userId },

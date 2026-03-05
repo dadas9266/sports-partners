@@ -438,6 +438,9 @@ export interface PublicProfile {
   isOwnProfile: boolean;
   birthDate?: string | null;
   gender?: Gender | null;
+  whoCanMessage?: "EVERYONE" | "FOLLOWERS" | "NOBODY";
+  whoCanChallenge?: "EVERYONE" | "FOLLOWERS" | "NOBODY";
+  isBlockedByThem?: boolean;
 }
 
 // --- Search Types ---

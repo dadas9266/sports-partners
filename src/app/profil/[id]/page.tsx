@@ -8,6 +8,7 @@ import { tr } from "date-fns/locale";
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
 import { getPublicProfile, submitRating, getUserRatings, toggleFollow, getFollowStats, getLeaderboard, startDirectConversation, removeFollower } from "@/services/api";
+import { APIError } from "@/services/api";
 import type { PublicProfile, Rating, Badge, UserStoryGroup } from "@/types";
 import { LEVEL_LABELS, LEVEL_COLORS } from "@/types";
 import BadgeComp from "@/components/ui/Badge";
@@ -49,6 +50,7 @@ export default function PublicProfilePage({
   const router = useRouter();
   const [messagingLoading, setMessagingLoading] = useState(false);
   const [profile, setProfile] = useState<PublicProfile | null>(null);
+  const [profileAccessError, setProfileAccessError] = useState<"blocked" | "private" | null>(null);
   const [ratings, setRatings] = useState<Rating[]>([]);
   const [badges, setBadges] = useState<Badge[]>([]);
   const [loading, setLoading] = useState(true);
@@ -108,6 +110,13 @@ export default function PublicProfilePage({
           setProfile(p.data);
           setFollowerCount((p.data as PublicProfile & { followersCount?: number }).followersCount ?? 0);
           setFollowingCount((p.data as PublicProfile & { followingCount?: number }).followingCount ?? 0);
+          // Sizi engelleyen kullanıcı ise blockStatus'u BLOCK olarak ayarla
+          if ((p.data as any).isBlockedByThem) {
+            setBlockStatus("BLOCK");
+          }
+        } else if ((p as any).code === "BLOCKED") {
+          // Hedef kullanıcı bizi engellemişÇ profil görüntülenemiyor
+          setBlockStatus("BLOCK");
         }
         if (r.success && r.data) setRatings(r.data);
         if (lb.success && lb.data) {
@@ -115,7 +124,14 @@ export default function PublicProfilePage({
           if (entry) setBadges(entry.badges);
         }
       })
-      .catch(() => toast.error("Profil yüklenemedi"))
+      .catch((err) => {
+        if (err instanceof APIError && err.status === 403) {
+          // 403: engellendi veya gizli profil
+          setProfileAccessError("blocked");
+        } else {
+          toast.error("Profil yüklenemedi");
+        }
+      })
       .finally(() => setLoading(false));
 
     loadFollowStats();
@@ -320,6 +336,15 @@ export default function PublicProfilePage({
   }
 
   if (!profile) {
+    if (profileAccessError === "blocked") {
+      return (
+        <div className="text-center py-16 max-w-sm mx-auto">
+          <span className="text-6xl">🚫</span>
+          <p className="mt-4 font-semibold text-gray-700 dark:text-gray-300">Bu profili görüntüleme izniniz yok</p>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Bu kullanıcı profilini gizlemiş veya sizi engellemiş olabilir.</p>
+        </div>
+      );
+    }
     return (
       <div className="text-center py-16">
         <span className="text-6xl">😕</span>
@@ -329,6 +354,18 @@ export default function PublicProfilePage({
   }
 
   const joinDate = format(new Date(profile.createdAt), "MMMM yyyy", { locale: tr });
+
+  // Gizlilik kontrolü: mesaj gönderme izni var mı?
+  const whoCanMessage = (profile as any).whoCanMessage ?? "EVERYONE";
+  const canMessage =
+    whoCanMessage === "EVERYONE" ||
+    (whoCanMessage === "FOLLOWERS" && isFollowing);
+
+  // Gizlilik kontrolü: teklif gönderme izni var mı?
+  const whoCanChallenge = (profile as any).whoCanChallenge ?? "EVERYONE";
+  const canChallenge =
+    whoCanChallenge === "EVERYONE" ||
+    (whoCanChallenge === "FOLLOWERS" && isFollowing);
 
   return (
     <div className="max-w-2xl mx-auto pb-24">
@@ -386,22 +423,26 @@ export default function PublicProfilePage({
             )}
             {session && !profile.isOwnProfile && (
               <>
-                <button
-                  onClick={async () => {
-                    if (!session) { toast.error("Giriş yapın"); return; }
-                    setMessagingLoading(true);
-                    try {
-                      const res = await startDirectConversation(id);
-                      if (res.success && res.data) router.push(`/mesajlar/dm/${res.data.id}`);
-                      else toast.error("Konuşma başlatılamadı");
-                    } catch { toast.error("Konuşma başlatılamadı"); }
-                    finally { setMessagingLoading(false); }
-                  }}
-                  disabled={messagingLoading}
-                  title="Mesaj Gönder"
-                  className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm"
-                >💬</button>
-                {blockStatus !== "BLOCK" && (
+                {/* Mesaj butonu: gizlilik ayarına göre gizle */}
+                {blockStatus !== "BLOCK" && canMessage && (
+                  <button
+                    onClick={async () => {
+                      if (!session) { toast.error("Giriş yapın"); return; }
+                      setMessagingLoading(true);
+                      try {
+                        const res = await startDirectConversation(id);
+                        if (res.success && res.data) router.push(`/mesajlar/dm/${res.data.id}`);
+                        else toast.error("Konuşma başlatılamadı");
+                      } catch { toast.error("Konuşma başlatılamadı"); }
+                      finally { setMessagingLoading(false); }
+                    }}
+                    disabled={messagingLoading}
+                    title="Mesaj Gönder"
+                    className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm"
+                  >💬</button>
+                )}
+                {/* Teklif butonu: engellenmemiş VE gizlilik izni varsa göster */}
+                {blockStatus !== "BLOCK" && canChallenge && (
                   <button
                     onClick={() => setShowChallengeModal(true)}
                     title="Teklif Gönder"

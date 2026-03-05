@@ -81,6 +81,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Bu kullanıcıya teklif gönderemezsiniz" }, { status: 403 });
     }
 
+    // Engel kontrolü
+    const block = await prisma.userBlock.findFirst({
+      where: {
+        OR: [
+          { blockerId: userId, blockedId: targetId },
+          { blockerId: targetId, blockedId: userId },
+        ],
+      },
+    });
+    if (block) {
+      return NextResponse.json({ success: false, error: "Bu kullanıcıya teklif gönderemezsiniz" }, { status: 403 });
+    }
+
     // Gizlilik kontrolü: bu kullanıcıya teklif gönderebilir miyiz?
     if (target.whoCanChallenge === "NOBODY") {
       return NextResponse.json({ success: false, error: "Bu kullanıcı teklif kabul etmiyor" }, { status: 403 });
