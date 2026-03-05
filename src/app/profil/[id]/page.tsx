@@ -58,7 +58,9 @@ export default function PublicProfilePage({
   const [ratingScore, setRatingScore] = useState(5);
   const [ratingComment, setRatingComment] = useState("");
   const [submittingRating, setSubmittingRating] = useState(false);
-  const [activeTab, setActiveTab] = useState<"listings" | "ratings" | "posts">("posts");
+  const [activeTab, setActiveTab] = useState<"listings" | "ratings" | "posts" | "stats">("posts");
+  const [statsData, setStatsData] = useState<any>(null);
+  const [statsLoading, setStatsLoading] = useState(false);
   const [posts, setPosts] = useState<any[]>([]);
   const [postsLoading, setPostsLoading] = useState(false);
   const [postsView, setPostsView] = useState<"grid" | "list">("grid");
@@ -69,6 +71,7 @@ export default function PublicProfilePage({
 
   // Follow state
   const [isFollowing, setIsFollowing] = useState(false);
+  const [pendingFollow, setPendingFollow] = useState(false);
   const [followsMe, setFollowsMe] = useState(false);
   const [followerCount, setFollowerCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
@@ -92,6 +95,7 @@ export default function PublicProfilePage({
       const res = await getFollowStats(id);
       if (res.success && res.data) {
         setIsFollowing(res.data.isFollowing);
+        setPendingFollow(res.data.pending ?? false);
         setFollowsMe(res.data.followsMe ?? false);
         setFollowerCount(res.data.followerCount);
         setFollowingCount(res.data.followingCount);
@@ -110,6 +114,8 @@ export default function PublicProfilePage({
           setProfile(p.data);
           setFollowerCount((p.data as PublicProfile & { followersCount?: number }).followersCount ?? 0);
           setFollowingCount((p.data as PublicProfile & { followingCount?: number }).followingCount ?? 0);
+          // Pending follow isteği
+          if ((p.data as any).pendingFollow) setPendingFollow(true);
           // Sizi engelleyen kullanıcı ise blockStatus'u BLOCK olarak ayarla
           if ((p.data as any).isBlockedByThem) {
             setBlockStatus("BLOCK");
@@ -170,6 +176,16 @@ export default function PublicProfilePage({
   }, []);
 
   useEffect(() => {
+    if (activeTab !== "stats") return;
+    setStatsLoading(true);
+    fetch(`/api/users/${id}/stats`)
+      .then((r) => r.json())
+      .then((json) => { if (json.success) setStatsData(json.data); })
+      .catch(() => {})
+      .finally(() => setStatsLoading(false));
+  }, [id, activeTab]);
+
+  useEffect(() => {
     if (activeTab !== "posts") return;
     setPostsLoading(true);
     fetch(`/api/posts?userId=${id}`)
@@ -181,21 +197,39 @@ export default function PublicProfilePage({
 
   const handleFollow = async () => {
     if (!session) { toast.error("Takip etmek için giriş yapın"); return; }
+    // Pending istek varsa iptal et
+    if (pendingFollow) {
+      setFollowLoading(true);
+      try {
+        await toggleFollow(id);
+        setPendingFollow(false);
+        toast.success("Takip isteği geri alındı");
+      } catch { toast.error("Hata oluştu"); }
+      finally { setFollowLoading(false); }
+      return;
+    }
     // Optimistic update — hemen butonu güncelle
     const next = !isFollowing;
-    setIsFollowing(next);
-    setFollowerCount((prev) => next ? prev + 1 : prev - 1);
+    if (!profile?.isPrivateProfile) {
+      setIsFollowing(next);
+      setFollowerCount((prev) => next ? prev + 1 : prev - 1);
+    }
     setFollowLoading(true);
     try {
       const res = await toggleFollow(id) as any;
-      // API { success, following } şeklinde flat döndürüyor
       const actualFollowing = res.following ?? res.data?.following ?? next;
+      const actualPending = res.pending ?? false;
       setIsFollowing(actualFollowing);
+      setPendingFollow(actualPending);
       setFollowerCount((prev) => {
         const diff = actualFollowing !== next ? (actualFollowing ? 1 : -1) : 0;
         return prev + diff;
       });
-      toast.success(actualFollowing ? "✓ Takip edildi" : "Takipten çıkıldı");
+      if (actualPending) {
+        toast.success("⏳ Takip isteği gönderildi");
+      } else {
+        toast.success(actualFollowing ? "✓ Takip edildi" : "Takipten çıkıldı");
+      }
     } catch (err) {
       // Hata durumunda optimistic update'i geri al
       setIsFollowing(!next);
@@ -410,15 +444,17 @@ export default function PublicProfilePage({
           <div className="flex items-center gap-2 pb-1">
             {session && !profile.isOwnProfile && blockStatus !== "BLOCK" && (
               <button
-                onClick={handleFollow}
+                onClick={pendingFollow ? undefined : handleFollow}
                 disabled={followLoading}
                 className={`text-sm font-semibold px-4 py-1.5 rounded-lg transition ${
-                  isFollowing
+                  pendingFollow
+                    ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 cursor-default"
+                    : isFollowing
                     ? "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
                     : "bg-emerald-600 text-white hover:bg-emerald-700"
                 }`}
               >
-                {followLoading ? "..." : isFollowing ? "Takip Ediliyor" : "Takip Et"}
+                {followLoading ? "..." : pendingFollow ? "⏳ İstek Gönderildi" : isFollowing ? "Takip Ediliyor" : "Takip Et"}
               </button>
             )}
             {session && !profile.isOwnProfile && (
@@ -618,6 +654,7 @@ export default function PublicProfilePage({
             { key: "posts",    label: "Gönderiler" },
             { key: "listings", label: `İlanlar${profile.activeListings.length > 0 ? ` (${profile.activeListings.length})` : ""}` },
             { key: "ratings",  label: `Değerlendirmeler${ratings.length > 0 ? ` (${ratings.length})` : ""}` },
+            { key: "stats",    label: "İstatistikler" },
           ].map(t => (
             <button
               key={t.key}
@@ -764,6 +801,97 @@ export default function PublicProfilePage({
                 </p>
               </div>
             ))
+          )}
+        </div>
+      )}
+
+      {/* İstatistikler */}
+      {activeTab === "stats" && (
+        <div className="space-y-5 pb-8">
+          {statsLoading ? (
+            <div className="flex justify-center py-14"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600" /></div>
+          ) : !statsData ? (
+            <p className="text-center text-gray-400 dark:text-gray-500 py-12">İstatistikler yüklenemedi</p>
+          ) : (
+            <>
+              {/* Özet kartlar */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                  { label: "Toplam Maç", value: statsData.totalMatches, icon: "⚔️" },
+                  { label: "Tamamlanan", value: statsData.completedMatches, icon: "✅" },
+                  { label: "Günlük Seri", value: `${statsData.currentStreak} 🔥`, icon: "📅" },
+                  { label: "Rekor Seri",  value: `${statsData.longestStreak} 🏆`, icon: "🌟" },
+                ].map((card) => (
+                  <div key={card.label} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-4 text-center">
+                    <p className="text-2xl mb-1">{card.icon}</p>
+                    <p className="text-xl font-bold text-gray-800 dark:text-gray-100">{card.value}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{card.label}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Ortalama puan */}
+              {statsData.avgRating !== null && (
+                <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-4 flex items-center gap-4">
+                  <span className="text-3xl">⭐</span>
+                  <div>
+                    <p className="text-2xl font-bold text-gray-800 dark:text-gray-100">{statsData.avgRating}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">{statsData.ratingCount} değerlendirme</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Spora göre dağılım */}
+              {statsData.bySport.length > 0 && (
+                <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-4">
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Spora Göre Maçlar</h3>
+                  <div className="space-y-2">
+                    {statsData.bySport.map((s: any) => {
+                      const max = statsData.bySport[0]?.matchCount || 1;
+                      return (
+                        <div key={s.id}>
+                          <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400 mb-0.5">
+                            <span>{s.icon || "🏅"} {s.name}</span>
+                            <span className="font-semibold">{s.matchCount} maç{s.avgRating ? ` · ⭐${s.avgRating}` : ""}</span>
+                          </div>
+                          <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+                              style={{ width: `${Math.round((s.matchCount / max) * 100)}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Aylık aktivite */}
+              {statsData.monthly.length > 0 && (
+                <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-4">
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Son 12 Ay Aktivitesi</h3>
+                  <div className="flex items-end gap-1 h-20">
+                    {statsData.monthly.map((m: any) => {
+                      const maxM = Math.max(...statsData.monthly.map((x: any) => x.count), 1);
+                      const heightPct = Math.round((m.count / maxM) * 100);
+                      const label = m.month.slice(5); // MM only
+                      return (
+                        <div key={m.month} className="flex-1 flex flex-col items-center gap-0.5" title={`${m.month}: ${m.count} maç`}>
+                          <div className="w-full flex flex-col justify-end h-16">
+                            <div
+                              className={`w-full rounded-sm transition-all duration-500 ${m.count > 0 ? "bg-emerald-500" : "bg-gray-100 dark:bg-gray-700"}`}
+                              style={{ height: m.count > 0 ? `${Math.max(heightPct, 8)}%` : "4px" }}
+                            />
+                          </div>
+                          <span className="text-[10px] text-gray-400">{label}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}

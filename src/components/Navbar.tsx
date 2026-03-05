@@ -276,6 +276,7 @@ export default function Navbar() {
                           { href: "/ayarlar/guvenlik", icon: "🔒", label: "Hesap Güvenliği" },
                           { href: "/ayarlar/profesyonel", icon: "⭐", label: "Profesyonel Hesap" },
                           ...((session.user as any)?.userType === "VENUE" ? [{ href: "/ayarlar/isletme", icon: "🏟️", label: "İşletme Yönetimi" }] : []),
+                          ...((session.user as any)?.userType === "TRAINER" ? [{ href: "/antrenor/derslerim", icon: "📚", label: "Ders Takibi" }] : []),
                           { href: "/ayarlar/gizlilik", icon: "🛡️", label: "Gizlilik" },
                           { href: "/topluluklar", icon: "🌐", label: "Topluluklar" },
                           { href: "/turnuvalar", icon: "🏆", label: "Turnuvalar" },

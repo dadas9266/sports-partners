@@ -20,7 +20,7 @@ export async function POST(
       return NextResponse.json({ success: false, error: "Kendinizi takip edemezsiniz" }, { status: 400 });
     }
 
-    const target = await prisma.user.findUnique({ where: { id: targetId }, select: { id: true, name: true } });
+    const target = await prisma.user.findUnique({ where: { id: targetId }, select: { id: true, name: true, isPrivateProfile: true } as any });
     if (!target) return notFound("Kullanıcı bulunamadı");
 
     const existing = await prisma.follow.findUnique({
@@ -30,14 +30,28 @@ export async function POST(
     if (existing) {
       await prisma.follow.delete({ where: { id: existing.id } });
       log.info("Takip bırakıldı", { userId, targetId });
-      return NextResponse.json({ success: true, following: false });
+      return NextResponse.json({ success: true, following: false, pending: false });
     } else {
-      await prisma.follow.create({ data: { followerId: userId, followingId: targetId } });
-      // Takip bildirimini gönder
+      // Kapalı profil: PENDING olarak oluştur, bildirim gönder
+      const isPrivate = (target as any).isPrivateProfile ?? false;
+      await prisma.follow.create({
+        data: {
+          followerId: userId,
+          followingId: targetId,
+          status: isPrivate ? "PENDING" : "ACCEPTED",
+        },
+      });
       const follower = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
-      await createNotification(NOTIF.newFollower(targetId, follower?.name ?? "Biri", userId));
-      log.info("Kullanıcı takip edildi", { userId, targetId });
-      return NextResponse.json({ success: true, following: true });
+      if (isPrivate) {
+        // Takip isteği bildirimi (FOLLOW_REQUEST)
+        await createNotification(NOTIF.followRequest(targetId, follower?.name ?? "Biri", userId));
+        log.info("Takip isteği gönderildi (kapalı profil)", { userId, targetId });
+        return NextResponse.json({ success: true, following: false, pending: true });
+      } else {
+        await createNotification(NOTIF.newFollower(targetId, follower?.name ?? "Biri", userId));
+        log.info("Kullanıcı takip edildi", { userId, targetId });
+        return NextResponse.json({ success: true, following: true, pending: false });
+      }
     }
   } catch (error) {
     log.error("Follow hatası", error);
@@ -78,9 +92,9 @@ export async function GET(
     const { id: targetId } = await params;
     const userId = await getCurrentUserId();
 
-    const [followerCount, followingCount, isFollowing, followsMe] = await Promise.all([
-      prisma.follow.count({ where: { followingId: targetId } }),
-      prisma.follow.count({ where: { followerId: targetId } }),
+    const [followerCount, followingCount, followRecord, followsMe] = await Promise.all([
+      prisma.follow.count({ where: { followingId: targetId, status: "ACCEPTED" } }),
+      prisma.follow.count({ where: { followerId: targetId, status: "ACCEPTED" } }),
       userId
         ? prisma.follow.findUnique({
             where: { followerId_followingId: { followerId: userId, followingId: targetId } },
@@ -98,8 +112,9 @@ export async function GET(
       data: {
         followerCount,
         followingCount,
-        isFollowing: !!isFollowing,
-        followsMe: !!followsMe,
+        isFollowing: followRecord?.status === "ACCEPTED",
+        pending: followRecord?.status === "PENDING",
+        followsMe: followsMe?.status === "ACCEPTED",
       },
     });
   } catch (error) {

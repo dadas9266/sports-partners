@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useProfile } from "@/hooks/useProfile";
 import { useSports } from "@/hooks/useLocations";
 import toast from "react-hot-toast";
@@ -162,6 +163,19 @@ export default function ProfesyonelPage() {
 
       {/* ─── Antrenör Formu ───────────────────────────────────── */}
       {tab === "trainer" && (
+        <>
+        {isTrainer && (
+          <Link href="/antrenor/derslerim" className="flex items-center justify-between bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-2xl px-5 py-4 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition group">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">📚</span>
+              <div>
+                <p className="font-semibold text-blue-800 dark:text-blue-300 text-sm">Ders Takibi</p>
+                <p className="text-xs text-blue-600 dark:text-blue-400">Öğrencileri, dersleri ve ödevleri yönet</p>
+              </div>
+            </div>
+            <span className="text-blue-400 group-hover:translate-x-1 transition-transform">→</span>
+          </Link>
+        )}
         <form onSubmit={handleTrainerSubmit} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 space-y-4">
           <h3 className="font-semibold text-gray-800 dark:text-gray-100">Antrenör Başvuru Formu</h3>
 
@@ -231,6 +245,7 @@ export default function ProfesyonelPage() {
             </Button>
           </div>
         </form>
+        </>
       )}
 
       {/* ─── Mekan Formu ─────────────────────────────────────── */}

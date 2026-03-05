@@ -72,6 +72,7 @@ export async function GET(
         profileVisibility: true,
         whoCanMessage: true,
         whoCanChallenge: true,
+        isPrivateProfile: true,
         clubMemberships: {
           select: {
             role: true,
@@ -124,7 +125,8 @@ export async function GET(
         const isFollowing = await prisma.follow.findUnique({
           where: { followerId_followingId: { followerId: currentUserId, followingId: id } },
         });
-        if (!isFollowing) {
+        // Sadece ACCEPTED takip edenler görebilir
+        if (!isFollowing || isFollowing.status !== "ACCEPTED") {
           return NextResponse.json({ success: false, error: "Bu profil yalnızca takipçilere açık", code: "PRIVATE_PROFILE" }, { status: 403 });
         }
       } else if (user.profileVisibility === "FOLLOWERS" && !currentUserId) {
@@ -149,9 +151,18 @@ export async function GET(
     const totalMatches = (count.matches1 || 0) + (count.matches2 || 0);
 
     const [followersCount, followingCount] = await Promise.all([
-      prisma.follow.count({ where: { followingId: id } }),
-      prisma.follow.count({ where: { followerId: id } }),
+      prisma.follow.count({ where: { followingId: id, status: "ACCEPTED" } }),
+      prisma.follow.count({ where: { followerId: id, status: "ACCEPTED" } }),
     ]);
+
+    // Mevcut kullanıcının bu profile pending talebi var mı?
+    let pendingFollow = false;
+    if (currentUserId && currentUserId !== id) {
+      const existingFollow = await prisma.follow.findUnique({
+        where: { followerId_followingId: { followerId: currentUserId, followingId: id } },
+      });
+      pendingFollow = existingFollow?.status === "PENDING";
+    }
 
     // Kendi profilinde ekstra bilgiler
     const isOwnProfile = isOwnProfileCheck;
@@ -191,6 +202,8 @@ export async function GET(
         whoCanMessage: isOwnProfile ? undefined : (user.whoCanMessage ?? "EVERYONE"),
         whoCanChallenge: isOwnProfile ? undefined : (user.whoCanChallenge ?? "EVERYONE"),
         isBlockedByThem,
+        isPrivateProfile: user.isPrivateProfile ?? false,
+        pendingFollow,
       },
     });
   } catch (error) {

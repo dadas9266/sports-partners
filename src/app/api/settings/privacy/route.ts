@@ -11,6 +11,7 @@ const privacySchema = z.object({
   whoCanChallenge: z.enum(["EVERYONE", "FOLLOWERS", "NOBODY"]).optional(),
   profileVisibility: z.enum(["EVERYONE", "FOLLOWERS", "NOBODY"]).optional(),
   showOnLeaderboard: z.boolean().optional(),
+  isPrivateProfile: z.boolean().optional(),
 });
 
 // GET /api/settings/privacy — aktif kullanıcının gizlilik ayarlarını getir
@@ -26,6 +27,7 @@ export async function GET() {
         whoCanChallenge: true,
         profileVisibility: true,
         showOnLeaderboard: true,
+        isPrivateProfile: true,
       },
     });
 
@@ -57,6 +59,7 @@ export async function PUT(request: Request) {
         whoCanChallenge: true,
         profileVisibility: true,
         showOnLeaderboard: true,
+        isPrivateProfile: true,
       },
     });
 

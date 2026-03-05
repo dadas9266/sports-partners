@@ -61,6 +61,20 @@ export const NOTIF = {
     body: `${followerName} sizi takip etmeye başladı.`,
     link: `/profil/${followerId}`,
   }),
+  followRequest: (userId: string, requesterName: string, requesterId: string) => ({
+    userId,
+    type: "FOLLOW_REQUEST" as NotificationType,
+    title: "Takip İsteği",
+    body: `${requesterName} sizi takip etmek istiyor.`,
+    link: `/ayarlar/gizlilik`,
+  }),
+  followAccepted: (userId: string, acceptorName: string, acceptorId: string) => ({
+    userId,
+    type: "FOLLOW_ACCEPTED" as NotificationType,
+    title: "Takip İsteği Kabul Edildi",
+    body: `${acceptorName} takip isteğinizi kabul etti.`,
+    link: `/profil/${acceptorId}`,
+  }),
   newMessage: (userId: string, senderName: string, matchId: string, preview: string) => ({
     userId,
     type: "NEW_MESSAGE" as NotificationType,

@@ -93,6 +93,8 @@ export default function ProfilDuzenle() {
 
   const handleSave = async () => {
     if (!form.name.trim()) { toast.error("Ad Soyad boş olamaz"); return; }
+    if (form.sportIds.length === 0) { toast.error("En az 1 spor dalı seçmelisiniz"); return; }
+    if (form.sportIds.length > 5) { toast.error("En fazla 5 spor dalı seçebilirsiniz"); return; }
 
     setSaving(true);
     try {
@@ -310,7 +312,12 @@ export default function ProfilDuzenle() {
 
       {/* ─── Spor Seçimi ─────────────────────────────────────────── */}
       <div>
-        <label className={labelClass}>Spor Dalları <span className="text-gray-400 font-normal">(maks 5)</span></label>
+        <label className={labelClass}>
+          Spor Dalları <span className="text-gray-400 font-normal">(maks 5)</span>
+          {form.sportIds.length > 0 && (
+            <span className="ml-2 text-emerald-600 dark:text-emerald-400 font-semibold">{form.sportIds.length}/5 seçili</span>
+          )}
+        </label>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
           {allSports.map((sport) => {
             const selected = form.sportIds.includes(sport.id);
@@ -318,18 +325,19 @@ export default function ProfilDuzenle() {
               <button
                 key={sport.id}
                 type="button"
-                disabled={!selected && form.sportIds.length >= 5}
                 onClick={() => {
                   if (selected) {
                     setForm({ ...form, sportIds: form.sportIds.filter((id) => id !== sport.id) });
-                  } else if (form.sportIds.length < 5) {
+                  } else if (form.sportIds.length >= 5) {
+                    toast.error("En fazla 5 spor dalı seçebilirsiniz");
+                  } else {
                     setForm({ ...form, sportIds: [...form.sportIds, sport.id] });
                   }
                 }}
                 className={`p-2.5 rounded-xl border-2 text-left text-sm transition ${
                   selected
                     ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20"
-                    : "border-gray-200 dark:border-gray-600 hover:border-emerald-300 disabled:opacity-40"
+                    : "border-gray-200 dark:border-gray-600 hover:border-emerald-300"
                 }`}
               >
                 <span className="mr-1">{sport.icon || "🏅"}</span>

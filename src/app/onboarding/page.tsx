@@ -101,6 +101,9 @@ export default function OnboardingPage() {
           <div>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-3 text-center">
               En fazla 5 spor seçebilirsin
+              {prefs.sportIds.length > 0 && (
+                <span className="ml-2 font-semibold text-emerald-600 dark:text-emerald-400">{prefs.sportIds.length}/5</span>
+              )}
             </p>
             <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto pr-1">
               {sports.map((sport) => {
@@ -109,18 +112,19 @@ export default function OnboardingPage() {
                   <button
                     key={sport.id}
                     type="button"
-                    disabled={!selected && prefs.sportIds.length >= 5}
                     onClick={() => {
                       if (selected) {
                         setPrefs({ ...prefs, sportIds: prefs.sportIds.filter((id) => id !== sport.id) });
-                      } else if (prefs.sportIds.length < 5) {
+                      } else if (prefs.sportIds.length >= 5) {
+                        toast.error("En fazla 5 spor dalı seçebilirsiniz");
+                      } else {
                         setPrefs({ ...prefs, sportIds: [...prefs.sportIds, sport.id] });
                       }
                     }}
                     className={`p-3 rounded-xl border-2 text-left transition ${
                       selected
                         ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20"
-                        : "border-gray-200 dark:border-gray-600 hover:border-emerald-300 disabled:opacity-40"
+                        : "border-gray-200 dark:border-gray-600 hover:border-emerald-300"
                     }`}
                   >
                     <span className="text-lg mr-1">{sport.icon || "🏅"}</span>

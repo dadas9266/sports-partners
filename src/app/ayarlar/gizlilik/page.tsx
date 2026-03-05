@@ -9,6 +9,7 @@ interface PrivacySettings {
   whoCanChallenge: PrivacyLevel;
   profileVisibility: PrivacyLevel;
   showOnLeaderboard: boolean;
+  isPrivateProfile: boolean;
 }
 
 interface BlockedUser {
@@ -102,25 +103,41 @@ function Toggle({
   );
 }
 
+interface FollowRequest {
+  followId: string;
+  createdAt: string;
+  user: {
+    id: string;
+    name: string;
+    avatarUrl: string | null;
+    bio: string | null;
+    city: { name: string } | null;
+  };
+}
+
 export default function GizlilikPage() {
   const [settings, setSettings] = useState<PrivacySettings>({
     whoCanMessage: "EVERYONE",
     whoCanChallenge: "EVERYONE",
     profileVisibility: "EVERYONE",
     showOnLeaderboard: true,
+    isPrivateProfile: false,
   });
   const [blockedUsers, setBlockedUsers] = useState<BlockedUser[]>([]);
+  const [followRequests, setFollowRequests] = useState<FollowRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">("idle");
   const [unblockingId, setUnblockingId] = useState<string | null>(null);
+  const [processingFollowId, setProcessingFollowId] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [privRes, blockRes] = await Promise.all([
+      const [privRes, blockRes, followReqRes] = await Promise.all([
         fetch("/api/settings/privacy"),
         fetch("/api/settings/blocked-users"),
+        fetch("/api/follow-requests"),
       ]);
       if (privRes.ok) {
         const { data } = await privRes.json();
@@ -129,6 +146,10 @@ export default function GizlilikPage() {
       if (blockRes.ok) {
         const { data } = await blockRes.json();
         setBlockedUsers(data);
+      }
+      if (followReqRes.ok) {
+        const { data } = await followReqRes.json();
+        setFollowRequests(data ?? []);
       }
     } finally {
       setLoading(false);
@@ -168,6 +189,22 @@ export default function GizlilikPage() {
       }
     } finally {
       setUnblockingId(null);
+    }
+  };
+
+  const handleFollowRequest = async (followId: string, action: "ACCEPT" | "REJECT") => {
+    setProcessingFollowId(followId);
+    try {
+      const res = await fetch("/api/follow-requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ followId, action }),
+      });
+      if (res.ok) {
+        setFollowRequests((prev) => prev.filter((r) => r.followId !== followId));
+      }
+    } finally {
+      setProcessingFollowId(null);
     }
   };
 
@@ -227,6 +264,24 @@ export default function GizlilikPage() {
           onChange={(v) => setSettings((s) => ({ ...s, profileVisibility: v }))}
           disabled={saving}
         />
+
+        {/* Kapalı Profil */}
+        <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+          <div className="flex items-start gap-3">
+            <span className="text-xl mt-0.5">🔒</span>
+            <div>
+              <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">Kapalı Profil</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                Açıksa, seni takip etmek isteyenler onay bekler. Sadece onayladıkların takipçin olur.
+              </p>
+            </div>
+          </div>
+          <Toggle
+            checked={settings.isPrivateProfile}
+            onChange={(v) => setSettings((s) => ({ ...s, isPrivateProfile: v }))}
+            disabled={saving}
+          />
+        </div>
 
         {/* Liderlik Tablosu */}
         <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
@@ -290,12 +345,70 @@ export default function GizlilikPage() {
         <div className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
           <p className="font-semibold">Gizlilik ayarları hakkında</p>
           <ul className="text-xs text-blue-600 dark:text-blue-400 space-y-0.5 list-disc list-inside">
+            <li><strong>Kapalı Profil</strong>: Takip istekleri onayınızı bekler, onaylamayanlar seni takip edemez.</li>
             <li><strong>Takipçiler</strong> seçeneği: Yalnızca seni takip eden kullanıcılara izin verir.</li>
             <li><strong>Kimse</strong> seçeneği: Yeni konuşma veya teklif başlatılmasını tamamen kapatır.</li>
             <li>Mevcut maç konuşmaları bu ayardan etkilenmez.</li>
           </ul>
         </div>
       </div>
+
+      {/* Takip İstekleri */}
+      {settings.isPrivateProfile && (
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                Takip İstekleri
+              </h3>
+              <p className="text-xs text-gray-400 mt-0.5">Kapalı profilini takip etmek isteyenler</p>
+            </div>
+            {followRequests.length > 0 && (
+              <span className="text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 px-2.5 py-1 rounded-full font-semibold">
+                {followRequests.length} istek
+              </span>
+            )}
+          </div>
+          {followRequests.length === 0 ? (
+            <div className="py-8 text-center bg-gray-50 dark:bg-gray-700/30 rounded-xl">
+              <span className="text-3xl">🔔</span>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Bekleyen takip isteği yok.</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {followRequests.map((req) => (
+                <div key={req.followId} className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-base font-bold text-emerald-600 shrink-0 overflow-hidden">
+                      {req.user.avatarUrl ? <img src={req.user.avatarUrl} alt={req.user.name} className="w-full h-full object-cover" /> : req.user.name.charAt(0)}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate">{req.user.name}</p>
+                      {req.user.city && <p className="text-xs text-gray-400 truncate">📍 {req.user.city.name}</p>}
+                    </div>
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <button
+                      onClick={() => handleFollowRequest(req.followId, "ACCEPT")}
+                      disabled={processingFollowId === req.followId}
+                      className="text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-lg transition disabled:opacity-50"
+                    >
+                      {processingFollowId === req.followId ? "…" : "Kabul Et"}
+                    </button>
+                    <button
+                      onClick={() => handleFollowRequest(req.followId, "REJECT")}
+                      disabled={processingFollowId === req.followId}
+                      className="text-xs font-semibold border border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-red-300 hover:text-red-500 px-3 py-1.5 rounded-lg transition disabled:opacity-50"
+                    >
+                      {processingFollowId === req.followId ? "…" : "Reddet"}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Engellenen Kullanıcılar */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6">
