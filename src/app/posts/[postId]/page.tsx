@@ -7,7 +7,6 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
 import toast from "react-hot-toast";
-import { ArrowLeft } from "lucide-react";
 
 export default function PostDetailPage() {
   const { postId } = useParams();
@@ -109,7 +108,7 @@ export default function PostDetailPage() {
     <div className="max-w-2xl mx-auto p-4 pb-20">
       <header className="flex items-center gap-4 mb-6">
         <Link href="/sosyal" className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition">
-          <ArrowLeft size={20} />
+          <span className="text-xl">←</span>
         </Link>
         <h1 className="font-bold text-lg">Gönderi Detayı</h1>
       </header>
