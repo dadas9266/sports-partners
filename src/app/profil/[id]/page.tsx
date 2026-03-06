@@ -415,7 +415,7 @@ export default function PublicProfilePage({
 
         {/* Edit on own profile */}
         {profile.isOwnProfile && (
-          <Link href="/profil"
+          <Link href="/ayarlar/profil"
             className="absolute top-3 right-3 z-10 text-xs font-semibold px-3 py-1.5 rounded-full bg-black/40 text-white hover:bg-black/55 backdrop-blur-sm transition">
             ✏️ Düzenle
           </Link>
@@ -594,33 +594,6 @@ export default function PublicProfilePage({
         {/* Bio */}
         {profile.bio && (
           <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed mb-3">{profile.bio}</p>
-        )}
-
-        {/* Trainer info — enhanced card */}
-        {(profile as any).trainerProfile?.isVerified && (
-          <div className="mb-3 p-3 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-100 dark:border-blue-900/40">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-sm font-bold text-blue-700 dark:text-blue-300">🏋️ Antrenör Bilgileri</span>
-            </div>
-            <div className="flex flex-wrap gap-3 text-xs">
-              {(profile as any).trainerProfile?.gymName && (
-                <span className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400">
-                  🏢 {(profile as any).trainerProfile.gymName}
-                </span>
-              )}
-              {((profile as any).trainerProfile?.specializations ?? []).map((sp: { sportName: string; years: number }, i: number) => (
-                <span key={i} className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400">
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                  {sp.sportName}{sp.years ? ` · ${sp.years} yıl` : ""}
-                </span>
-              ))}
-              {(profile as any).trainerProfile.hourlyRate && (
-                <span className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 font-semibold">
-                  💰 {(profile as any).trainerProfile.hourlyRate}₺/sa
-                </span>
-              )}
-            </div>
-          </div>
         )}
 
         {/* Sports + badges */}
