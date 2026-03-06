@@ -523,8 +523,15 @@ model TrainerProfile {
   hourlyRate      Float?                          // Saatlik ücret (₺)
   gymName         String?                         // Çalıştığı salon
   gymAddress      String?
-  certificates    String[] @default([])        // Sertifika URL'leri (Supabase Storage)
-  isVerified      Boolean  @default(false)     // Admin onayı
+  university      String?                         // Üniversite adı
+  department      String?                         // Bölüm adı
+  experienceYears Int?                            // Genel deneyim yılı
+  lessonTypes     String[] @default([])           // ["birebir","grup","cocuk","performans"]
+  providesEquipment Boolean?                      // Ekipman sağlıyor mu?
+  trainerBadgeVisible Boolean @default(true)      // Rozet popup herkese görünür mü?
+  certificates    String[] @default([])           // Sertifika URL'leri (Supabase Storage)
+  certNote        String?                         // Sertifika notu (serbest metin)
+  isVerified      Boolean  @default(false)        // Admin onayı
   verifiedAt      DateTime?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt

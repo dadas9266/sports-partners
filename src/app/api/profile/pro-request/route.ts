@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     }
 
     if (type === "TRAINER") {
-      const { branches, gymName, hourlyRate, experience, certNote } = details;
+      const { branches, gymName, hourlyRate, experience, certNote, university, department, lessonTypes, providesEquipment } = details;
 
       // Antrenör profil oluştur — hemen onayla (test modunda admin onayı beklemeden)
       await prisma.trainerProfile.upsert({
@@ -34,10 +34,22 @@ export async function POST(request: Request) {
         create: {
           userId,
           gymName: gymName || null,
+          university: university || null,
+          department: department || null,
+          experienceYears: experience ? parseInt(experience) : null,
+          lessonTypes: Array.isArray(lessonTypes) ? lessonTypes : [],
+          providesEquipment: typeof providesEquipment === "boolean" ? providesEquipment : null,
+          certNote: certNote || null,
           isVerified: true,
         },
         update: {
           gymName: gymName || null,
+          university: university || null,
+          department: department || null,
+          experienceYears: experience ? parseInt(experience) : null,
+          lessonTypes: Array.isArray(lessonTypes) ? lessonTypes : [],
+          providesEquipment: typeof providesEquipment === "boolean" ? providesEquipment : null,
+          certNote: certNote || null,
           isVerified: true,
         },
       });

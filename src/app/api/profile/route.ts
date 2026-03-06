@@ -50,7 +50,7 @@ export async function GET() {
           sports: { select: { id: true, name: true, icon: true } },
           ratingsReceived: { select: { score: true } },
           ratingsGiven: { select: { matchId: true } },
-          trainerProfile: { select: { isVerified: true, gymName: true, specializations: { select: { sportName: true, years: true } } } },
+          trainerProfile: { select: { isVerified: true, gymName: true, university: true, department: true, experienceYears: true, lessonTypes: true, providesEquipment: true, certNote: true, trainerBadgeVisible: true, specializations: { select: { sportName: true, years: true } } } },
           venueProfile: { select: { isVerified: true, businessName: true, address: true, phone: true, website: true, logoUrl: true } },
           instagram: true,
           tiktok: true,

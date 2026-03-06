@@ -14,6 +14,7 @@ import { LEVEL_LABELS, LEVEL_COLORS } from "@/types";
 import BadgeComp from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import StoryViewer from "@/components/StoryViewer";
+import TrainerBadgePopup from "@/components/profile/TrainerBadgePopup";
 function StarRating({ value, onChange }: { value: number; onChange?: (v: number) => void }) {
   return (
     <div className="flex gap-1">
@@ -530,10 +531,16 @@ export default function PublicProfilePage({
           <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white leading-tight">{profile.name}</h1>
             {(profile as any).trainerProfile?.isVerified && (
-              <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-sm">
-                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                Onaylı Antrenör
-              </span>
+              <TrainerBadgePopup
+                trainerProfile={(profile as any).trainerProfile}
+                user={{
+                  name: profile.name,
+                  avatarUrl: profile.avatarUrl,
+                  birthDate: (profile as any).birthDate,
+                  city: profile.city as any,
+                }}
+                isOwn={profile.isOwnProfile}
+              />
             )}
             {(profile as any).userType === "VENUE" && (
               <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">🏟️ Tesis</span>

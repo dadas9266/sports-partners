@@ -71,3 +71,37 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
   }
 }
+
+// PATCH /api/trainer-profile → kısmi güncelle (örn. badge görünürlüğü)
+export async function PATCH(req: NextRequest) {
+  const currentUserId = await getCurrentUserId();
+  if (!currentUserId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const body = await req.json();
+    const updatableFields: Record<string, unknown> = {};
+
+    if (typeof body.trainerBadgeVisible === "boolean") {
+      updatableFields.trainerBadgeVisible = body.trainerBadgeVisible;
+    }
+    if (typeof body.hourlyRate === "number") {
+      updatableFields.hourlyRate = body.hourlyRate;
+    }
+
+    if (Object.keys(updatableFields).length === 0) {
+      return NextResponse.json({ error: "Güncellenecek alan bulunamadı" }, { status: 400 });
+    }
+
+    const profile = await prisma.trainerProfile.update({
+      where: { userId: currentUserId },
+      data: updatableFields,
+    });
+
+    return NextResponse.json({ success: true, data: profile });
+  } catch (err) {
+    log.error("Eğitmen profili güncelleme hatası", err);
+    return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
+  }
+}

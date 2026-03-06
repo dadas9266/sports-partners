@@ -4,6 +4,7 @@ import { differenceInYears } from "date-fns";
 import toast from "react-hot-toast";
 import Button from "@/components/ui/Button";
 import { GENDER_LABELS } from "@/types";
+import TrainerBadgePopup from "@/components/profile/TrainerBadgePopup";
 
 const GENDER_ICONS: Record<string, string> = { MALE: "♂️", FEMALE: "♀️" };
 
@@ -141,10 +142,16 @@ export default function ProfileHeaderView({
           <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white leading-tight">{user.name}</h1>
             {(user.userType === "TRAINER" || user.trainerProfile) && (
-              <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-sm">
-                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                Onaylı Antrenör{user.trainerProfile?.isVerified ? "" : " (Beklemede)"}
-              </span>
+              <TrainerBadgePopup
+                trainerProfile={user.trainerProfile ?? { isVerified: false }}
+                user={{
+                  name: user.name,
+                  avatarUrl: user.avatarUrl,
+                  birthDate: user.birthDate,
+                  city: user.city,
+                }}
+                isOwn={true}
+              />
             )}
             {(user.userType === "VENUE" || user.venueProfile) && (
               <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">
