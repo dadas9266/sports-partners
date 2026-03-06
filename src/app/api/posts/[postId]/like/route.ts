@@ -79,9 +79,9 @@ export async function POST(
         await createNotification({
           userId: post.userId,
           type: "NEW_POST_LIKE",
-          title: "Gönderiniz beğenildi",
-          body: `${liker?.name ?? "Birisi"} gönderinizi ${REACTION_LABELS[reaction]}`,
-          link: `/profil/${post.userId}`,
+          title: "Yeni Beğeni",
+          body: `${liker?.name ?? "Birisi"} gönderini ${REACTION_LABELS[reaction]}`,
+          link: `/posts/${postId}`,
         });
       }
 

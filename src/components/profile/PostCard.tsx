@@ -100,33 +100,39 @@ export default function PostCard({ post, onLikeToggle }: PostCardProps) {
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4">
       {/* Header */}
       <div className="flex items-center gap-3 mb-3">
-        <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 overflow-hidden flex items-center justify-center text-lg">
-          {post.user?.avatarUrl ? (
-            <img src={post.user.avatarUrl} alt={post.user.name} className="w-full h-full object-cover" />
-          ) : (
-            post.user?.name?.charAt(0)?.toUpperCase() || "?"
-          )}
-        </div>
+        <Link href={`/profil/${post.user?.id}`}>
+          <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 overflow-hidden flex items-center justify-center text-lg">
+            {post.user?.avatarUrl ? (
+              <img src={post.user.avatarUrl} alt={post.user.name} className="w-full h-full object-cover" />
+            ) : (
+              post.user?.name?.charAt(0)?.toUpperCase() || "?"
+            )}
+          </div>
+        </Link>
         <div>
-          <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">{post.user?.name}</p>
-          <p className="text-xs text-gray-400 dark:text-gray-500">
+          <Link href={`/profil/${post.user?.id}`} className="text-sm font-semibold text-gray-800 dark:text-gray-100 hover:text-emerald-500 transition">
+            {post.user?.name}
+          </Link>
+          <Link href={`/posts/${post.id}`} className="text-xs text-gray-400 dark:text-gray-500 block hover:underline">
             {format(new Date(post.createdAt), "d MMM yyyy, HH:mm", { locale: tr })}
-          </p>
+          </Link>
         </div>
       </div>
 
       {/* Content */}
       {post.content && (
-        <p className="text-gray-800 dark:text-gray-100 text-sm whitespace-pre-wrap mb-3">{post.content}</p>
+        <Link href={`/posts/${post.id}`} className="text-gray-800 dark:text-gray-100 text-sm whitespace-pre-wrap mb-3 block hover:bg-gray-50 dark:hover:bg-gray-700/20 p-1 rounded transition-colors">
+            {post.content}
+        </Link>
       )}
 
       {/* Images */}
       {post.images?.length > 0 && (
-        <div className={`grid gap-1.5 mb-3 ${post.images.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
+        <Link href={`/posts/${post.id}`} className={`grid gap-1.5 mb-3 ${post.images.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
           {post.images.slice(0, 4).map((url: string, i: number) => (
             <img key={i} src={url} alt="" className="w-full h-48 object-cover rounded-lg" />
           ))}
-        </div>
+        </Link>
       )}
 
       {/* Actions */}
@@ -193,19 +199,21 @@ export default function PostCard({ post, onLikeToggle }: PostCardProps) {
         <div className="mt-3 space-y-3">
           {comments.map((c) => (
             <div key={c.id} className="flex gap-2">
-              <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden flex-shrink-0">
-                {c.user?.avatarUrl ? (
-                  <img src={c.user.avatarUrl} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">
-                    {c.user?.name?.charAt(0) || "?"}
-                  </div>
-                )}
-              </div>
+              <Link href={`/profil/${c.user?.id}`}>
+                <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden flex-shrink-0">
+                    {c.user?.avatarUrl ? (
+                    <img src={c.user.avatarUrl} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                    <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">
+                        {c.user?.name?.charAt(0) || "?"}
+                    </div>
+                    )}
+                </div>
+              </Link>
               <div className="flex-1">
                 <div className="bg-gray-50 dark:bg-gray-700/50 p-2 rounded-lg relative group">
                   <div className="flex justify-between items-start">
-                    <span className="font-semibold text-gray-700 dark:text-gray-200 text-xs">{c.user?.name}</span>
+                    <Link href={`/profil/${c.user?.id}`} className="font-semibold text-gray-700 dark:text-gray-200 text-xs hover:text-emerald-500 transition">{c.user?.name}</Link>
                     <button 
                       onClick={() => handleCommentLike(c.id)}
                       className={`text-[10px] ${c.likedByMe ? "text-red-500" : "text-gray-400 hover:text-red-500"}`}

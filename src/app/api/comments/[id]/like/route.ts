@@ -37,6 +37,27 @@ export async function POST(
         },
       });
       const count = await (prisma as any).commentLike.count({ where: { commentId } });
+
+      // Yorum sahibine bildirim gönder
+      const comment = await (prisma as any).postComment.findUnique({
+        where: { id: commentId },
+        select: { userId: true, postId: true },
+      });
+      if (comment && comment.userId !== userId) {
+        const liker = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { name: true },
+        });
+        const { createNotification } = await import("@/lib/notifications");
+        await createNotification({
+          userId: comment.userId,
+          type: "NEW_POST_LIKE",
+          title: "Yorumun Beğenildi",
+          body: `${liker?.name ?? "Birisi"} yorumunu beğendi ❤️`,
+          link: `/posts/${comment.postId}?commentId=${commentId}`,
+        });
+      }
+
       return NextResponse.json({ liked: true, likeCount: count });
     }
   } catch (error) {

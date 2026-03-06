@@ -17,6 +17,7 @@ export async function GET(
   { params }: { params: Promise<{ postId: string }> }
 ) {
   const { postId } = await params;
+  const currentUserId = await getCurrentUserId();
 
   try {
     const comments = await prisma.postComment.findMany({
@@ -26,7 +27,7 @@ export async function GET(
         user: { select: { id: true, name: true, avatarUrl: true } },
         _count: { select: { likes: true } },
         likes: {
-          where: { userId: (await getCurrentUserId()) || "" },
+          where: { userId: currentUserId || "" },
           select: { id: true },
         },
       },
@@ -35,9 +36,10 @@ export async function GET(
     const commentsWithLiked = comments.map(c => ({
       ...c,
       likedByMe: c.likes.length > 0,
+      likes: [] // Client'a gereksiz veri gitmesin
     }));
 
-    return NextResponse.json({ comments: commentsWithLiked });
+    return NextResponse.json({ success: true, comments: commentsWithLiked });
   } catch (err) {
     log.error("Yorumları getirme hatası", err);
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
@@ -70,6 +72,27 @@ export async function POST(
           _count: { select: { likes: true } },
         },
       });
+
+      // BİLDİRİM GÖNDER
+      const post = await prisma.post.findUnique({
+        where: { id: postId },
+        select: { userId: true, content: true },
+      });
+
+      if (post && post.userId !== userId) {
+        const commenter = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { name: true },
+        });
+
+        await createNotification({
+          userId: post.userId,
+          type: "NEW_POST_COMMENT",
+          title: "Yeni Yorum",
+          body: `${commenter?.name ?? "Birisi"} gönderine yorum yaptı: "${parsed.data.content.substring(0, 30)}${parsed.data.content.length > 30 ? "..." : ""}"`,
+          link: `/posts/${postId}?commentId=${comment.id}`,
+        });
+      }
 
       return NextResponse.json({ 
         comment: {
