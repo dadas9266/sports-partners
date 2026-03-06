@@ -92,11 +92,11 @@ export async function PATCH(
     if (!isU1 && !isU2)
       return NextResponse.json({ error: "Bu işlem için yetkiniz yok" }, { status: 403 });
 
-    if (action === "approve") {
+    if (action === "approve" || action === "complete") {
       const updateData: any = isU1 ? { u1Approved: true } : { u2Approved: true };
       
       const otherApproved = isU1 ? match.u2Approved : match.u1Approved;
-      if (otherApproved) {
+      if (otherApproved || action === "complete") {
         updateData.status = "COMPLETED";
         updateData.completedAt = new Date();
       }
@@ -109,7 +109,7 @@ export async function PATCH(
       return NextResponse.json({ success: true, data: updated });
     } 
 
-    if (action === "report_no_show") {
+    if (action === "report_no_show" || action === "no-show") {
       const updateData: any = isU1 ? { u1Reported: true } : { u2Reported: true };
       
       const updated = await prisma.match.update({
