@@ -180,8 +180,8 @@ export default function ProfesyonelPage() {
               🏟️ Tesis Yönetimi
             </Link>
           </div>
+          <TrainerBadgeVisibilityCard badgeVisible={badgeVisible} saving={savingBadge} onChange={handleBadgeVisibilityToggle} />
         </div>
-        <TrainerBadgeVisibilityCard badgeVisible={badgeVisible} saving={savingBadge} onChange={handleBadgeVisibilityToggle} />
       )}
 
       {/* ─── FORM BÖLÜMÜ ─────────────────────────────────────── */}
