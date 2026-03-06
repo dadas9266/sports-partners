@@ -425,8 +425,8 @@ export default function SosyalPage() {
               onCommentChange={(postId, text) => setCommentText((p) => ({ ...p, [postId]: text }))}
               onComment={(postId) => handleComment(postId)}
               onDeletePost={(postId) => setPosts((p) => p.filter((x) => x.id !== postId))}
-              replyingTo={replyingTo[post.id]}
-              setReplyingTo={(p) => setReplyingTo(prev => ({ ...prev, [post.id]: p }))}
+              replyingToGlobal={replyingTo[post.id]}
+              setReplyingToGlobal={(p) => setReplyingTo(prev => ({ ...prev, [post.id]: p }))}
             />
           ))}
 
@@ -468,6 +468,8 @@ function PostCard({
   onCommentChange,
   onComment,
   onDeletePost,
+  replyingToGlobal,
+  setReplyingToGlobal,
 }: {
   post: Post;
   sessionUserId?: string;
@@ -481,13 +483,18 @@ function PostCard({
   onCommentChange: (id: string, text: string) => void;
   onComment: (id: string) => void;
   onDeletePost: (id: string) => void;
-  replyingTo: any;
-  setReplyingTo: (p: any) => void;
+  replyingToGlobal: any;
+  setReplyingToGlobal: (p: any) => void;
 }) {
   const [deleting, setDeleting] = useState(false);
   const [showLikesModal, setShowLikesModal] = useState(false);
   const [likesList, setLikesList] = useState<any[]>([]);
   const [likesLoading, setLikesLoading] = useState(false);
+  const [replyingToLocal, setReplyingToLocal] = useState<any>(null);
+
+  // Sync component local state with global if needed, but here it's easier to use props directly
+  const currentReply = replyingToGlobal;
+  const setReply = setReplyingToGlobal;
 
   const handleDelete = async () => {
     if (!confirm("Gönderiyi silmek istiyor musun?")) return;
@@ -658,8 +665,8 @@ function PostCard({
                       key={c.id} 
                       comment={c} 
                       onLike={handleCommentLike} 
-                      onReply={(p) => {
-                        setReplyingTo(p);
+                      onReply={(p: any) => {
+                        setReply(p);
                         const el = document.getElementById(`comment-input-${post.id}`);
                         el?.focus();
                       }} 
@@ -670,17 +677,17 @@ function PostCard({
           )}
           {/* Yorum gir */}
           <div className="mt-2">
-            {replyingTo && (
+            {currentReply && (
               <div className="flex items-center justify-between px-2 py-1 mb-1 bg-gray-50 dark:bg-gray-700/30 rounded text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
-                <span><b>{replyingTo.name}</b> kişisine yanıt veriliyor...</span>
-                <button onClick={() => setReplyingTo(null)} className="hover:underline">Vazgeç</button>
+                <span><b>{currentReply.name}</b> kişisine yanıt veriliyor...</span>
+                <button onClick={() => setReply(null)} className="hover:underline">Vazgeç</button>
               </div>
             )}
             <div className="flex gap-2">
               <input
                 id={`comment-input-${post.id}`}
                 type="text"
-                placeholder={replyingTo ? "Yanıt yaz..." : "Yorum yaz..."}
+                placeholder={currentReply ? "Yanıt yaz..." : "Yorum yaz..."}
                 value={commentText[post.id] ?? ""}
                 onChange={(e) => onCommentChange(post.id, e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && onComment(post.id)}
