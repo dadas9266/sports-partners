@@ -805,6 +805,9 @@ model PostComment {
   userId    String
   user      User     @relation(fields: [userId], references: [id])
   content   String
+  parentId  String?                          // Yanıt sistemi (VK tarzı)
+  parent    PostComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   PostComment[] @relation("CommentReplies")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -812,6 +815,7 @@ model PostComment {
 
   @@index([postId])
   @@index([userId])
+  @@index([parentId])
 }
 
 model CommentLike {

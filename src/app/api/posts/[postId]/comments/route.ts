@@ -9,6 +9,7 @@ const log = createLogger("api:posts:comments");
 
 const commentSchema = z.object({
   content: z.string().min(1).max(500),
+  parentId: z.string().optional(),
 });
 
 // GET /api/posts/[postId]/comments
@@ -21,25 +22,40 @@ export async function GET(
 
   try {
     const comments = await prisma.postComment.findMany({
-      where: { postId },
+      where: { postId, parentId: null }, // Sadece ana yorumları getir
       orderBy: { createdAt: "asc" },
       include: {
         user: { select: { id: true, name: true, avatarUrl: true } },
-        _count: { select: { likes: true } },
+        _count: { select: { likes: true, replies: true } },
         likes: {
           where: { userId: currentUserId || "" },
           select: { id: true },
         },
+        replies: { // VK Tarzı: İlk seviye yanıtları dahil et
+          include: {
+            user: { select: { id: true, name: true, avatarUrl: true } },
+            _count: { select: { likes: true } },
+            likes: {
+              where: { userId: currentUserId || "" },
+              select: { id: true },
+            },
+          },
+          orderBy: { createdAt: "asc" },
+        }
       },
     });
     
-    const commentsWithLiked = comments.map(c => ({
+    // Yardımcı fonksiyon: Like temizle ve likedByMe ekle
+    const formatComment = (c: any) => ({
       ...c,
       likedByMe: c.likes.length > 0,
-      likes: [] // Client'a gereksiz veri gitmesin
-    }));
+      likes: [],
+      replies: c.replies ? c.replies.map(formatComment) : []
+    });
 
-    return NextResponse.json({ success: true, comments: commentsWithLiked });
+    const commentsFormatted = comments.map(formatComment);
+
+    return NextResponse.json({ success: true, comments: commentsFormatted });
   } catch (err) {
     log.error("Yorumları getirme hatası", err);
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
@@ -66,38 +82,63 @@ export async function POST(
     }
 
       const comment = await prisma.postComment.create({
-        data: { postId, userId, content: parsed.data.content },
+        data: { 
+          postId, 
+          userId, 
+          content: parsed.data.content,
+          parentId: parsed.data.parentId || null 
+        },
         include: {
           user: { select: { id: true, name: true, avatarUrl: true } },
-          _count: { select: { likes: true } },
+          _count: { select: { likes: true, replies: true } },
         },
       });
 
       // BİLDİRİM GÖNDER
-      const post = await prisma.post.findUnique({
-        where: { id: postId },
-        select: { userId: true, content: true },
-      });
+      // Eğer bir yoruma yanıt ise yorum sahibine, değilse post sahibine bildirim gitsin
+      if (parsed.data.parentId) {
+         const parentComment = await prisma.postComment.findUnique({
+            where: { id: parsed.data.parentId },
+            select: { userId: true }
+         });
+         
+         if (parentComment && parentComment.userId !== userId) {
+            const commenter = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+            await createNotification({
+              userId: parentComment.userId,
+              type: "NEW_POST_COMMENT",
+              title: "Yorumuna yanıt geldi",
+              body: `${commenter?.name ?? "Birisi"} yorumuna yanıt verdi: "${parsed.data.content.substring(0, 30)}..."`,
+              link: `/posts/${postId}?commentId=${comment.id}`,
+            });
+         }
+      } else {
+          const post = await prisma.post.findUnique({
+            where: { id: postId },
+            select: { userId: true, content: true },
+          });
 
-      if (post && post.userId !== userId) {
-        const commenter = await prisma.user.findUnique({
-          where: { id: userId },
-          select: { name: true },
-        });
+          if (post && post.userId !== userId) {
+            const commenter = await prisma.user.findUnique({
+              where: { id: userId },
+              select: { name: true },
+            });
 
-        await createNotification({
-          userId: post.userId,
-          type: "NEW_POST_COMMENT",
-          title: "Yeni Yorum",
-          body: `${commenter?.name ?? "Birisi"} gönderine yorum yaptı: "${parsed.data.content.substring(0, 30)}${parsed.data.content.length > 30 ? "..." : ""}"`,
-          link: `/posts/${postId}?commentId=${comment.id}`,
-        });
+            await createNotification({
+              userId: post.userId,
+              type: "NEW_POST_COMMENT",
+              title: "Yeni Yorum",
+              body: `${commenter?.name ?? "Birisi"} gönderine yorum yaptı: "${parsed.data.content.substring(0, 30)}..."`,
+              link: `/posts/${postId}?commentId=${comment.id}`,
+            });
+          }
       }
 
       return NextResponse.json({ 
         comment: {
           ...comment,
           likedByMe: false,
+          replies: []
         }
       }, { status: 201 });
   } catch (err) {

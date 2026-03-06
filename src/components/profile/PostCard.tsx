@@ -23,6 +23,7 @@ export default function PostCard({ post, onLikeToggle }: PostCardProps) {
   const [addingComment, setAddingComment] = useState(false);
   const [likedByMe, setLikedByMe] = useState(post.likedByMe || post.liked);
   const [likeCount, setLikeCount] = useState(post._count?.likes ?? 0);
+  const [replyingTo, setReplyingTo] = useState<any>(null); // { id: string, name: string }
 
   const handleLike = async () => {
     if (toggling) return;
@@ -56,11 +57,19 @@ export default function PostCard({ post, onLikeToggle }: PostCardProps) {
     try {
       const res = await fetch(`/api/comments/${commentId}/like`, { method: "POST" });
       const json = await res.json();
-      if (json.likeCount !== undefined) {
-        setComments(prev => prev.map(c => 
-          c.id === commentId ? { ...c, likedByMe: json.liked, _count: { ...c._count, likes: json.likeCount } } : c
-        ));
-      }
+      
+      const updateList = (list: any[]): any[] => {
+        return list.map(c => {
+          if (c.id === commentId) {
+            return { ...c, likedByMe: json.liked, _count: { ...c._count, likes: json.likeCount } };
+          }
+          if (c.replies?.length > 0) {
+            return { ...c, replies: updateList(c.replies) };
+          }
+          return c;
+        });
+      };
+      setComments(prev => updateList(prev));
     } catch { /* ignore */ }
   };
 
@@ -83,13 +92,23 @@ export default function PostCard({ post, onLikeToggle }: PostCardProps) {
       const res = await fetch(`/api/posts/${post.id}/comments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: commentText.trim() }),
+        body: JSON.stringify({ 
+          content: commentText.trim(),
+          parentId: replyingTo?.id || null
+        }),
       });
       const json = await res.json();
       if (json.comment) {
-        setComments((prev) => [...prev, json.comment]);
+        if (replyingTo) {
+          setComments(prev => prev.map(c => 
+            c.id === replyingTo.id ? { ...c, replies: [...(c.replies || []), json.comment] } : c
+          ));
+        } else {
+          setComments((prev) => [...prev, json.comment]);
+        }
         setCommentCount((n: number) => n + 1);
         setCommentText("");
+        setReplyingTo(null);
       }
     } finally {
       setAddingComment(false);
@@ -197,57 +216,101 @@ export default function PostCard({ post, onLikeToggle }: PostCardProps) {
       {/* Comments */}
       {showComments && (
         <div className="mt-3 space-y-3">
-          {comments.map((c) => (
-            <div key={c.id} className="flex gap-2">
-              <Link href={`/profil/${c.user?.id}`}>
-                <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden flex-shrink-0">
-                    {c.user?.avatarUrl ? (
-                    <img src={c.user.avatarUrl} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                    <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">
-                        {c.user?.name?.charAt(0) || "?"}
-                    </div>
-                    )}
-                </div>
-              </Link>
-              <div className="flex-1">
-                <div className="bg-gray-50 dark:bg-gray-700/50 p-2 rounded-lg relative group">
-                  <div className="flex justify-between items-start">
-                    <Link href={`/profil/${c.user?.id}`} className="font-semibold text-gray-700 dark:text-gray-200 text-xs hover:text-emerald-500 transition">{c.user?.name}</Link>
-                    <button 
-                      onClick={() => handleCommentLike(c.id)}
-                      className={`text-[10px] ${c.likedByMe ? "text-red-500" : "text-gray-400 hover:text-red-500"}`}
-                    >
-                      {c.likedByMe ? "❤️" : "🤍"} {c._count?.likes || 0}
-                    </button>
-                  </div>
-                  <p className="text-gray-600 dark:text-gray-400 text-xs mt-0.5">{c.content}</p>
-                </div>
-                <p className="text-[10px] text-gray-400 mt-1 pl-1">
-                  {format(new Date(c.createdAt), "d MMM, HH:mm", { locale: tr })}
-                </p>
+          <div className="max-h-[400px] overflow-y-auto space-y-3 pr-1">
+            {comments.map((c) => (
+              <RenderComment 
+                key={c.id} 
+                comment={c} 
+                onLike={handleCommentLike} 
+                onReply={(p) => {
+                  setReplyingTo(p);
+                  const el = document.getElementById(`reply-input-${post.id}`);
+                  el?.focus();
+                }} 
+              />
+            ))}
+          </div>
+
+          <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
+            {replyingTo && (
+              <div className="flex items-center justify-between px-2 py-1 mb-1 bg-gray-50 dark:bg-gray-700/30 rounded text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                <span><b>{replyingTo.name}</b> kişisine yanıt veriliyor...</span>
+                <button onClick={() => setReplyingTo(null)} className="hover:underline">Vazgeç</button>
               </div>
+            )}
+            <div className="flex gap-2">
+              <input
+                id={`reply-input-${post.id}`}
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleAddComment()}
+                placeholder={replyingTo ? "Yanıt yaz..." : "Yorum yaz..."}
+                className="flex-1 text-sm px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-transparent text-gray-800 dark:text-gray-100 outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+              <Button
+                size="sm"
+                onClick={handleAddComment}
+                loading={addingComment}
+                disabled={!commentText.trim()}
+              >
+                Gönder
+              </Button>
             </div>
-          ))}
-          <div className="flex gap-2 mt-2">
-            <input
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleAddComment()}
-              placeholder="Yorum yaz..."
-              className="flex-1 text-sm px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-transparent text-gray-800 dark:text-gray-100 outline-none focus:ring-2 focus:ring-emerald-500"
-            />
-            <Button
-              size="sm"
-              onClick={handleAddComment}
-              loading={addingComment}
-              disabled={!commentText.trim()}
-            >
-              Gönder
-            </Button>
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function RenderComment({ comment, onLike, onReply, isReply = false }: { comment: any, onLike: (id: string) => void, onReply: (p: any) => void, isReply?: boolean }) {
+  return (
+    <div className={`flex gap-2 ${isReply ? "ml-8 mt-2" : ""}`}>
+      <Link href={`/profil/${comment.user?.id}`} className="flex-shrink-0">
+        <div className={`${isReply ? "w-6 h-6 text-[10px]" : "w-8 h-8 text-xs"} rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden flex items-center justify-center font-bold`}>
+            {comment.user?.avatarUrl ? (
+              <img src={comment.user.avatarUrl} alt="" className="w-full h-full object-cover" />
+            ) : (
+              comment.user?.name?.charAt(0) || "?"
+            )}
+        </div>
+      </Link>
+      <div className="flex-1 min-w-0">
+        <div className="bg-gray-50 dark:bg-gray-700/50 p-2 rounded-xl rounded-tl-none relative group">
+          <div className="flex justify-between items-start gap-2">
+            <Link href={`/profil/${comment.user?.id}`} className="font-semibold text-gray-700 dark:text-gray-200 text-xs hover:text-emerald-500 transition truncate">
+              {comment.user?.name}
+            </Link>
+            <button 
+              onClick={() => onLike(comment.id)}
+              className={`text-[10px] flex items-center gap-0.5 ${comment.likedByMe ? "text-red-500" : "text-gray-400 hover:text-red-500"}`}
+            >
+              {comment.likedByMe ? "❤️" : "🤍"} <span className="font-medium">{comment._count?.likes || 0}</span>
+            </button>
+          </div>
+          <p className="text-gray-600 dark:text-gray-400 text-xs mt-0.5 leading-relaxed">{comment.content}</p>
+        </div>
+        <div className="flex items-center gap-3 mt-1 ml-1">
+          <p className="text-[9px] text-gray-400">
+            {format(new Date(comment.createdAt), "d MMM, HH:mm", { locale: tr })}
+          </p>
+          <button 
+            onClick={() => onReply({ id: comment.id, name: comment.user?.name })}
+            className="text-[9px] font-bold text-gray-500 hover:text-emerald-600 dark:hover:text-emerald-400 uppercase tracking-tighter"
+          >
+            Yanıtla
+          </button>
+        </div>
+
+        {/* REPLIES TREE */}
+        {comment.replies?.length > 0 && (
+          <div className="space-y-1">
+            {comment.replies.map((reply: any) => (
+              <RenderComment key={reply.id} comment={reply} onLike={onLike} onReply={onReply} isReply={true} />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

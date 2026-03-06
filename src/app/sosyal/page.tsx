@@ -52,6 +52,7 @@ export default function SosyalPage() {
   const [commentText, setCommentText] = useState<Record<string, string>>({});
   const [submittingComment, setSubmittingComment] = useState<string | null>(null);
   const [commentsLoading, setCommentsLoading] = useState<Record<string, boolean>>({});
+  const [replyingTo, setReplyingTo] = useState<Record<string, any>>({}); // postId -> { id, name }
 
   // Story feed
   const [storyGroups, setStoryGroups] = useState<UserStoryGroup[]>([]);
@@ -253,17 +254,45 @@ export default function SosyalPage() {
   const handleComment = async (postId: string) => {
     const text = commentText[postId]?.trim();
     if (!text) return;
+    const parent = replyingTo[postId];
     setSubmittingComment(postId);
     try {
       const res = await fetch(`/api/posts/${postId}/comments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: text }),
+        body: JSON.stringify({ 
+          content: text,
+          parentId: parent?.id || null 
+        }),
       });
       const json = await res.json();
       if (res.ok) {
-        setComments((p) => ({ ...p, [postId]: [...(p[postId] ?? []), json] }));
+        if (parent) {
+          // Nested update
+          setComments(prev => {
+            const list = prev[postId] || [];
+            const addReply = (nodes: any[]): any[] => {
+              return nodes.map(n => {
+                if (n.id === parent.id) {
+                  return { ...n, replies: [...(n.replies || []), json.comment || json] };
+                }
+                if (n.replies?.length > 0) {
+                  return { ...n, replies: addReply(n.replies) };
+                }
+                return n;
+              });
+            };
+            return { ...prev, [postId]: addReply(list) };
+          });
+        } else {
+          setComments((p) => ({ ...p, [postId]: [...(p[postId] ?? []), json.comment || json] }));
+        }
         setCommentText((p) => ({ ...p, [postId]: "" }));
+        setReplyingTo(p => {
+          const next = { ...p };
+          delete next[postId];
+          return next;
+        });
         setPosts((prev) =>
           prev.map((p) =>
             p.id === postId
@@ -394,8 +423,10 @@ export default function SosyalPage() {
               onLike={handleLike}
               onToggleComments={toggleComments}
               onCommentChange={(postId, text) => setCommentText((p) => ({ ...p, [postId]: text }))}
-              onComment={handleComment}
+              onComment={(postId) => handleComment(postId)}
               onDeletePost={(postId) => setPosts((p) => p.filter((x) => x.id !== postId))}
+              replyingTo={replyingTo[post.id]}
+              setReplyingTo={(p) => setReplyingTo(prev => ({ ...prev, [post.id]: p }))}
             />
           ))}
 
@@ -450,6 +481,8 @@ function PostCard({
   onCommentChange: (id: string, text: string) => void;
   onComment: (id: string) => void;
   onDeletePost: (id: string) => void;
+  replyingTo: any;
+  setReplyingTo: (p: any) => void;
 }) {
   const [deleting, setDeleting] = useState(false);
   const [showLikesModal, setShowLikesModal] = useState(false);
@@ -619,58 +652,107 @@ function PostCard({
             (comments[post.id] ?? []).length === 0 ? (
               <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-1">Henüz yorum yok. İlk yorumu sen yap!</p>
             ) : (
-              (comments[post.id] ?? []).map((c: any) => (
-                <div key={c.id} className="flex gap-2.5">
-                  <Link href={`/profil/${c.user?.id}`} className="shrink-0">
-                      <div className="w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-xs font-bold text-gray-600 dark:text-gray-400 overflow-hidden">
-                        {c.user?.avatarUrl ? (
-                          <img src={c.user.avatarUrl} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                          c.user?.name?.charAt(0)?.toUpperCase()
-                        )}
-                      </div>
-                  </Link>
-                  <div className="bg-gray-50 dark:bg-gray-700 rounded-xl px-3 py-2 flex-1 min-w-0">
-                    <div className="flex justify-between items-start">
-                      <Link href={`/profil/${c.user?.id}`} className="text-xs font-semibold text-gray-700 dark:text-gray-200 hover:text-emerald-500 transition">{c.user?.name}</Link>
-                      <button 
-                        onClick={() => handleCommentLike(c.id)}
-                        className={`text-[10px] flex items-center gap-0.5 ${c.likedByMe ? "text-red-500" : "text-gray-400 hover:text-red-500"}`}
-                      >
-                        {c.likedByMe ? "❤️" : "🤍"} {c._count?.likes || 0}
-                      </button>
-                    </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-300 mt-0.5">{c.content}</p>
-                    <p className="text-[10px] text-gray-400 mt-1">
-                      {format(new Date(c.createdAt), "d MMM, HH:mm", { locale: tr })}
-                    </p>
-                  </div>
-                </div>
-              ))
+              <div className="space-y-3">
+                {(comments[post.id] ?? []).map((c: any) => (
+                   <NestedComment 
+                      key={c.id} 
+                      comment={c} 
+                      onLike={handleCommentLike} 
+                      onReply={(p) => {
+                        setReplyingTo(p);
+                        const el = document.getElementById(`comment-input-${post.id}`);
+                        el?.focus();
+                      }} 
+                   />
+                ))}
+              </div>
             )
           )}
           {/* Yorum gir */}
-          <div className="flex gap-2 mt-2">
-            <input
-              type="text"
-              placeholder="Yorum yaz..."
-              value={commentText[post.id] ?? ""}
-              onChange={(e) => onCommentChange(post.id, e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && onComment(post.id)}
-              maxLength={300}
-              className="flex-1 text-sm px-3 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-gray-800 dark:text-gray-200 placeholder:text-gray-400"
-            />
-            <button
-              onClick={() => onComment(post.id)}
-              disabled={!commentText[post.id]?.trim() || submittingComment === post.id}
-              className="text-sm bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl font-semibold disabled:opacity-40 transition"
-            >
-              {submittingComment === post.id ? "..." : "↩"}
-            </button>
+          <div className="mt-2">
+            {replyingTo && (
+              <div className="flex items-center justify-between px-2 py-1 mb-1 bg-gray-50 dark:bg-gray-700/30 rounded text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                <span><b>{replyingTo.name}</b> kişisine yanıt veriliyor...</span>
+                <button onClick={() => setReplyingTo(null)} className="hover:underline">Vazgeç</button>
+              </div>
+            )}
+            <div className="flex gap-2">
+              <input
+                id={`comment-input-${post.id}`}
+                type="text"
+                placeholder={replyingTo ? "Yanıt yaz..." : "Yorum yaz..."}
+                value={commentText[post.id] ?? ""}
+                onChange={(e) => onCommentChange(post.id, e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && onComment(post.id)}
+                maxLength={300}
+                className="flex-1 text-sm px-3 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-gray-800 dark:text-gray-200 placeholder:text-gray-400"
+              />
+              <button
+                onClick={() => onComment(post.id)}
+                disabled={!commentText[post.id]?.trim() || submittingComment === post.id}
+                className="text-sm bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl font-semibold disabled:opacity-40 transition"
+              >
+                {submittingComment === post.id ? "..." : "Gönder"}
+              </button>
+            </div>
           </div>
         </div>
       )}
     </article>
+  );
+}
+
+function NestedComment({ comment, onLike, onReply, isReply = false }: { comment: any, onLike: (id: string) => void, onReply: (p: any) => void, isReply?: boolean }) {
+  return (
+    <div className={`group ${isReply ? "ml-8 mt-2" : "mt-3"}`}>
+      <div className="flex gap-2.5">
+        <Link href={`/profil/${comment.user?.id}`} className="shrink-0">
+          <div className={`${isReply ? "w-6 h-6 text-[10px]" : "w-8 h-8 text-xs"} rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center font-bold text-gray-600 dark:text-gray-400 overflow-hidden`}>
+            {comment.user?.avatarUrl ? (
+              <img src={comment.user.avatarUrl} alt="" className="w-full h-full object-cover" />
+            ) : (
+              comment.user?.name?.charAt(0)?.toUpperCase()
+            )}
+          </div>
+        </Link>
+        <div className="flex-1 min-w-0">
+          <div className="bg-gray-50 dark:bg-gray-700 rounded-xl rounded-tl-none px-3 py-2">
+            <div className="flex justify-between items-start gap-2">
+              <Link href={`/profil/${comment.user?.id}`} className="text-xs font-semibold text-gray-700 dark:text-gray-200 hover:text-emerald-500 transition truncate">{comment.user?.name}</Link>
+              <button 
+                onClick={() => onLike(comment.id)}
+                className={`text-[10px] flex items-center gap-0.5 ${comment.likedByMe ? "text-red-500" : "text-gray-400 hover:text-red-500"}`}
+              >
+                {comment.likedByMe ? "❤️" : "🤍"} <span className="font-medium">{comment._count?.likes || 0}</span>
+              </button>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-300 mt-0.5 leading-relaxed">{comment.content}</p>
+          </div>
+          <div className="flex items-center gap-4 mt-1 ml-1">
+            <p className="text-[9px] text-gray-400">
+              {format(new Date(comment.createdAt), "d MMM, HH:mm", { locale: tr })}
+            </p>
+            <button 
+              onClick={() => onReply({ id: comment.id, name: comment.user?.name })}
+              className="text-[9px] font-bold text-gray-500 hover:text-emerald-600 uppercase tracking-tighter"
+            >
+              Yanıtla
+            </button>
+          </div>
+
+          {/* Recursive Replies */}
+          {comment.replies?.length > 0 && (
+            <div className="space-y-1">
+              {comment.replies.map((reply: any) => (
+                <NestedComment key={reply.id} comment={reply} onLike={onLike} onReply={onReply} isReply={true} />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
   );
 }
 
