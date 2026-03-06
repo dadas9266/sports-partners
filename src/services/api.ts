@@ -241,7 +241,7 @@ export async function toggleFollow(userId: string): Promise<ApiResponse<{ follow
   return fetchAPI(`/api/users/${userId}/follow`, { method: "POST" });
 }
 
-export async function getFollowStats(userId: string): Promise<ApiResponse<{ followerCount: number; followingCount: number; isFollowing: boolean; followsMe: boolean }>> {
+export async function getFollowStats(userId: string): Promise<ApiResponse<{ followerCount: number; followingCount: number; isFollowing: boolean; followsMe: boolean; pending?: boolean }>> {
   return fetchAPI(`/api/users/${userId}/follow`);
 }
 

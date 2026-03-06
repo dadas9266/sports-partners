@@ -296,7 +296,7 @@ export async function POST(request: Request) {
     // Banned kullanıcı ilan oluşturamaz
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { isBanned: true, currentStreak: true, userType: true },
+      select: { isBanned: true, currentStreak: true, userType: true, trainerProfile: { select: { id: true } } },
     });
 
     if (user?.isBanned) {

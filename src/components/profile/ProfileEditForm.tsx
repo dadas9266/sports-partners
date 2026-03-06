@@ -6,7 +6,7 @@ import type { ProfileEditForm } from "@/types";
 
 interface Sport {
   id: string;
-  icon: string;
+  icon: string | null;
   name: string;
 }
 

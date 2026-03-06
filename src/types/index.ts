@@ -443,6 +443,9 @@ export interface PublicProfile {
   whoCanMessage?: "EVERYONE" | "FOLLOWERS" | "NOBODY";
   whoCanChallenge?: "EVERYONE" | "FOLLOWERS" | "NOBODY";
   isBlockedByThem?: boolean;
+  isPrivateProfile?: boolean;
+  isRestricted?: boolean;
+  pendingFollow?: boolean;
 }
 
 // --- Search Types ---

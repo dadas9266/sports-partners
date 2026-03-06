@@ -32,7 +32,7 @@
       ]
     },
     {
-      "source": "/api/(.*)",
+      "source": "/api/(?!locations|sports|listings)(.*)",
       "headers": [
         { "key": "Cache-Control", "value": "no-store, max-age=0" }
       ]

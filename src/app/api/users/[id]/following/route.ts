@@ -3,21 +3,22 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUserId } from "@/lib/api-utils";
 import { createLogger } from "@/lib/logger";
 
-const log = createLogger("post-likes-list");
+const log = createLogger("user-following");
 
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: postId } = await params;
-    const userId = await getCurrentUserId();
-
-    const likes = await prisma.postLike.findMany({
-      where: { postId },
+    const { id: userId } = await params;
+    
+    const following = await prisma.follow.findMany({
+      where: { 
+        followerId: userId,
+        status: "ACCEPTED"
+      },
       select: {
-        reaction: true,
-        user: {
+        following: {
           select: {
             id: true,
             name: true,
@@ -31,14 +32,10 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      data: likes.map(l => ({
-        reaction: l.reaction,
-        user: l.user,
-        isFollowing: false // İlerde takip durumu eklenebilir
-      }))
+      data: following.map(f => f.following)
     });
   } catch (err) {
-    log.error("Post beğenenler listesi hatası", err);
+    log.error("Takip edilen listesi hatası", err);
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
   }
 }

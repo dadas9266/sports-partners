@@ -510,6 +510,14 @@ export default function ListingDetailPage({
 
                 {/* Rating section */}
                 {matchStatus === "COMPLETED" && !alreadyRated && !showRatingModal && (
+                  <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4 flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-sm text-emerald-800 dark:text-emerald-300 font-semibold">🌟 Maç Bitti!</p>
+                      <p className="text-xs text-emerald-700 dark:text-emerald-400">Partnerinizi değerlendirmek ister misiniz?</p>
+                    </div>
+                    <Button onClick={() => setShowRatingModal(true)} size="sm">Değerlendir</Button>
+                  </div>
+                )}
               </div>
             );
           })()}

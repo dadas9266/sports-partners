@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
 import Button from "@/components/ui/Button";

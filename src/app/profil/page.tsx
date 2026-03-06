@@ -64,6 +64,8 @@ export default function ProfilePage() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [ratingModal, setRatingModal] = useState<{ matchId: string; partnerName: string } | null>(null);
+  const [ratingScore, setRatingScore] = useState(0);
+  const [ratingComment, setRatingComment] = useState("");
   const [posts, setPosts] = useState<any[]>([]);
   const [postsLoading, setPostsLoading] = useState(false);
   const [postsView, setPostsView] = useState<"grid" | "list">("grid");
@@ -394,7 +396,7 @@ export default function ProfilePage() {
       {(() => {
         const pendingIncoming = data.myListings?.reduce((acc: number, l: ListingWithResponses) => acc + (l.responses?.filter(r => r.status === "PENDING").length ?? 0), 0) ?? 0;
         const myResponsesCount = data.myResponses?.length ?? 0;
-        const matchesCount = data.matches?.length ?? 0;
+        const matchesCount = data.myMatches?.length ?? 0;
         const isMoreActive = activeTab === "calendar" || activeTab === "templates";
         return (
           <div className="flex items-center border-b border-gray-200 dark:border-gray-700 mb-4 overflow-x-auto scrollbar-hide" role="tablist">

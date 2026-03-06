@@ -4,14 +4,14 @@ import { getCurrentUserId } from "@/lib/api-utils";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const userId = await getCurrentUserId();
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const commentId = params.id;
+  const { id: commentId } = await params;
 
   try {
     const existing = await (prisma as any).commentLike.findUnique({

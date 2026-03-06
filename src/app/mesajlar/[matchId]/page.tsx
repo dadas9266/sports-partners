@@ -136,7 +136,7 @@ export default function ChatPage({ params }: { params: Promise<{ matchId: string
                 {/* Puan rozeti kaldırıldı - API tarafında henüz desteklenmiyor */}
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                {conversation.listing.sport.icon} {conversation.listing.sport.name} — {format(new Date(conversation.listing.dateTime), "d MMM HH:mm", { locale: tr })}
+                {conversation.listing?.sport.icon} {conversation.listing?.sport.name} — {conversation.listing?.dateTime ? format(new Date(conversation.listing.dateTime), "d MMM HH:mm", { locale: tr }) : ""}
               </p>
             </div>
           </>

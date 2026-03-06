@@ -66,6 +66,12 @@ export default function PublicProfilePage({
   const [postsLoading, setPostsLoading] = useState(false);
   const [postsView, setPostsView] = useState<"grid" | "list">("grid");
 
+  // Follow Modal states
+  const [showFollowersModal, setShowFollowersModal] = useState(false);
+  const [showFollowingModal, setShowFollowingModal] = useState(false);
+  const [followListData, setFollowListData] = useState<any[]>([]);
+  const [followListLoading, setFollowListLoading] = useState(false);
+
   // Story state
   const [storyGroups, setStoryGroups] = useState<UserStoryGroup[]>([]);
   const [storyViewerOpen, setStoryViewerOpen] = useState(false);
@@ -241,13 +247,28 @@ export default function PublicProfilePage({
     }
   };
 
+  const handleRatingSubmit = async () => {
+    setSubmittingRating(true);
+    try {
+      await submitRating(id, ratingScore, ratingComment);
+      toast.success("Değerlendirmeniz gönderildi!");
+      setRatingModal(false);
+      // Refresh ratings
+      const r = await getUserRatings(id);
+      if (r.success && r.data) setRatings(r.data);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Hata oluştu");
+    } finally {
+      setSubmittingRating(false);
+    }
+  };
+
   const handleBlock = async (type: "BLOCK" | "RESTRICT") => {
     if (!session) return;
     setBlockLoading(true);
     setDotMenuOpen(false);
     try {
       if (blockStatus === type) {
-        // Kaldır
         const res = await fetch(`/api/users/${id}/block`, { method: "DELETE" });
         if ((await res.json()).success) {
           setBlockStatus(null);
@@ -292,11 +313,31 @@ export default function PublicProfilePage({
       } else {
         toast.error(json.error ?? "Şikayet gönderilemedi");
       }
-    } catch {
-      toast.error("Bir hata oluştu");
     } finally {
       setReportLoading(false);
     }
+  };
+
+  const loadFollowers = async () => {
+    setFollowListLoading(true);
+    setShowFollowersModal(true);
+    try {
+      const res = await fetch(`/api/users/${id}/followers`);
+      const json = await res.json();
+      if (json.success) setFollowListData(json.data);
+    } catch { toast.error("Hata oluştu"); }
+    finally { setFollowListLoading(false); }
+  };
+
+  const loadFollowing = async () => {
+    setFollowListLoading(true);
+    setShowFollowingModal(true);
+    try {
+      const res = await fetch(`/api/users/${id}/following`);
+      const json = await res.json();
+      if (json.success) setFollowListData(json.data);
+    } catch { toast.error("Hata oluştu"); }
+    finally { setFollowListLoading(false); }
   };
 
   const handleRemoveFollower = async () => {
@@ -346,22 +387,6 @@ export default function PublicProfilePage({
     }
   };
 
-  const handleRatingSubmit = async () => {
-    setSubmittingRating(true);
-    try {
-      await submitRating(id, ratingScore, ratingComment);
-      toast.success("Değerlendirmeniz gönderildi!");
-      setRatingModal(false);
-      // Refresh ratings
-      const r = await getUserRatings(id);
-      if (r.success && r.data) setRatings(r.data);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Hata oluştu");
-    } finally {
-      setSubmittingRating(false);
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex justify-center py-16">
@@ -391,10 +416,10 @@ export default function PublicProfilePage({
   const joinDate = format(new Date(profile.createdAt), "MMMM yyyy", { locale: tr });
 
   // restricted state: kapalı profil ve takip etmiyoruz
-  const isRestricted = (profile as any).isRestricted;
+  const isRestricted = profile.isRestricted;
 
   // Gizlilik kontrolü: mesaj gönderme izni var mı?
-  const whoCanMessage = (profile as any).whoCanMessage ?? "EVERYONE";
+  const whoCanMessage = profile.whoCanMessage ?? "EVERYONE";
   const canMessage =
     !isRestricted && (
       whoCanMessage === "EVERYONE" ||
@@ -402,7 +427,7 @@ export default function PublicProfilePage({
     );
 
   // Gizlilik kontrolü: teklif gönderme izni var mı?
-  const whoCanChallenge = (profile as any).whoCanChallenge ?? "EVERYONE";
+  const whoCanChallenge = profile.whoCanChallenge ?? "EVERYONE";
   const canChallenge =
     !isRestricted && (
       whoCanChallenge === "EVERYONE" ||
@@ -508,28 +533,25 @@ export default function PublicProfilePage({
               </div>
             )}
             {dotMenuOpen && (
-              <>
-                      <div className="fixed inset-0 z-[100]" onClick={() => setDotMenuOpen(false)} />
-                      <div className="absolute right-0 mt-1 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-[101] overflow-hidden py-1">
-                        {followsMe && (
-                          <button onClick={handleRemoveFollower} className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-                            👤 Takipçiyi Çıkar
-                          </button>
-                        )}
-                        <button onClick={() => handleBlock("RESTRICT")} className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-                          🔇 {blockStatus === "RESTRICT" ? "Kısıtlamayı Kaldır" : "Kısıtla"}
-                        </button>
-                        <button onClick={() => handleBlock("BLOCK")} className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition">
-                          🚫 {blockStatus === "BLOCK" ? "Engeli Kaldır" : "Engelle"}
-                        </button>
-                        <button onClick={() => { setDotMenuOpen(false); setReportModal(true); }} className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-sm text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition">
-                          🚩 Şikayet Et
-                        </button>
-                      </div>
-                    </>
+              <div className="relative">
+                <div className="fixed inset-0 z-[100]" onClick={() => setDotMenuOpen(false)} />
+                <div className="absolute right-0 mt-1 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-[101] overflow-hidden py-1">
+                  {followsMe && (
+                    <button onClick={handleRemoveFollower} className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                      👤 Takipçiyi Çıkar
+                    </button>
                   )}
+                  <button onClick={() => handleBlock("RESTRICT")} className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                    🔇 {blockStatus === "RESTRICT" ? "Kısıtlamayı Kaldır" : "Kısıtla"}
+                  </button>
+                  <button onClick={() => handleBlock("BLOCK")} className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition">
+                    🚫 {blockStatus === "BLOCK" ? "Engeli Kaldır" : "Engelle"}
+                  </button>
+                  <button onClick={() => { setDotMenuOpen(false); setReportModal(true); }} className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-sm text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition">
+                    🚩 Şikayet Et
+                  </button>
                 </div>
-              </>
+              </div>
             )}
             {blockStatus === "BLOCK" && (
               <span className="text-xs text-red-500 font-medium">🚫 Engellendi</span>
@@ -595,10 +617,10 @@ export default function PublicProfilePage({
         {/* Stats — clean inline row */}
         <div className="flex items-center gap-4 text-sm mb-3">
           <span><strong className="text-gray-900 dark:text-white">{profile.totalMatches}</strong> <span className="text-gray-500 dark:text-gray-400">maç</span></span>
-          <button onClick={() => !isRestricted && setActiveTab("stats")} className="hover:opacity-80 transition">
+          <button onClick={() => !isRestricted && loadFollowers()} className="hover:opacity-80 transition">
             <strong className="text-gray-900 dark:text-white">{followerCount}</strong> <span className="text-gray-500 dark:text-gray-400">takipçi</span>
           </button>
-          <button onClick={() => !isRestricted && setActiveTab("stats")} className="hover:opacity-80 transition">
+          <button onClick={() => !isRestricted && loadFollowing()} className="hover:opacity-80 transition">
             <strong className="text-gray-900 dark:text-white">{followingCount}</strong> <span className="text-gray-500 dark:text-gray-400">takip</span>
           </button>
           {profile.avgRating !== null && profile.avgRating !== undefined && (
@@ -1043,14 +1065,77 @@ export default function PublicProfilePage({
                   onChange={(e) => setReportDesc(e.target.value)}
                   rows={3}
                   maxLength={500}
-                  placeholder="Şikayetinizi detaylandırın..."
+                  placeholder="Detaylı bilgi verebilirsiniz..."
                   className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 resize-none focus:ring-2 focus:ring-orange-500 outline-none"
                 />
               </div>
               <div className="flex gap-3 justify-end">
                 <Button variant="secondary" onClick={() => setReportModal(false)}>İptal</Button>
-                <Button onClick={handleReport} loading={reportLoading} className="bg-orange-500 hover:bg-orange-600">Şikayet Gönder</Button>
+                <Button onClick={handleReport} loading={reportLoading} className="bg-orange-600 hover:bg-orange-700 text-white">Gönder</Button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Followers / Following Modal */}
+      {(showFollowersModal || showFollowingModal) && (
+        <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => { setShowFollowersModal(false); setShowFollowingModal(false); setFollowListData([]); }}>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col max-h-[80vh] animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+            <div className="p-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between sticky top-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md z-10">
+              <h3 className="font-bold text-gray-900 dark:text-white">
+                {showFollowersModal ? "Takipçiler" : "Takip Edilenler"}
+              </h3>
+              <button 
+                onClick={() => { setShowFollowersModal(false); setShowFollowingModal(false); setFollowListData([]); }}
+                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-2 space-y-1">
+              {followListLoading ? (
+                <div className="py-20 flex flex-col items-center justify-center gap-3">
+                  <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                  <p className="text-xs text-gray-500">Yükleniyor...</p>
+                </div>
+              ) : followListData.length === 0 ? (
+                <div className="py-20 text-center">
+                  <p className="text-gray-400 text-sm">Henüz kimse yok</p>
+                </div>
+              ) : (
+                followListData.map((item) => (
+                  <div 
+                    key={item.id} 
+                    onClick={() => {
+                        setShowFollowersModal(false); 
+                        setShowFollowingModal(false);
+                        router.push(`/profil/${item.id}`);
+                    }}
+                    className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-xl cursor-pointer transition-colors group"
+                  >
+                    <div className="relative">
+                      {item.avatarUrl ? (
+                        <img src={item.avatarUrl} alt={item.name} className="w-10 h-10 rounded-full object-cover ring-2 ring-transparent group-hover:ring-emerald-500/30 transition-all" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold">
+                          {item.name[0]}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-gray-900 dark:text-white text-sm truncate">{item.name}</div>
+                      <div className="text-[11px] text-gray-500 dark:text-gray-400 truncate">
+                        {item.city?.name || "Bilinmeyen Şehir"}
+                      </div>
+                    </div>
+                    <div className="pr-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="9 5l7 7-7 7" /></svg>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
