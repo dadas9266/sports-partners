@@ -753,8 +753,6 @@ function NestedComment({ comment, onLike, onReply, isReply = false }: { comment:
     </div>
   );
 }
-  );
-}
 
 // ─── Reaction Emojileri ──────────────────────────────────────────────────────
 const REACTION_EMOJIS: Record<string, string> = {
