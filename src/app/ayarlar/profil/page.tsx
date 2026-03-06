@@ -13,6 +13,13 @@ const inputClass =
   "w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition";
 const labelClass = "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1";
 
+const LESSON_TYPES = [
+  { id: "birebir", label: "Birebir", icon: "👤", desc: "Bireysel ders" },
+  { id: "grup", label: "Grup", icon: "👥", desc: "Grup dersi" },
+  { id: "cocuk", label: "Çocuk", icon: "🧒", desc: "Çocuklara yönelik" },
+  { id: "performans", label: "Performans", icon: "🏆", desc: "Yüksek performans" },
+];
+
 export default function ProfilDuzenle() {
   const { data, loading, refresh } = useProfile();
   const { locations } = useLocations();
@@ -36,12 +43,23 @@ export default function ProfilDuzenle() {
     sportIds: [] as string[],
     avatarUrl: "",
     coverUrl: "",
+    // Trainer fields
+    isTrainer: false,
+    university: "",
+    department: "",
+    trainerBranches: [] as string[],
+    lessonTypes: [] as string[],
+    providesEquipment: false,
+    gymName: "",
+    experience: "",
+    certNote: "",
   });
 
   // Kullanıcı verisi yüklenince formu doldur
   useEffect(() => {
     if (!data?.user) return;
     const u = data.user as any;
+    const tp = u.trainerProfile;
     setForm({
       name: u.name || "",
       phone: u.phone || "",
@@ -53,6 +71,16 @@ export default function ProfilDuzenle() {
       sportIds: (u.sports || []).map((s: any) => s.id),
       avatarUrl: u.avatarUrl || "",
       coverUrl: u.coverUrl || "",
+      // Trainer fields sync
+      isTrainer: u.userType === "TRAINER" || !!tp,
+      university: tp?.university || "",
+      department: tp?.department || "",
+      trainerBranches: tp?.specializations?.map((s: any) => s.sportId) || [],
+      lessonTypes: tp?.lessonTypes || [],
+      providesEquipment: !!tp?.providesEquipment,
+      gymName: tp?.gymName || "",
+      experience: tp?.experienceYears?.toString() || "",
+      certNote: tp?.certNote || "",
     });
   }, [data]);
 
@@ -96,8 +124,16 @@ export default function ProfilDuzenle() {
     if (form.sportIds.length === 0) { toast.error("En az 1 spor dalı seçmelisiniz"); return; }
     if (form.sportIds.length > 10) { toast.error("En fazla 10 spor dalı seçebilirsiniz"); return; }
 
+    if (form.isTrainer) {
+      if (!form.university.trim()) { toast.error("Üniversite adı zorunludur"); return; }
+      if (!form.department.trim()) { toast.error("Bölüm adı zorunludur"); return; }
+      if (form.lessonTypes.length === 0) { toast.error("En az 1 ders türü seçilmeli"); return; }
+      if (form.trainerBranches.length === 0) { toast.error("En az 1 antrenörlük branşı seçilmeli"); return; }
+    }
+
     setSaving(true);
     try {
+      // 1. Basic Profile Update
       const res = await updateProfile({
         name: form.name.trim(),
         phone: form.phone || null,
@@ -110,12 +146,39 @@ export default function ProfilDuzenle() {
         avatarUrl: form.avatarUrl || null,
       } as any);
 
-      if (res.success) {
-        toast.success("Profil güncellendi ✓");
-        refresh();
-      } else {
-        toast.error((res as any).error || "Güncelleme başarısız");
+      if (!res.success) {
+        toast.error((res as any).error || "Profil güncellenemedi");
+        setSaving(false);
+        return;
       }
+
+      // 2. Trainer Profile Update (If trainer)
+      if (form.isTrainer) {
+        const trainerRes = await fetch("/api/profile/pro-request", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: "TRAINER",
+            university: form.university,
+            department: form.department,
+            branches: form.trainerBranches,
+            lessonTypes: form.lessonTypes,
+            providesEquipment: form.providesEquipment,
+            gymName: form.gymName,
+            experience: form.experience,
+            certNote: form.certNote,
+          }),
+        });
+        const tJson = await trainerRes.json();
+        if (!tJson.success) {
+          toast.error("Antrenörlük bilgileri güncellenemedi: " + (tJson.error || "Hata"));
+        } else {
+          toast.success("Antrenörlük bilgileri güncellendi ✓");
+        }
+      }
+
+      toast.success("Profil başarıyla güncellendi");
+      refresh();
     } catch {
       toast.error("Bir hata oluştu");
     } finally {
@@ -348,10 +411,111 @@ export default function ProfilDuzenle() {
         </div>
       </div>
 
+      {/* ─── ANTRENÖRLÜK BİLGİLERİ (Sadece Antrenörlere) ───────── */}
+      {form.isTrainer && (
+        <div className="pt-8 border-t border-gray-100 dark:border-gray-800 space-y-6">
+          <div className="flex items-center gap-3">
+            <span className="p-2.5 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-xl text-xl">🎓</span>
+            <div>
+              <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">Antrenörlük Bilgileri</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Onaylı antrenör rozetinizde görünecek profesyonel detaylar</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>Üniversite Adı <span className="text-red-400">*</span></label>
+              <input type="text" value={form.university}
+                onChange={(e) => setForm({ ...form, university: e.target.value })}
+                className={inputClass} placeholder="Mezun olduğunuz üniversite" />
+            </div>
+            <div>
+              <label className={labelClass}>Bölüm <span className="text-red-400">*</span></label>
+              <input type="text" value={form.department}
+                onChange={(e) => setForm({ ...form, department: e.target.value })}
+                className={inputClass} placeholder="Mezun olduğunuz bölüm" />
+            </div>
+          </div>
+
+          <div>
+            <label className={labelClass}>Profesyonel Branşlarınız <span className="text-red-400">*</span></label>
+            <p className="text-xs text-gray-400 mb-2">Eğitmenlik yaptığınız ana branşları seçin</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {allSports.map((sport) => {
+                const selected = form.trainerBranches.includes(sport.id);
+                return (
+                  <button key={sport.id} type="button"
+                    onClick={() => {
+                      if (selected) { setForm({ ...form, trainerBranches: form.trainerBranches.filter(id => id !== sport.id) }); }
+                      else { setForm({ ...form, trainerBranches: [...form.trainerBranches, sport.id] }); }
+                    }}
+                    className={`p-2.5 rounded-xl border-2 text-left text-sm transition ${selected ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 font-medium" : "border-gray-100 dark:border-gray-700 hover:border-blue-300"}`}>
+                    <span className="mr-1">{sport.icon || "🏅"}</span>
+                    {sport.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
+            <label className={labelClass}>Verdiğiniz Ders Türleri <span className="text-red-400">*</span></label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
+              {LESSON_TYPES.map((lt) => {
+                const sel = form.lessonTypes.includes(lt.id);
+                return (
+                  <button key={lt.id} type="button" 
+                    onClick={() => setForm(p => ({ ...p, lessonTypes: sel ? p.lessonTypes.filter(t => t !== lt.id) : [...p.lessonTypes, lt.id] }))}
+                    className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition text-center ${sel ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300" : "border-gray-100 dark:border-gray-700 hover:border-blue-300 text-gray-500"}`}>
+                    <span className="text-xl">{lt.icon}</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider">{lt.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
+            <label className="flex items-center gap-3 cursor-pointer group p-4 rounded-xl border-2 border-gray-100 dark:border-gray-800 hover:border-blue-500 transition-colors bg-gray-50/50 dark:bg-gray-900/20">
+              <input type="checkbox" checked={form.providesEquipment}
+                onChange={(e) => setForm({ ...form, providesEquipment: e.target.checked })}
+                className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+              <div>
+                <span className={labelClass + " !mb-0"}>Öğrencilere Ekipman Sağlıyorum</span>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Dersler için gerekli ekipmanı tarafımdan karşılanacaktır.</p>
+              </div>
+            </label>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>Çalıştığınız Salon / Spor Merkezi</label>
+              <input type="text" value={form.gymName}
+                onChange={(e) => setForm({ ...form, gymName: e.target.value })}
+                className={inputClass} placeholder="Kurum veya kulüp adı" />
+            </div>
+            <div>
+              <label className={labelClass}>Deneyim (yıl)</label>
+              <input type="number" value={form.experience}
+                onChange={(e) => setForm({ ...form, experience: e.target.value })}
+                className={inputClass} placeholder="Deneyim süreniz" />
+            </div>
+          </div>
+
+          <div>
+            <label className={labelClass}>Eğitim & Sertifika Bilgisi</label>
+            <textarea value={form.certNote}
+              onChange={(e) => setForm({ ...form, certNote: e.target.value })}
+              className={`${inputClass} resize-none`} rows={3}
+              placeholder="Sahip olduğunuz uzmanlık belgeleri, lisanslar vb." />
+          </div>
+        </div>
+      )}
+
       {/* Kaydet */}
       <div className="flex justify-end pt-2">
-        <Button onClick={handleSave} loading={saving} className="min-w-[140px]">
-          Değişiklikleri Kaydet
+        <Button onClick={handleSave} loading={saving} className="min-w-[160px]">
+          Tümünü Kaydet
         </Button>
       </div>
     </div>

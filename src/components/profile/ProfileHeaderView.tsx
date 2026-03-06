@@ -196,21 +196,6 @@ export default function ProfileHeaderView({
         {user.bio && (
           <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed mb-3">{user.bio}</p>
         )}
-        {user.trainerProfile?.isVerified && (
-          <div className="p-3 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-100 dark:border-blue-900/40 mb-3">
-            <div className="flex items-center gap-2 mb-1.5">
-              <span className="text-sm font-bold text-blue-700 dark:text-blue-300">🏋️ Antrenör Bilgileri</span>
-            </div>
-            <div className="flex flex-wrap gap-3 text-xs">
-              {user.trainerProfile?.gymName && (
-                <span className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400">🏢 {user.trainerProfile.gymName}</span>
-              )}
-              {((user.trainerProfile as any)?.specializations ?? []).map((sp: { sportName: string; years: number }, i: number) => (
-                <span key={i} className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400">🏆 {sp.sportName}{sp.years ? ` · ${sp.years} yıl` : ""}</span>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

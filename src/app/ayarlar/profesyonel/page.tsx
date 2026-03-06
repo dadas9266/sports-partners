@@ -101,9 +101,10 @@ export default function ProfesyonelPage() {
 
   const handleTrainerSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!trainerForm.university.trim()) { toast.error("Üniversite adı zorunludur"); return; }
+    if (!trainerForm.department.trim()) { toast.error("Bölüm adı zorunludur"); return; }
     if (trainerForm.branches.length === 0) { toast.error("En az bir branş seçiniz"); return; }
     if (trainerForm.lessonTypes.length === 0) { toast.error("En az bir ders türü seçiniz"); return; }
-    if (trainerForm.providesEquipment === null) { toast.error("Ekipman durumunu belirtiniz"); return; }
     setSubmitting(true);
     try {
       const res = await fetch("/api/profile/pro-request", {
@@ -277,16 +278,16 @@ function TrainerForm({ form, setForm, toggleLessonType, sports, submitting, onSu
       {/* Üniversite & Bölüm */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className={labelClass}>Üniversite <span className="text-gray-400 font-normal">(opsiyonel)</span></label>
+          <label className={labelClass}>Üniversite Adı <span className="text-red-400">*</span></label>
           <input type="text" value={form.university}
             onChange={(e) => setForm({ ...form, university: e.target.value })}
-            className={inputClass} placeholder="Örn: Balıkesir Üniversitesi" />
+            className={inputClass} placeholder="Mezun olduğunuz üniversite" />
         </div>
         <div>
-          <label className={labelClass}>Bölüm <span className="text-gray-400 font-normal">(opsiyonel)</span></label>
+          <label className={labelClass}>Bölüm <span className="text-red-400">*</span></label>
           <input type="text" value={form.department}
             onChange={(e) => setForm({ ...form, department: e.target.value })}
-            className={inputClass} placeholder="Örn: Beden Eğitimi ve Spor Öğretmenliği" />
+            className={inputClass} placeholder="Mezun olduğunuz bölüm" />
         </div>
       </div>
 
@@ -331,41 +332,33 @@ function TrainerForm({ form, setForm, toggleLessonType, sports, submitting, onSu
 
       {/* Ekipman */}
       <div>
-        <label className={labelClass}>Ekipman Sağlama <span className="text-red-400">*</span></label>
-        <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">Öğrencilere ekipman sağlıyor musunuz?</p>
-        <div className="flex gap-3">
-          {[
-            { value: true, label: "Evet, sağlıyorum", icon: "✅", desc: "Ekipman dahil" },
-            { value: false, label: "Hayır, sağlamıyorum", icon: "❌", desc: "Kendi ekipmanı getirir" },
-          ].map((opt) => (
-            <button key={String(opt.value)} type="button"
-              onClick={() => setForm({ ...form, providesEquipment: opt.value })}
-              className={`flex-1 flex flex-col items-center gap-1 p-3.5 rounded-xl border-2 transition ${
-                form.providesEquipment === opt.value
-                  ? opt.value ? "border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300"
-                              : "border-red-400 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300"
-                  : "border-gray-200 dark:border-gray-600 hover:border-gray-300 text-gray-600 dark:text-gray-400"}`}>
-              <span className="text-2xl">{opt.icon}</span>
-              <span className="text-sm font-semibold">{opt.label}</span>
-              <span className="text-xs opacity-70">{opt.desc}</span>
-            </button>
-          ))}
-        </div>
+        <label className="flex items-center gap-3 cursor-pointer group p-4 rounded-xl border-2 border-gray-100 dark:border-gray-800 hover:border-blue-500 transition-colors bg-gray-50/50 dark:bg-gray-900/20">
+          <input
+            type="checkbox"
+            checked={!!form.providesEquipment}
+            onChange={(e) => setForm({ ...form, providesEquipment: e.target.checked })}
+            className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          <div>
+            <span className={labelClass + " !mb-0"}>Öğrencilere Ekipman Sağlıyorum</span>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Dersler için gerekli ekipmanları tarafımdan karşılanacaktır.</p>
+          </div>
+        </label>
       </div>
 
       {/* Salon & Deneyim */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className={labelClass}>Çalıştığınız Salon / Kulüp <span className="text-gray-400 font-normal">(opsiyonel)</span></label>
+          <label className={labelClass}>Çalıştığınız Salon / Spor Merkezi <span className="text-gray-400 font-normal">(opsiyonel)</span></label>
           <input type="text" value={form.gymName}
             onChange={(e) => setForm({ ...form, gymName: e.target.value })}
-            className={inputClass} placeholder="Örn: FitLife Spor Merkezi" />
+            className={inputClass} placeholder="Çalıştığınız kurumun adı" />
         </div>
         <div>
           <label className={labelClass}>Deneyim (yıl)</label>
           <input type="number" min={0} max={50} value={form.experience}
             onChange={(e) => setForm({ ...form, experience: e.target.value })}
-            className={inputClass} placeholder="Örn: 5" />
+            className={inputClass} placeholder="Deneyim süreniz" />
         </div>
       </div>
 
@@ -398,10 +391,10 @@ function VenueForm({ form, setForm, submitting, onSubmit, inputClass, labelClass
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className={labelClass}>Tesis Adı <span className="text-red-400">*</span></label>
+          <label className={labelClass}>İşletme Adı <span className="text-red-400">*</span></label>
           <input type="text" value={form.businessName}
             onChange={(e) => setForm({ ...form, businessName: e.target.value })}
-            className={inputClass} placeholder="Örn: FitLife Spor Salonu" />
+            className={inputClass} placeholder="Tesisin tam adı" />
         </div>
         <div>
           <label className={labelClass}>İletişim Telefonu <span className="text-gray-400 font-normal">(opsiyonel)</span></label>
