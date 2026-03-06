@@ -30,12 +30,6 @@
       "headers": [
         { "key": "Cache-Control", "value": "public, s-maxage=60, stale-while-revalidate=300" }
       ]
-    },
-    {
-      "source": "/api/(?!locations|sports|listings)(.*)",
-      "headers": [
-        { "key": "Cache-Control", "value": "no-store, max-age=0" }
-      ]
     }
   ]
 }
