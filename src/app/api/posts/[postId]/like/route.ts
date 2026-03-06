@@ -49,24 +49,28 @@ export async function POST(
       if (existing.reaction === reaction) {
         // Aynı reaction → beğeniyi geri al
         await prisma.postLike.delete({ where: { id: existing.id } });
-        return NextResponse.json({ liked: false, reaction: null });
+        const count = await prisma.postLike.count({ where: { postId } });
+        return NextResponse.json({ liked: false, reaction: null, likeCount: count });
       } else {
         // Farklı reaction → güncelle
         await prisma.postLike.update({
           where: { id: existing.id },
           data: { reaction },
         });
-        return NextResponse.json({ liked: true, reaction });
+        const count = await prisma.postLike.count({ where: { postId } });
+        return NextResponse.json({ liked: true, reaction, likeCount: count });
       }
     } else {
       // Yeni beğeni
       await prisma.postLike.create({ data: { postId, userId, reaction } });
+      const count = await prisma.postLike.count({ where: { postId } });
 
       // Bildirim gönder (kendi gönderine beğeni atarsa bildirim gitmesin)
       const post = await prisma.post.findUnique({
         where: { id: postId },
         select: { userId: true },
       });
+
       if (post && post.userId !== userId) {
         const liker = await prisma.user.findUnique({
           where: { id: userId },
@@ -81,7 +85,7 @@ export async function POST(
         });
       }
 
-      return NextResponse.json({ liked: true, reaction });
+      return NextResponse.json({ liked: true, reaction, likeCount: count });
     }
   } catch (err) {
     log.error("Like toggle hatası", err);

@@ -122,22 +122,26 @@ export async function GET(
 
     if (!user) return notFound("Kullanıcı bulunamadı");
 
-    // Profil gizlilik kontrolü (kendi profilini her zaman görebilir)
-    const isOwnProfileCheck = currentUserId === id;
-    if (!isOwnProfileCheck && user.profileVisibility) {
+    // Gizlilik kontrolü (Profil bazlı)
+    const isOwnProfile = currentUserId === id;
+    const existingFollow = (currentUserId && !isOwnProfile)
+      ? await prisma.follow.findUnique({
+          where: { followerId_followingId: { followerId: currentUserId, followingId: id } },
+        })
+      : null;
+
+    const isFollowing = existingFollow?.status === "ACCEPTED";
+    const pendingFollow = existingFollow?.status === "PENDING";
+
+    // Profil gizlilik ayarı (Görünürlük)
+    if (!isOwnProfile && user.profileVisibility) {
       if (user.profileVisibility === "NOBODY") {
         return NextResponse.json({ success: false, error: "Bu profil gizlidir", code: "PRIVATE_PROFILE" }, { status: 403 });
       }
-      if (user.profileVisibility === "FOLLOWERS" && currentUserId) {
-        const isFollowing = await prisma.follow.findUnique({
-          where: { followerId_followingId: { followerId: currentUserId, followingId: id } },
-        });
-        // Sadece ACCEPTED takip edenler görebilir
-        if (!isFollowing || isFollowing.status !== "ACCEPTED") {
+      if (user.profileVisibility === "FOLLOWERS") {
+        if (!isFollowing) {
           return NextResponse.json({ success: false, error: "Bu profil yalnızca takipçilere açık", code: "PRIVATE_PROFILE" }, { status: 403 });
         }
-      } else if (user.profileVisibility === "FOLLOWERS" && !currentUserId) {
-        return NextResponse.json({ success: false, error: "Bu profil yalnızca takipçilere açık", code: "PRIVATE_PROFILE" }, { status: 403 });
       }
     }
 
@@ -162,23 +166,7 @@ export async function GET(
       prisma.follow.count({ where: { followerId: id, status: "ACCEPTED" } }),
     ]);
 
-    // Takip durumu kontrolü (Gizli profil kısıtlamaları için)
-    let isFollowing = false;
-    let pendingFollow = false;
-    if (currentUserId && currentUserId !== id) {
-      const existingFollow = await prisma.follow.findUnique({
-        where: { followerId_followingId: { followerId: currentUserId, followingId: id } },
-      });
-      isFollowing = existingFollow?.status === "ACCEPTED";
-      pendingFollow = existingFollow?.status === "PENDING";
-    }
-
-    // Kendi profilinde ekstra bilgiler
-    const isOwnProfile = isOwnProfileCheck;
-
     // KAPALI PROFİL KISITLAMASI (VK/Instagram Mantığı)
-    // Eğer profil kapalıysa ve biz sahibi değilsek, ayrıca takip etmiyorsak:
-    // Sadece Isim, Şehir, Yaş, Takip Et butonu görünmeli.
     const shouldHideData = !isOwnProfile && user.isPrivateProfile && !isFollowing;
 
     log.info("Kullanıcı profili görüntülendi", { targetId: id, viewerId: currentUserId });
@@ -196,7 +184,7 @@ export async function GET(
           followersCount,
           followingCount,
           isPrivateProfile: true,
-          isFollowing: false,
+          isFollowing,
           pendingFollow,
           isOwnProfile: false,
           isRestricted: true, // Frontend'de "Bu profil kapalı" uyarısı için

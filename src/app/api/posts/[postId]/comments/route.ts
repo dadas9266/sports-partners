@@ -24,9 +24,20 @@ export async function GET(
       orderBy: { createdAt: "asc" },
       include: {
         user: { select: { id: true, name: true, avatarUrl: true } },
+        _count: { select: { likes: true } },
+        likes: {
+          where: { userId: (await getCurrentUserId()) || "" },
+          select: { id: true },
+        },
       },
     });
-    return NextResponse.json(comments);
+    
+    const commentsWithLiked = comments.map(c => ({
+      ...c,
+      likedByMe: c.likes.length > 0,
+    }));
+
+    return NextResponse.json({ comments: commentsWithLiked });
   } catch (err) {
     log.error("Yorumları getirme hatası", err);
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
@@ -52,33 +63,20 @@ export async function POST(
       return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
     }
 
-    const comment = await prisma.postComment.create({
-      data: { postId, userId, content: parsed.data.content },
-      include: {
-        user: { select: { id: true, name: true, avatarUrl: true } },
-      },
-    });
-
-    // Bildirim gönder
-    const post = await prisma.post.findUnique({
-      where: { id: postId },
-      select: { userId: true },
-    });
-    if (post && post.userId !== userId) {
-      const commenter = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { name: true },
+      const comment = await prisma.postComment.create({
+        data: { postId, userId, content: parsed.data.content },
+        include: {
+          user: { select: { id: true, name: true, avatarUrl: true } },
+          _count: { select: { likes: true } },
+        },
       });
-      await createNotification({
-        userId: post.userId,
-        type: "NEW_POST_COMMENT",
-        title: "Gönderinize yorum yapıldı",
-        body: `${commenter?.name ?? "Birisi"}: ${parsed.data.content.substring(0, 50)}`,
-        link: `/profil/${post.userId}`,
-      });
-    }
 
-    return NextResponse.json(comment, { status: 201 });
+      return NextResponse.json({ 
+        comment: {
+          ...comment,
+          likedByMe: false,
+        }
+      }, { status: 201 });
   } catch (err) {
     log.error("Yorum oluşturma hatası", err);
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });

@@ -73,7 +73,7 @@ export default function PostCard({ post, onLikeToggle }: PostCardProps) {
   const handleToggleComments = () => {
     const next = !showComments;
     setShowComments(next);
-    if (next && comments.length === 0) loadComments();
+    if (next) loadComments();
   };
 
   const handleAddComment = async () => {
