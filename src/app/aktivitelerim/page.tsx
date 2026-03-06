@@ -17,6 +17,7 @@ type MyListing = {
   id: string; type: string; status: string;
   dateTime: string; createdAt: string;
   sport: SportSnip; district: DistrictSnip;
+  responses?: { id: string; message: string | null; user: UserSnip }[];
   _count: { responses: number };
 };
 
@@ -33,8 +34,10 @@ type MyMatch = {
   scheduledAt: string | null; completedAt: string | null;
   trustScore: number; approvedById: string | null;
   iHaveConfirmed: boolean; iHaveRated: boolean;
+  iHaveReported?: boolean;
   createdAt: string;
   user1: UserSnip; user2: UserSnip;
+  user1Id?: string; user2Id?: string;
   listing: {
     id: string; type: string; dateTime: string;
     sport: SportSnip; district: DistrictSnip;
@@ -164,6 +167,61 @@ export default function AktivitelerimPage() {
     }
   };
 
+  const [answeringResponse, setAnsweringResponse] = useState<string | null>(null);
+  const handleResponseAction = async (id: string, action: "accept" | "reject", listingId: string) => {
+    setAnsweringResponse(id);
+    try {
+      const res = await fetch(`/api/ilan/${listingId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, responseId: id }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        toast.success(action === "accept" ? "✅ Başvuru kabul edildi!" : "Başvuru reddedildi");
+        if (action === "accept") {
+          setListings(prev => prev.map(l => l.id === listingId ? { ...l, status: "MATCHED", responses: [] } : l));
+        } else {
+          setListings(prev => prev.map(l => l.id === listingId ? { ...l, responses: l.responses?.filter(r => r.id !== id) } : l));
+        }
+      } else {
+        toast.error(json.error ?? "İşlem başarısız");
+      }
+    } catch {
+      toast.error("Bir hata oluştu");
+    } finally {
+      setAnsweringResponse(null);
+    }
+  };
+
+  const [confirmingMatchId, setConfirmingMatchId] = useState<string | null>(null);
+  const handleMatchAction = async (matchId: string, action: "approve" | "report_no_show") => {
+    setConfirmingMatchId(matchId);
+    try {
+      const res = await fetch(`/api/matches/${matchId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        toast.success(action === "approve" ? "✅ Maç onaylandı!" : "⚠️ Bildirim iletildi.");
+        setMatches(prev => prev.map(m => m.id === matchId ? { 
+          ...m, 
+          iHaveConfirmed: action === "approve", 
+          iHaveReported: action === "report_no_show",
+          status: json.data?.status ?? m.status 
+        } : m));
+      } else {
+        toast.error(json.error ?? "İşlem başarısız");
+      }
+    } catch {
+      toast.error("Bir hata oluştu");
+    } finally {
+      setConfirmingMatchId(null);
+    }
+  };
+
   const handleChallengeAction = async (id: string, action: "ACCEPTED" | "REJECTED") => {
     try {
       const res = await fetch(`/api/challenges/${id}`, {
@@ -280,6 +338,35 @@ export default function AktivitelerimPage() {
                     {m._count.messages > 0 && (
                       <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">💬 {m._count.messages} mesaj</p>
                     )}
+                    
+                    {needsAction && !m.iHaveReported && (
+                      <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-700/50 rounded-xl space-y-3">
+                        <p className="text-xs text-amber-800 dark:text-amber-300 font-medium">
+                          Maç tarihi geçti. Maç gerçekleştiyse lütfen onaylayın, aksi halde bildirin.
+                        </p>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={(e) => { e.preventDefault(); handleMatchAction(m.id, "approve"); }}
+                            disabled={confirmingMatchId === m.id}
+                            className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold py-2 rounded-lg transition"
+                          >
+                            ✅ Maçı Onayla
+                          </button>
+                          <button
+                            onClick={(e) => { e.preventDefault(); handleMatchAction(m.id, "report_no_show"); }}
+                            disabled={confirmingMatchId === m.id}
+                            className="flex-1 bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-900/20 dark:hover:bg-red-900/30 dark:text-red-400 text-[10px] font-bold py-2 rounded-lg transition"
+                          >
+                            🚫 Gelmedi Olarak Bildir
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    {m.iHaveReported && (
+                      <div className="mt-3 text-center p-2 bg-red-50 dark:bg-red-900/10 rounded-lg">
+                        <span className="text-xs text-red-600 dark:text-red-400 font-medium italic">Rapor iletildi.</span>
+                      </div>
+                    )}
                   </div>
                 </Link>
               );
@@ -340,6 +427,46 @@ export default function AktivitelerimPage() {
                     </button>
                   )}
                 </div>
+
+                {/* Gelen Başvurular (İlan Sahibine Özel) */}
+                {l.status === "OPEN" && l.responses && l.responses.length > 0 && (
+                  <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700/50">
+                    <h4 className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-3">⚠️ Bekleyen Karşılıklar ({l.responses.length})</h4>
+                    <div className="space-y-3">
+                      {l.responses.map((resp) => (
+                        <div key={resp.id} className="bg-emerald-50/50 dark:bg-emerald-900/10 p-3 rounded-xl border border-emerald-100 dark:border-emerald-800/30">
+                          <div className="flex items-center justify-between gap-3 mb-2">
+                            <Link href={`/profil/${resp.user.id}`} className="flex items-center gap-2 group">
+                              <Avatar user={resp.user} />
+                              <span className="text-xs font-bold text-gray-800 dark:text-gray-100 group-hover:text-emerald-600 transition">{resp.user.name}</span>
+                            </Link>
+                            <div className="flex gap-1">
+                              <button
+                                disabled={answeringResponse === resp.id}
+                                onClick={() => handleResponseAction(resp.id, "accept", l.id)}
+                                className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold rounded-lg transition"
+                              >
+                                {answeringResponse === resp.id ? "..." : "Kabul"}
+                              </button>
+                              <button
+                                disabled={answeringResponse === resp.id}
+                                onClick={() => handleResponseAction(resp.id, "reject", l.id)}
+                                className="px-3 py-1 bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-900/20 text-[10px] font-bold rounded-lg transition"
+                              >
+                                Red
+                              </button>
+                            </div>
+                          </div>
+                          {resp.message && (
+                            <p className="text-[11px] text-gray-500 dark:text-gray-400 italic bg-white dark:bg-gray-800 px-2 py-1 rounded border border-gray-100 dark:border-gray-700">
+                              &ldquo;{resp.message}&rdquo;
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             ))
           )}

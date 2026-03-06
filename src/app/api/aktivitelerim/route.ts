@@ -31,6 +31,14 @@ export async function GET() {
           district: {
             select: { name: true, city: { select: { name: true } } },
           },
+          responses: {
+            where: { status: "PENDING" },
+            select: {
+              id: true,
+              message: true,
+              user: { select: { id: true, name: true, avatarUrl: true } },
+            },
+          },
           _count: { select: { responses: true } },
         },
       }),
@@ -91,16 +99,29 @@ export async function GET() {
           },
           ratings: { select: { ratedById: true } },
           _count: { select: { messages: true } },
+          u1Approved: true,
+          u2Approved: true,
+          u1Reported: true,
+          u2Reported: true,
+          user1Id: true,
+          user2Id: true,
         },
       }),
     ]);
 
     // Her maç için kullanıcının onaylayıp onaylamadığını ve puan verip vermediğini ekle
-    const matchesWithMeta = matches.map((m) => ({
-      ...m,
-      iHaveConfirmed: m.approvedById === userId || m.status === "COMPLETED",
-      iHaveRated: m.ratings.some((r) => r.ratedById === userId),
-    }));
+    const matchesWithMeta = matches.map((m) => {
+      const isU1 = m.user1Id === userId;
+      const myApproved = isU1 ? m.u1Approved : m.u2Approved;
+      const myReported = isU1 ? m.u1Reported : m.u2Reported;
+      
+      return {
+        ...m,
+        iHaveConfirmed: myApproved || m.status === "COMPLETED",
+        iHaveReported: myReported,
+        iHaveRated: (m as any).ratings.some((r: any) => r.ratedById === userId),
+      };
+    });
 
     log.info("Aktivitelerim yüklendi", {
       userId,

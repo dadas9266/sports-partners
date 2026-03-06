@@ -72,7 +72,7 @@ export async function GET() {
           district: { include: { city: true } },
           venue: true,
           responses: {
-            include: { user: { select: { id: true, name: true } } },
+            include: { user: { select: { id: true, name: true, avatarUrl: true } } },
             orderBy: { createdAt: "desc" },
             take: 20,
           },

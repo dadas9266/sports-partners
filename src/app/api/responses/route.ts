@@ -74,7 +74,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Engel kontrolü — engellenen kullanıcı ilan sahibine karşılık veremez
+    // Engel kontrolü
     const block = await prisma.userBlock.findFirst({
       where: {
         OR: [
@@ -88,6 +88,24 @@ export async function POST(request: Request) {
         { success: false, error: "Bu ilana karşılık gönderemezsiniz" },
         { status: 403 }
       );
+    }
+
+    // KAPALI PROFİL MESAJ/TEKLİF ENGELİ
+    const targetUser = await prisma.user.findUnique({
+      where: { id: listing.userId },
+      select: { isPrivateProfile: true }
+    });
+    
+    if (targetUser?.isPrivateProfile) {
+      const isFollowing = await prisma.follow.findUnique({
+        where: { followerId_followingId: { followerId: userId, followingId: listing.userId } }
+      });
+      if (!isFollowing || isFollowing.status !== "ACCEPTED") {
+        return NextResponse.json(
+          { success: false, error: "Bu kullanıcıya sadece takipçileri mesaj/teklif gönderebilir." },
+          { status: 403 }
+        );
+      }
     }
 
     // İlan banned kullanıcı engeli + cinsiyet kısıtı + yaş kısıtı kontrolü

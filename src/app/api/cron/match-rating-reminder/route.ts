@@ -39,7 +39,10 @@ export async function GET(request: Request) {
         id: true,
         user1Id: true,
         user2Id: true,
-        approvedById: true,
+        u1Approved: true,
+        u2Approved: true,
+        u1Reported: true,
+        u2Reported: true,
         scheduledAt: true,
         listing: {
           select: {
@@ -53,10 +56,14 @@ export async function GET(request: Request) {
       const sportName = match.listing?.sport?.name ?? "Spor";
       const sportIcon = match.listing?.sport?.icon ?? "⚽";
 
-      // Her katılımcı için — henüz onaylamamış olanları bilgilendir
+      // Her katılımcı için — henüz onaylamamış veya raporlamamış olanları bilgilendir
       for (const uid of [match.user1Id, match.user2Id]) {
-        // Bu kişi zaten onayladıysa atla
-        if (match.approvedById === uid) continue;
+        const isU1 = uid === match.user1Id;
+        const myApproved = isU1 ? match.u1Approved : match.u2Approved;
+        const myReported = isU1 ? match.u1Reported : match.u2Reported;
+
+        // Bu kişi zaten onayladıysa veya raporladıysa atla
+        if (myApproved || myReported) continue;
 
         // Son 23 saatte aynı maç için zaten bildirim gönderildiyse atla
         const recentNotif = await prisma.notification.findFirst({
@@ -73,7 +80,7 @@ export async function GET(request: Request) {
           userId: uid,
           type: "MATCH_STATUS_CHANGED",
           title: `${sportIcon} Maçını Onayladın mı?`,
-          body: `${sportName} maçının tarihi geçti. Maç oyandıysa onaylamayı unutma!`,
+          body: `${sportName} maçının tarihi geçti. Maç gerçekleştiyse onaylayabilir, aksi halde bildirebilirsiniz.`,
           link: `/eslesmeler/${match.id}`,
         });
         confirmSent++;

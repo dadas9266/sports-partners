@@ -126,6 +126,7 @@ model User {
   reportsReceived      UserReport[]      @relation("ReportTarget")
   enrollmentsAsTrainer TrainerEnrollment[] @relation("TrainerEnrollments")
   enrollmentsAsStudent TrainerEnrollment[] @relation("StudentEnrollments")
+  commentLikes         CommentLike[]
 }
 
 // ========== SPOR ==========
@@ -321,6 +322,13 @@ model Match {
   status     MatchStatus @default(SCHEDULED)
   scheduledAt DateTime?                           // Maç zamanı (listing.dateTime kopyası)
   completedAt DateTime?                           // Tamamlanma zamanı
+  
+  // --- Maç Onayı / Raporlama ---
+  u1Approved  Boolean   @default(false)           // user1 onayladı mı?
+  u2Approved  Boolean   @default(false)           // user2 onayladı mı?
+  u1Reported  Boolean   @default(false)           // user1 rakibi gelmedi diye raporladı mı?
+  u2Reported  Boolean   @default(false)           // user2 rakibi gelmedi diye raporladı mı?
+  
   // --- Güven Skoru (0-100) ---
   trustScore    Int     @default(0)               // Composite: OTP+Geo+ThirdParty
   // --- Geofencing (Pasif) ---
@@ -800,7 +808,22 @@ model PostComment {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  likes     CommentLike[]
+
   @@index([postId])
+  @@index([userId])
+}
+
+model CommentLike {
+  id        String      @id @default(cuid())
+  commentId String
+  comment   PostComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User        @relation(fields: [userId], references: [id])
+  createdAt DateTime    @default(now())
+
+  @@unique([commentId, userId])
+  @@index([commentId])
   @@index([userId])
 }
 

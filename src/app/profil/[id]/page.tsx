@@ -390,17 +390,24 @@ export default function PublicProfilePage({
 
   const joinDate = format(new Date(profile.createdAt), "MMMM yyyy", { locale: tr });
 
+  // restricted state: kapalı profil ve takip etmiyoruz
+  const isRestricted = (profile as any).isRestricted;
+
   // Gizlilik kontrolü: mesaj gönderme izni var mı?
   const whoCanMessage = (profile as any).whoCanMessage ?? "EVERYONE";
   const canMessage =
-    whoCanMessage === "EVERYONE" ||
-    (whoCanMessage === "FOLLOWERS" && isFollowing);
+    !isRestricted && (
+      whoCanMessage === "EVERYONE" ||
+      (whoCanMessage === "FOLLOWERS" && isFollowing)
+    );
 
   // Gizlilik kontrolü: teklif gönderme izni var mı?
   const whoCanChallenge = (profile as any).whoCanChallenge ?? "EVERYONE";
   const canChallenge =
-    whoCanChallenge === "EVERYONE" ||
-    (whoCanChallenge === "FOLLOWERS" && isFollowing);
+    !isRestricted && (
+      whoCanChallenge === "EVERYONE" ||
+      (whoCanChallenge === "FOLLOWERS" && isFollowing)
+    );
 
   return (
     <div className="max-w-2xl mx-auto pb-24">
@@ -458,10 +465,10 @@ export default function PublicProfilePage({
                 {followLoading ? "..." : pendingFollow ? "⏳ İstek Gönderildi" : isFollowing ? "Takip Ediliyor" : "Takip Et"}
               </button>
             )}
-            {session && !profile.isOwnProfile && (
-              <>
+            {!profile.isOwnProfile && (
+              <div className="flex items-center gap-1.5">
                 {/* Mesaj butonu: gizlilik ayarına göre gizle */}
-                {blockStatus !== "BLOCK" && canMessage && (
+                {session && blockStatus !== "BLOCK" && canMessage && (
                   <button
                     onClick={async () => {
                       if (!session) { toast.error("Giriş yapın"); return; }
@@ -479,25 +486,29 @@ export default function PublicProfilePage({
                   >💬</button>
                 )}
                 {/* Teklif butonu: engellenmemiş VE gizlilik izni varsa göster */}
-                {blockStatus !== "BLOCK" && canChallenge && (
+                {session && blockStatus !== "BLOCK" && canChallenge && (
                   <button
                     onClick={() => setShowChallengeModal(true)}
                     title="Teklif Gönder"
                     className="w-9 h-9 flex items-center justify-center rounded-lg bg-orange-50 dark:bg-orange-900/30 hover:bg-orange-100 dark:hover:bg-orange-900/50 transition text-sm text-orange-600 dark:text-orange-400"
                   >⚔️</button>
                 )}
+                {session && !isRestricted && (
+                  <button
+                    onClick={() => setRatingModal(true)}
+                    title="Değerlendir"
+                    className="w-9 h-9 flex items-center justify-center rounded-lg bg-yellow-50 dark:bg-yellow-900/30 hover:bg-yellow-100 dark:hover:bg-yellow-900/50 transition text-sm text-yellow-600 dark:text-yellow-400"
+                  >⭐</button>
+                )}
                 <button
-                  onClick={() => setRatingModal(true)}
-                  title="Değerlendir"
-                  className="w-9 h-9 flex items-center justify-center rounded-lg bg-yellow-50 dark:bg-yellow-900/30 hover:bg-yellow-100 dark:hover:bg-yellow-900/50 transition text-sm text-yellow-600 dark:text-yellow-400"
-                >⭐</button>
-                <div className="relative">
-                  <button onClick={() => setDotMenuOpen(v => !v)}
-                    className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition text-gray-500 dark:text-gray-400 text-sm font-bold">
-                    ···
-                  </button>
-                  {dotMenuOpen && (
-                    <>
+                  onClick={() => setDotMenuOpen(v => !v)}
+                  className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition text-gray-500 dark:text-gray-400 text-sm font-bold">
+                  ···
+                </button>
+              </div>
+            )}
+            {dotMenuOpen && (
+              <>
                       <div className="fixed inset-0 z-[100]" onClick={() => setDotMenuOpen(false)} />
                       <div className="absolute right-0 mt-1 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-[101] overflow-hidden py-1">
                         {followsMe && (
@@ -584,8 +595,12 @@ export default function PublicProfilePage({
         {/* Stats — clean inline row */}
         <div className="flex items-center gap-4 text-sm mb-3">
           <span><strong className="text-gray-900 dark:text-white">{profile.totalMatches}</strong> <span className="text-gray-500 dark:text-gray-400">maç</span></span>
-          <span><strong className="text-gray-900 dark:text-white">{followerCount}</strong> <span className="text-gray-500 dark:text-gray-400">takipçi</span></span>
-          <span><strong className="text-gray-900 dark:text-white">{followingCount}</strong> <span className="text-gray-500 dark:text-gray-400">takip</span></span>
+          <button onClick={() => !isRestricted && setActiveTab("stats")} className="hover:opacity-80 transition">
+            <strong className="text-gray-900 dark:text-white">{followerCount}</strong> <span className="text-gray-500 dark:text-gray-400">takipçi</span>
+          </button>
+          <button onClick={() => !isRestricted && setActiveTab("stats")} className="hover:opacity-80 transition">
+            <strong className="text-gray-900 dark:text-white">{followingCount}</strong> <span className="text-gray-500 dark:text-gray-400">takip</span>
+          </button>
           {profile.avgRating !== null && profile.avgRating !== undefined && (
             <span><strong className="text-gray-900 dark:text-white">{profile.avgRating.toFixed(1)}</strong> <span className="text-gray-500 dark:text-gray-400">★ ({profile.ratingCount})</span></span>
           )}
@@ -656,8 +671,29 @@ export default function PublicProfilePage({
       {/* ── TAB CONTENT ───────────────────────────────────── */}
       <div className="px-4 sm:px-5 pt-4">
 
+      {/* ── RESTRICTED OVERLAY ────────────────────────────── */}
+      {isRestricted && (
+        <div className="py-16 px-6 text-center bg-gray-50 dark:bg-gray-800/30 rounded-3xl border border-dashed border-gray-200 dark:border-gray-700">
+          <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-3xl text-emerald-600 dark:text-emerald-400">🔒</span>
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">Bu Profil Gizli</h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400 max-w-[240px] mx-auto leading-relaxed">
+            Paylaşımları ve detayları görmek için bu kullanıcıyı takip etmelisin.
+          </p>
+          {!session && (
+            <button 
+              onClick={() => router.push("/auth/login")}
+              className="mt-5 px-6 py-2 bg-emerald-600 text-white rounded-xl font-bold text-xs shadow-lg shadow-emerald-500/20 active:scale-95 transition-transform"
+            >
+              Giriş Yap ve Takip Et
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Posts Tab */}
-      {activeTab === "posts" && (
+      {!isRestricted && activeTab === "posts" && (
         <div>
           {posts.length > 0 && (
             <div className="flex justify-end gap-1 mb-3">
@@ -723,7 +759,7 @@ export default function PublicProfilePage({
       )}
 
       {/* İlanlar */}
-      {activeTab === "listings" && (
+      {!isRestricted && activeTab === "listings" && (
         <div className="space-y-3">
           {profile.activeListings.length === 0 ? (
             <p className="text-center text-gray-500 dark:text-gray-400 py-8">Aktif ilan yok</p>
@@ -756,7 +792,7 @@ export default function PublicProfilePage({
       )}
 
       {/* Değerlendirmeler */}
-      {activeTab === "ratings" && (
+      {!isRestricted && activeTab === "ratings" && (
         <div className="space-y-3">
           {ratings.length === 0 ? (
             <p className="text-center text-gray-500 dark:text-gray-400 py-8">Henüz değerlendirme yok</p>
@@ -785,7 +821,7 @@ export default function PublicProfilePage({
       )}
 
       {/* İstatistikler */}
-      {activeTab === "stats" && (
+      {!isRestricted && activeTab === "stats" && (
         <div className="space-y-5 pb-8">
           {statsLoading ? (
             <div className="flex justify-center py-14"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600" /></div>

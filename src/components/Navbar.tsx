@@ -161,6 +161,7 @@ export default function Navbar() {
                       { href: "/topluluklar", icon: "🏛️", label: "Topluluklar", desc: "Gruplar, kulüpler, takımlar" },
                       { href: "/mekanlar", icon: "🏟️", label: "Mekanlar", desc: "Spor tesisleri & sahalar" },
                       { href: "/turnuvalar", icon: "🏆", label: "Turnuvalar", desc: "Aktif turnuvalar" },
+                      { href: "/liderlik", icon: "🥇", label: "Liderlik", desc: "Sıralamalar & Puanlar" },
                     ].map(item => (
                       <Link
                         key={item.href}

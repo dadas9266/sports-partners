@@ -84,6 +84,22 @@ export default function EslesmelerDetailPage({ params }: { params: Promise<{ mat
       .finally(() => setLoading(false));
   }, [matchId, router]);
 
+  const handleNoShow = async () => {
+    if (!confirm("Bu kişi etkinliğe gelmedi mi? Bu bildirim geri alınamaz.")) return;
+    try {
+      const res = await fetch(`/api/matches/${matchId}/no-show`, { method: "POST" });
+      const json = await res.json();
+      if (json.success) {
+        toast.success("Gelmedi bildirimi gönderildi");
+        router.push("/aktivitelerim");
+      } else {
+        toast.error(json.error ?? "Bildirim gönderilemedi");
+      }
+    } catch {
+      toast.error("Bir hata oluştu");
+    }
+  };
+
   const handleConfirm = async () => {
     setConfirming(true);
     try {
@@ -235,20 +251,29 @@ export default function EslesmelerDetailPage({ params }: { params: Promise<{ mat
             </div>
           ) : dateHasPassed ? (
             <div className="space-y-3">
-              <p className="text-sm text-gray-600 dark:text-gray-300">
-                Maç tarihi geçti. Maç gerçekleştiyse her iki tarafın onaylaması gerekiyor.
-              </p>
-              <button
-                onClick={handleConfirm}
-                disabled={confirming}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2"
-              >
-                {confirming ? (
-                  <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> İşleniyor...</>
-                ) : (
-                  <>✅ Maçı Oynadık, Onaylıyorum</>
-                )}
-              </button>
+              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
+                <p className="text-sm text-amber-800 dark:text-amber-300 font-semibold mb-2">📅 Maç Tarihi Geçti</p>
+                <p className="text-xs text-amber-700 dark:text-amber-400 mb-4">Etkinlik zamanı geçti. Maçı oynadıysanız lütfen onaylayın, oynamadıysanız bildirin.</p>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={handleConfirm}
+                    disabled={confirming}
+                    className="flex-1 min-w-[140px] bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold py-2.5 rounded-xl transition flex items-center justify-center gap-2 text-sm"
+                  >
+                    {confirming ? (
+                      <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> İşleniyor...</>
+                    ) : (
+                      <>✅ Maçı Oynadık</>
+                    )}
+                  </button>
+                  <button
+                    onClick={handleNoShow}
+                    className="flex-1 min-w-[140px] bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-xl px-4 py-2.5 hover:bg-red-100 transition text-sm font-semibold"
+                  >
+                    ⚠️ Gelmedi (Bildir)
+                  </button>
+                </div>
+              </div>
             </div>
           ) : (
             <p className="text-sm text-gray-500 dark:text-gray-400">

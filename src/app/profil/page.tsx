@@ -545,12 +545,6 @@ export default function ProfilePage() {
                   <div className="mt-3 bg-green-50 dark:bg-green-900/20 rounded-lg p-3">
                     <p className="text-sm text-green-700 dark:text-green-300">
                       ✅ Eşleşme: <Link href={`/profil/${listing.match.user2.id}`} className="font-semibold hover:underline">{listing.match.user2?.name}</Link>
-                      {listing.match.user2?.phone && (
-                        <span> · 📞 {listing.match.user2.phone}</span>
-                      )}
-                      {listing.match.user2?.email && (
-                        <span> · ✉️ {listing.match.user2.email}</span>
-                      )}
                     </p>
                   </div>
                 )}
@@ -620,10 +614,6 @@ export default function ProfilePage() {
                       <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                         Partner: <Link href={`/profil/${partner?.id}`} className="font-semibold hover:text-emerald-600 transition">{partner?.name}</Link>
                       </p>
-                    </div>
-                    <div className="text-right text-sm text-gray-500 dark:text-gray-400">
-                      {partner?.phone && <p>📞 {partner.phone}</p>}
-                      <p>✉️ {partner?.email}</p>
                     </div>
                   </div>
                   {match.listing?.venue && (

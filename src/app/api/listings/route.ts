@@ -334,7 +334,8 @@ export async function POST(request: Request) {
     }
 
     // Sadece TRAINER tipindeki kullanıcılar Eğitmen ilanı verebilir
-    if (parsed.data.type === "TRAINER" && user?.userType !== "TRAINER") {
+    const isTrainer = user?.userType === "TRAINER" || !!user?.trainerProfile;
+    if (parsed.data.type === "TRAINER" && !isTrainer) {
       return NextResponse.json(
         { success: false, error: "Eğitmen ilanı verebilmek için profilinizin Eğitmen tipine sahip olması gereklidir." },
         { status: 403 }

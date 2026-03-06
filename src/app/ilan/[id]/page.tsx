@@ -471,16 +471,6 @@ export default function ListingDetailPage({
               <Link href={`/profil/${listing.match.user1Id}`} className="font-semibold text-gray-800 dark:text-gray-100 hover:text-emerald-600 transition">
                 {listing.match.user1?.name}
               </Link>
-              {(isOwner || currentUserId === listing.match.user2Id) && (
-                <>
-                  {listing.match.user1?.phone && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400">📞 {listing.match.user1.phone}</p>
-                  )}
-                  {listing.match.user1?.email && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400">✉️ {listing.match.user1.email}</p>
-                  )}
-                </>
-              )}
             </div>
             <div className="flex items-center justify-center text-2xl" aria-hidden="true">🤝</div>
             <div className="flex-1 bg-white dark:bg-gray-800 rounded-lg p-4">
@@ -488,16 +478,6 @@ export default function ListingDetailPage({
               <Link href={`/profil/${listing.match.user2Id}`} className="font-semibold text-gray-800 dark:text-gray-100 hover:text-emerald-600 transition">
                 {listing.match.user2?.name}
               </Link>
-              {(isOwner || currentUserId === listing.match.user2Id) && (
-                <>
-                  {listing.match.user2?.phone && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400">📞 {listing.match.user2.phone}</p>
-                  )}
-                  {listing.match.user2?.email && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400">✉️ {listing.match.user2.email}</p>
-                  )}
-                </>
-              )}
             </div>
           </div>
           {/* Post-match panel — only for participants after the event */}
@@ -510,85 +490,26 @@ export default function ListingDetailPage({
               <div className="mt-4 border-t border-green-200 dark:border-green-700 pt-4 space-y-4">
                 {/* Complete match CTA */}
                 {matchStatus !== "COMPLETED" && (
-                  <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Etkinliğe katıldınız mı?</p>
-                    <Button onClick={() => handleCompleteMatch(listing.match!.id)} loading={completing} size="sm">
-                      ✅ Maçı Tamamla (+10 puan)
-                    </Button>
+                  <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
+                    <p className="text-sm text-amber-800 dark:text-amber-300 font-semibold mb-2">📅 Maç Tarihi Geçti</p>
+                    <p className="text-xs text-amber-700 dark:text-amber-400 mb-4">Etkinlik zamanı geçti. Maçı oynadıysanız lütfen onaylayın, oynamadıysanız bildirin.</p>
+                    <div className="flex flex-wrap gap-2">
+                      <Button onClick={() => handleCompleteMatch(listing.match!.id)} loading={completing} size="sm">
+                        ✅ Maçı Oynadık (Onayla)
+                      </Button>
+                      <button
+                        onClick={() => handleNoShow(listing.match!.id)}
+                        disabled={noShowSending}
+                        className="text-sm bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-lg px-4 py-2 hover:bg-red-100 transition disabled:opacity-50"
+                      >
+                        {noShowSending ? "Gönderiliyor..." : "⚠️ Gelmedi (Bildir)"}
+                      </button>
+                    </div>
                   </div>
                 )}
 
                 {/* Rating section */}
                 {matchStatus === "COMPLETED" && !alreadyRated && !showRatingModal && (
-                  <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Karşı oyuncuyu değerlendirin</p>
-                    <button
-                      onClick={() => setShowRatingModal(true)}
-                      className="inline-flex items-center gap-2 text-sm bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700 rounded-lg px-4 py-2 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition"
-                    >
-                      ⭐ Değerlendirme Yap
-                    </button>
-                  </div>
-                )}
-
-                {/* Inline star rating modal */}
-                {showRatingModal && !alreadyRated && (
-                  <div className="animate-slide-up bg-white dark:bg-gray-800 border border-amber-200 dark:border-amber-700 rounded-xl p-5 space-y-3">
-                    <h4 className="font-semibold text-gray-800 dark:text-gray-100">⭐ Karşı Oyuncuyu Değerlendir</h4>
-                    <div className="flex gap-2">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <button
-                          key={star}
-                          onClick={() => setRatingScore(star)}
-                          className={`text-3xl transition-transform hover:scale-110 focus:outline-none ${star <= ratingScore ? "opacity-100" : "opacity-30"}`}
-                          aria-label={`${star} yıldız`}
-                        >
-                          ⭐
-                        </button>
-                      ))}
-                    </div>
-                    <textarea
-                      value={ratingComment}
-                      onChange={(e) => setRatingComment(e.target.value)}
-                      rows={2}
-                      maxLength={300}
-                      className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-amber-400 outline-none resize-none"
-                      placeholder="Yorum (opsiyonel, max 300 karakter)..."
-                    />
-                    <div className="flex gap-2">
-                      <Button size="sm" onClick={() => handleRate(listing.match!.id, ratedUserId)} loading={ratingSubmitting} disabled={ratingScore === 0}>
-                        Gönder
-                      </Button>
-                      <button onClick={() => setShowRatingModal(false)} className="text-sm text-gray-500 hover:underline">İptal</button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Post-rating: replay CTA */}
-                {(alreadyRated || matchStatus === "COMPLETED") && (
-                  <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg px-4 py-3 flex items-center justify-between gap-3">
-                    <span className="text-sm text-emerald-800 dark:text-emerald-300 font-medium">
-                      {alreadyRated ? "✅ Değerlendirdiniz!" : "✅ Maç tamamlandı!"}
-                    </span>
-                    <Link
-                      href={`/ilan/olustur?sport=${listing.sport?.id}&cityId=${listing.district?.city?.id}`}
-                      className="text-sm font-semibold text-emerald-700 dark:text-emerald-400 hover:underline whitespace-nowrap"
-                    >
-                      🔄 Tekrar buluşalım →
-                    </Link>
-                  </div>
-                )}
-
-                {/* No-show button */}
-                {matchStatus !== "COMPLETED" && (
-                  <button
-                    onClick={() => handleNoShow(listing.match!.id)}
-                    disabled={noShowSending}
-                    className="text-xs text-red-500 dark:text-red-400 hover:underline disabled:opacity-50"
-                  >
-                    {noShowSending ? "Gönderiliyor..." : "⚠️ Karşım gelmedi (bildir)"}
-                  </button>
-                )}
               </div>
             );
           })()}

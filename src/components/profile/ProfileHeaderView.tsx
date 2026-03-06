@@ -189,10 +189,6 @@ export default function ProfileHeaderView({
           )}
         </div>
 
-        {/* Bio / Info */}
-        {user.phone && (
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">📞 {user.phone}</p>
-        )}
         {user.bio && (
           <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed mb-3">{user.bio}</p>
         )}
