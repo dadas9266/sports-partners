@@ -207,13 +207,15 @@ export default function PublicProfilePage({
 
   const handleFollow = async () => {
     if (!session) { toast.error("Takip etmek için giriş yapın"); return; }
-    // Pending istek varsa iptal et
+    // Pending istek varsa iptal et / geri çek
     if (pendingFollow) {
       setFollowLoading(true);
       try {
-        await toggleFollow(id);
+        const res = await toggleFollow(id) as any;
         setPendingFollow(false);
-        toast.success("Takip isteği geri alındı");
+        toast.success(res.message || "Takip isteği geri çekildi");
+        // Sayaçları güncelle
+        loadFollowStats();
       } catch { toast.error("Hata oluştu"); }
       finally { setFollowLoading(false); }
       return;
@@ -231,10 +233,10 @@ export default function PublicProfilePage({
       const actualPending = res.pending ?? false;
       setIsFollowing(actualFollowing);
       setPendingFollow(actualPending);
-      setFollowerCount((prev) => {
-        const diff = actualFollowing !== next ? (actualFollowing ? 1 : -1) : 0;
-        return prev + diff;
-      });
+      
+      // Her durumda API'den güncel sayıları çekmek en sağlıklısı
+      loadFollowStats();
+
       if (actualPending) {
         toast.success("⏳ Takip isteği gönderildi");
       } else {

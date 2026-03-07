@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
 
     if (action === "ACCEPT") {
       await prisma.follow.update({
-        where: { id: followId },
+        where: { id: follow.id },
         data: { status: "ACCEPTED" },
       });
       // Kabul bildirimini isteği gönderene at
@@ -91,12 +91,12 @@ export async function POST(req: NextRequest) {
         NOTIF.followAccepted(follow.followerId, acceptor?.name ?? "Biri", userId)
       );
       log.info("Takip isteği kabul edildi", { userId, followerId: follow.followerId });
-      return NextResponse.json({ success: true, action: "ACCEPTED" });
+      return NextResponse.json({ success: true, action: "ACCEPTED", message: "Takip isteği kabul edildi" });
     } else {
       // Reddet: kaydı sil
-      await prisma.follow.delete({ where: { id: followId } });
+      await prisma.follow.delete({ where: { id: follow.id } });
       log.info("Takip isteği reddedildi", { userId, followerId: follow.followerId });
-      return NextResponse.json({ success: true, action: "REJECTED" });
+      return NextResponse.json({ success: true, action: "REJECTED", message: "Takip isteği silindi" });
     }
   } catch (error) {
     log.error("Follow requests POST hatası", error);

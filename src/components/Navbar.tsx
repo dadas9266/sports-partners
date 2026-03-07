@@ -374,7 +374,11 @@ export default function Navbar() {
                                           headers: { "Content-Type": "application/json" },
                                           body: JSON.stringify({ followerId: userId, action: "ACCEPT" })
                                         });
-                                        if (res.ok) { refreshNotifs(); toast.success("İstek kabul edildi"); }
+                                        const json = await res.ok ? await res.json() : null;
+                                        if (res.ok) { 
+                                          refreshNotifs(); 
+                                          toast.success(json?.message || "İstek kabul edildi"); 
+                                        }
                                       } catch {}
                                     }}
                                     className="px-3 py-1 bg-emerald-600 text-white text-[10px] font-bold rounded-lg hover:bg-emerald-700 transition"
@@ -392,7 +396,11 @@ export default function Navbar() {
                                           headers: { "Content-Type": "application/json" },
                                           body: JSON.stringify({ followerId: userId, action: "REJECT" })
                                         });
-                                        if (res.ok) { refreshNotifs(); toast("İstek reddedildi", { icon: "🗑️" }); }
+                                        const json = await res.ok ? await res.json() : null;
+                                        if (res.ok) { 
+                                          refreshNotifs(); 
+                                          toast.success(json?.message || "İstek reddedildi"); 
+                                        }
                                       } catch {}
                                     }}
                                     className="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-[10px] font-bold rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition"

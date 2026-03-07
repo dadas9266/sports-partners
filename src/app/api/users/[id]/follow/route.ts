@@ -28,9 +28,11 @@ export async function POST(
     });
 
     if (existing) {
+      // Eğer PENDING ise isteği iptal et / geri çek, eğer ACCEPTED ise takibi bırak
+      const wasPending = existing.status === "PENDING";
       await prisma.follow.delete({ where: { id: existing.id } });
-      log.info("Takip bırakıldı", { userId, targetId });
-      return NextResponse.json({ success: true, following: false, pending: false });
+      log.info(wasPending ? "Takip isteği geri çekildi" : "Takip bırakıldı", { userId, targetId });
+      return NextResponse.json({ success: true, following: false, pending: false, message: wasPending ? "İstek geri çekildi" : "Takipten çıkıldı" });
     } else {
       // Kapalı profil: PENDING olarak oluştur, bildirim gönder
       const isPrivate = (target as any).isPrivateProfile ?? false;
