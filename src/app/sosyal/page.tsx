@@ -267,37 +267,28 @@ export default function SosyalPage() {
       });
       const json = await res.json();
       if (res.ok) {
+        const newComment = { ...(json.comment || json), likedByMe: false, _count: { likes: 0, replies: 0 }, replies: [] };
         if (parent) {
-          // Nested update
           setComments(prev => {
             const list = prev[postId] || [];
-            const addReply = (nodes: any[]): any[] => {
-              return nodes.map(n => {
+            const addReply = (nodes: any[]): any[] =>
+              nodes.map(n => {
                 if (n.id === parent.id) {
-                  return { ...n, replies: [...(n.replies || []), json.comment || json] };
+                  return { ...n, replies: [...(n.replies || []), newComment], _count: { ...n._count, replies: (n._count?.replies ?? 0) + 1 } };
                 }
-                if (n.replies?.length > 0) {
-                  return { ...n, replies: addReply(n.replies) };
-                }
+                if (n.replies?.length > 0) return { ...n, replies: addReply(n.replies) };
                 return n;
               });
-            };
             return { ...prev, [postId]: addReply(list) };
           });
         } else {
-          setComments((p) => ({ ...p, [postId]: [...(p[postId] ?? []), json.comment || json] }));
+          setComments((p) => ({ ...p, [postId]: [...(p[postId] ?? []), newComment] }));
         }
         setCommentText((p) => ({ ...p, [postId]: "" }));
-        setReplyingTo(p => {
-          const next = { ...p };
-          delete next[postId];
-          return next;
-        });
+        setReplyingTo(p => { const next = { ...p }; delete next[postId]; return next; });
         setPosts((prev) =>
           prev.map((p) =>
-            p.id === postId
-              ? { ...p, _count: { ...p._count, comments: p._count.comments + 1 } }
-              : p
+            p.id === postId ? { ...p, _count: { ...p._count, comments: p._count.comments + 1 } } : p
           )
         );
       } else {
@@ -307,6 +298,26 @@ export default function SosyalPage() {
       setSubmittingComment(null);
     }
   };
+
+  const handleCommentLike = useCallback(async (postId: string, commentId: string) => {
+    try {
+      const res = await fetch(`/api/comments/${commentId}/like`, { method: "POST" });
+      const json = await res.json();
+      if (typeof json.likeCount === "number") {
+        setComments(prev => {
+          const updateLike = (nodes: any[]): any[] =>
+            nodes.map(n => {
+              if (n.id === commentId) {
+                return { ...n, _count: { ...n._count, likes: json.likeCount }, likedByMe: json.liked };
+              }
+              if (n.replies?.length > 0) return { ...n, replies: updateLike(n.replies) };
+              return n;
+            });
+          return { ...prev, [postId]: updateLike(prev[postId] ?? []) };
+        });
+      }
+    } catch { /* ignore */ }
+  }, []);
 
   if (status === "loading" || loading) {
     return (
@@ -427,6 +438,7 @@ export default function SosyalPage() {
               onDeletePost={(postId) => setPosts((p) => p.filter((x) => x.id !== postId))}
               replyingToGlobal={replyingTo[post.id]}
               setReplyingToGlobal={(p) => setReplyingTo(prev => ({ ...prev, [post.id]: p }))}
+              onCommentLike={(pId, cId) => handleCommentLike(pId, cId)}
             />
           ))}
 
@@ -485,14 +497,14 @@ function PostCard({
   onDeletePost: (id: string) => void;
   replyingToGlobal: any;
   setReplyingToGlobal: (p: any) => void;
+  onCommentLike: (postId: string, commentId: string) => void;
 }) {
   const [deleting, setDeleting] = useState(false);
   const [showLikesModal, setShowLikesModal] = useState(false);
   const [likesList, setLikesList] = useState<any[]>([]);
   const [likesLoading, setLikesLoading] = useState(false);
-  const [replyingToLocal, setReplyingToLocal] = useState<any>(null);
+  const [showAllComments, setShowAllComments] = useState(false);
 
-  // Sync component local state with global if needed, but here it's easier to use props directly
   const currentReply = replyingToGlobal;
   const setReply = setReplyingToGlobal;
 
@@ -523,23 +535,7 @@ function PostCard({
     finally { setLikesLoading(false); }
   };
 
-  const handleCommentLike = async (commentId: string) => {
-    try {
-      const res = await fetch(`/api/comments/${commentId}/like`, { method: "POST" });
-      const json = await res.json();
-      if (json.likeCount !== undefined) {
-        // Parent state'i güncelle (sosyal feed'deki comments objesini)
-        // Bu biraz karmaşık çünkü comments[post.id] bir array.
-        // Ama şimdilik basit bir fetch tetiklemek yerine local update deneyelim:
-        onToggleComments(null); // Sadece listeyi refresh etmek için bir yöntem gerekebilir
-        // Sosyal feed'de comment like şu an state olarak tutulmuyor, direkt refresh yapalım
-        const refreshRes = await fetch(`/api/posts/${post.id}/comments`);
-        const refreshJson = await refreshRes.json();
-        // Bu kısmı SosyalPage'deki bir fonksiyona bağlamak daha doğru olurdu ama
-        // hızlı çözüm için şimdilik UI'da sadece görsel feedback verelim (re-render)
-      }
-    } catch { /* ignore */ }
-  };
+  // Comment like is handled by parent via onCommentLike prop
 
   const isOwn = post.user.id === sessionUserId;
 
@@ -658,22 +654,45 @@ function PostCard({
           ) : (
             (comments[post.id] ?? []).length === 0 ? (
               <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-1">Henüz yorum yok. İlk yorumu sen yap!</p>
-            ) : (
-              <div className="space-y-3">
-                {(comments[post.id] ?? []).map((c: any) => (
-                   <NestedComment 
-                      key={c.id} 
-                      comment={c} 
-                      onLike={handleCommentLike} 
+            ) : (() => {
+              const allComments = comments[post.id] ?? [];
+              const SHOW_LIMIT = 3;
+              const visible = showAllComments ? allComments : allComments.slice(0, SHOW_LIMIT);
+              const remaining = allComments.length - SHOW_LIMIT;
+              return (
+                <div className="space-y-1">
+                  {!showAllComments && remaining > 0 && (
+                    <button
+                      onClick={() => setShowAllComments(true)}
+                      className="text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition mb-1"
+                    >
+                      ↩ Diğer {remaining} yorumu gör
+                    </button>
+                  )}
+                  {visible.map((c: any) => (
+                    <FacebookComment
+                      key={c.id}
+                      comment={c}
+                      postId={post.id}
+                      onLike={(cId) => onCommentLike(post.id, cId)}
                       onReply={(p: any) => {
                         setReply(p);
                         const el = document.getElementById(`comment-input-${post.id}`);
                         el?.focus();
-                      }} 
-                   />
-                ))}
-              </div>
-            )
+                      }}
+                    />
+                  ))}
+                  {showAllComments && allComments.length > SHOW_LIMIT && (
+                    <button
+                      onClick={() => setShowAllComments(false)}
+                      className="text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition mt-1"
+                    >
+                      Yorumları gizle ↑
+                    </button>
+                  )}
+                </div>
+              );
+            })()
           )}
           {/* Yorum gir */}
           <div className="mt-2">
@@ -709,12 +728,30 @@ function PostCard({
   );
 }
 
-function NestedComment({ comment, onLike, onReply, isReply = false }: { comment: any, onLike: (id: string) => void, onReply: (p: any) => void, isReply?: boolean }) {
+function FacebookComment({
+  comment,
+  postId,
+  onLike,
+  onReply,
+  isReply = false,
+}: {
+  comment: any;
+  postId: string;
+  onLike: (commentId: string) => void;
+  onReply: (p: any) => void;
+  isReply?: boolean;
+}) {
+  const [showReplies, setShowReplies] = useState(false);
+  const replyCount = comment.replies?.length ?? comment._count?.replies ?? 0;
+
   return (
-    <div className={`group ${isReply ? "ml-8 mt-2" : "mt-3"}`}>
-      <div className="flex gap-2.5">
-        <Link href={`/profil/${comment.user?.id}`} className="shrink-0">
-          <div className={`${isReply ? "w-6 h-6 text-[10px]" : "w-8 h-8 text-xs"} rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center font-bold text-gray-600 dark:text-gray-400 overflow-hidden`}>
+    <div className={isReply ? "ml-8 mt-1.5" : "mt-2"}>
+      <div className="flex gap-2">
+        {/* Avatar */}
+        <Link href={`/profil/${comment.user?.id}`} className="shrink-0 mt-0.5">
+          <div className={`${
+            isReply ? "w-6 h-6 text-[10px]" : "w-8 h-8 text-xs"
+          } rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center font-bold text-gray-600 dark:text-gray-400 overflow-hidden`}>
             {comment.user?.avatarUrl ? (
               <img src={comment.user.avatarUrl} alt="" className="w-full h-full object-cover" />
             ) : (
@@ -722,37 +759,66 @@ function NestedComment({ comment, onLike, onReply, isReply = false }: { comment:
             )}
           </div>
         </Link>
+
         <div className="flex-1 min-w-0">
-          <div className="bg-gray-50 dark:bg-gray-700 rounded-xl rounded-tl-none px-3 py-2">
-            <div className="flex justify-between items-start gap-2">
-              <Link href={`/profil/${comment.user?.id}`} className="text-xs font-semibold text-gray-700 dark:text-gray-200 hover:text-emerald-500 transition truncate">{comment.user?.name}</Link>
-              <button 
-                onClick={() => onLike(comment.id)}
-                className={`text-[10px] flex items-center gap-0.5 ${comment.likedByMe ? "text-red-500" : "text-gray-400 hover:text-red-500"}`}
-              >
-                {comment.likedByMe ? "❤️" : "🤍"} <span className="font-medium">{comment._count?.likes || 0}</span>
-              </button>
-            </div>
-            <p className="text-sm text-gray-600 dark:text-gray-300 mt-0.5 leading-relaxed">{comment.content}</p>
-          </div>
-          <div className="flex items-center gap-4 mt-1 ml-1">
-            <p className="text-[9px] text-gray-400">
-              {format(new Date(comment.createdAt), "d MMM, HH:mm", { locale: tr })}
-            </p>
-            <button 
-              onClick={() => onReply({ id: comment.id, name: comment.user?.name })}
-              className="text-[9px] font-bold text-gray-500 hover:text-emerald-600 uppercase tracking-tighter"
-            >
-              Yanıtla
-            </button>
+          {/* Bubble */}
+          <div className="inline-block max-w-full bg-gray-100 dark:bg-gray-700/60 rounded-2xl rounded-tl-sm px-3 py-2">
+            <Link href={`/profil/${comment.user?.id}`} className="text-xs font-bold text-gray-800 dark:text-gray-100 hover:text-emerald-600 transition block">
+              {comment.user?.name}
+            </Link>
+            <p className="text-sm text-gray-700 dark:text-gray-200 leading-relaxed mt-0.5 whitespace-pre-wrap break-words">{comment.content}</p>
           </div>
 
-          {/* Recursive Replies */}
-          {comment.replies?.length > 0 && (
-            <div className="space-y-1">
-              {comment.replies.map((reply: any) => (
-                <NestedComment key={reply.id} comment={reply} onLike={onLike} onReply={onReply} isReply={true} />
-              ))}
+          {/* Actions row */}
+          <div className="flex items-center gap-3 mt-1 ml-1">
+            <span className="text-[10px] text-gray-400 dark:text-gray-500">
+              {format(new Date(comment.createdAt), "d MMM, HH:mm", { locale: tr })}
+            </span>
+            <button
+              onClick={() => onLike(comment.id)}
+              className={`text-[11px] font-bold transition ${
+                comment.likedByMe ? "text-red-500" : "text-gray-500 dark:text-gray-400 hover:text-red-500"
+              }`}
+            >
+              {comment.likedByMe ? "Beğenildi" : "Beğen"}
+              {comment._count?.likes > 0 && (
+                <span className="ml-1 text-[10px] font-normal">{comment._count.likes} ❤️</span>
+              )}
+            </button>
+            {!isReply && (
+              <button
+                onClick={() => onReply({ id: comment.id, name: comment.user?.name })}
+                className="text-[11px] font-bold text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition"
+              >
+                Yanıtla
+              </button>
+            )}
+          </div>
+
+          {/* Replies section */}
+          {replyCount > 0 && !isReply && (
+            <div className="mt-1.5">
+              <button
+                onClick={() => setShowReplies(v => !v)}
+                className="flex items-center gap-1 text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline ml-1"
+              >
+                <svg className={`w-3 h-3 transition-transform ${showReplies ? "rotate-90" : ""}`} fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 111.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" /></svg>
+                {showReplies ? "Yanıtları gizle" : `${replyCount} yanıt gör`}
+              </button>
+              {showReplies && (
+                <div className="mt-1 space-y-1">
+                  {(comment.replies ?? []).map((reply: any) => (
+                    <FacebookComment
+                      key={reply.id}
+                      comment={reply}
+                      postId={postId}
+                      onLike={onLike}
+                      onReply={onReply}
+                      isReply={true}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
