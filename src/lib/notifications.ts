@@ -66,7 +66,7 @@ export const NOTIF = {
     type: "FOLLOW_REQUEST" as NotificationType,
     title: "Takip İsteği",
     body: `${requesterName} sizi takip etmek istiyor.`,
-    link: `/ayarlar/gizlilik`,
+    link: `/profil/${requesterId}`,
   }),
   followAccepted: (userId: string, acceptorName: string, acceptorId: string) => ({
     userId,

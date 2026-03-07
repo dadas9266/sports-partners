@@ -479,7 +479,7 @@ export default function PublicProfilePage({
           <div className="flex items-center gap-2 pb-1">
             {session && !profile.isOwnProfile && blockStatus !== "BLOCK" && (
               <button
-                onClick={pendingFollow ? undefined : handleFollow}
+                onClick={handleFollow}
                 disabled={followLoading}
                 className={`text-sm font-semibold px-4 py-1.5 rounded-lg transition ${
                   pendingFollow
