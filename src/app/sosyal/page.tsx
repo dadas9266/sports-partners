@@ -482,6 +482,7 @@ function PostCard({
   onDeletePost,
   replyingToGlobal,
   setReplyingToGlobal,
+  onCommentLike,
 }: {
   post: Post;
   sessionUserId?: string;
