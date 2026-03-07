@@ -1,0 +1,39 @@
+// Basit küfür / argo filtresi (TR + EN)
+// Yeni kelimeler eklemek için listeye eklemeniz yeterlidir
+
+const BAD_WORDS_TR = [
+  "amk", "aq", "orospu", "piç", "sik", "sikerim", "sikeyim", "yarrak",
+  "göt", "götünü", "ananı", "pezevenk", "kahpe", "oç", "mk", "mq",
+  "amına", "taşak", "dalyarak", "gerizekalı", "salak", "aptal", "dangalak",
+  "hıyar", "ibne", "top", "s2m", "s2k", "am",
+];
+
+const BAD_WORDS_EN = [
+  "fuck", "shit", "bitch", "asshole", "dick", "pussy", "bastard",
+  "cunt", "nigger", "faggot", "retard", "whore", "slut",
+];
+
+// Kelime sınırı ile eşleştirmek için regex oluştur
+const allWords = [...BAD_WORDS_TR, ...BAD_WORDS_EN];
+const pattern = new RegExp(
+  "\\b(" + allWords.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|") + ")\\b",
+  "gi"
+);
+
+/**
+ * Metni kontrol eder, küfür içeriyorsa true döner.
+ */
+export function containsProfanity(text: string): boolean {
+  return pattern.test(text);
+}
+
+/**
+ * Metindeki küfürleri yıldızla maskeler.
+ * Örn: "orospu" → "o****u"
+ */
+export function censorText(text: string): string {
+  return text.replace(pattern, (match) => {
+    if (match.length <= 2) return "*".repeat(match.length);
+    return match[0] + "*".repeat(match.length - 2) + match[match.length - 1];
+  });
+}

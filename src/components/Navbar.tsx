@@ -370,7 +370,8 @@ export default function Navbar() {
                                       if (!userId) return;
                                       try {
                                         const res = await fetch(`/api/follow-requests`, {
-                                          method: "PATCH",
+                                          method: "POST",
+                                          headers: { "Content-Type": "application/json" },
                                           body: JSON.stringify({ followerId: userId, action: "ACCEPT" })
                                         });
                                         if (res.ok) { refreshNotifs(); toast.success("İstek kabul edildi"); }
@@ -387,7 +388,8 @@ export default function Navbar() {
                                       if (!userId) return;
                                       try {
                                         const res = await fetch(`/api/follow-requests`, {
-                                          method: "PATCH",
+                                          method: "POST",
+                                          headers: { "Content-Type": "application/json" },
                                           body: JSON.stringify({ followerId: userId, action: "REJECT" })
                                         });
                                         if (res.ok) { refreshNotifs(); toast("İstek reddedildi", { icon: "🗑️" }); }

@@ -66,8 +66,8 @@ export default function PublicProfilePage({
   const [postsLoading, setPostsLoading] = useState(false);
   const [postsView, setPostsView] = useState<"grid" | "list">("grid");
 
-  // restricted state: kapalı profil ve takip etmiyoruz
-  const isRestricted = !session || (profile?.isPrivateContent && id !== session?.user?.id);
+  // restricted state: kapalı profil (API'den gelen isRestricted flag'i)
+  const isRestricted = !!profile?.isRestricted && id !== session?.user?.id;
 
   // Follow Modal states
   const [showFollowersModal, setShowFollowersModal] = useState(false);
@@ -416,7 +416,7 @@ export default function PublicProfilePage({
     );
   }
 
-  const joinDate = format(new Date(profile.createdAt), "MMMM yyyy", { locale: tr });
+  const joinDate = profile.createdAt ? format(new Date(profile.createdAt), "MMMM yyyy", { locale: tr }) : "";
 
       // Gizlilik kontrolü: mesaj gönderme izni var mı?
       const whoCanMessage = profile.whoCanMessage ?? "EVERYONE";
@@ -616,7 +616,7 @@ export default function PublicProfilePage({
 
         {/* Stats — clean inline row */}
         <div className="flex items-center gap-4 text-sm mb-3">
-          <span><strong className="text-gray-900 dark:text-white">{profile.totalMatches}</strong> <span className="text-gray-500 dark:text-gray-400">maç</span></span>
+          <span><strong className="text-gray-900 dark:text-white">{profile.totalMatches ?? 0}</strong> <span className="text-gray-500 dark:text-gray-400">maç</span></span>
           <button onClick={() => !isRestricted && loadFollowers()} className="hover:opacity-80 transition">
             <strong className="text-gray-900 dark:text-white">{followerCount}</strong> <span className="text-gray-500 dark:text-gray-400">takipçi</span>
           </button>
@@ -635,7 +635,7 @@ export default function PublicProfilePage({
 
         {/* Sports + badges */}
         <div className="flex flex-wrap gap-1.5 mb-3">
-          {profile.sports.map((s) => (
+          {(profile.sports ?? []).map((s) => (
             <span key={s.id} className="inline-flex items-center gap-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs px-2.5 py-1 rounded-full">
               {s.icon} {s.name}
             </span>

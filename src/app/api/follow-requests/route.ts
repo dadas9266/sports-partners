@@ -45,24 +45,32 @@ export async function GET(_req: NextRequest) {
 }
 
 // POST /api/follow-requests — isteği kabul et veya reddet
-// Body: { followId: string, action: "ACCEPT" | "REJECT" }
+// Body: { followId?: string, followerId?: string, action: "ACCEPT" | "REJECT" }
 export async function POST(req: NextRequest) {
   try {
     const userId = await getCurrentUserId();
     if (!userId) return unauthorized();
 
     const body = await req.json();
-    const { followId, action } = body as { followId: string; action: "ACCEPT" | "REJECT" };
+    const { followId, followerId, action } = body as { followId?: string; followerId?: string; action: "ACCEPT" | "REJECT" };
 
-    if (!followId || !["ACCEPT", "REJECT"].includes(action)) {
+    if ((!followId && !followerId) || !["ACCEPT", "REJECT"].includes(action)) {
       return NextResponse.json({ success: false, error: "Geçersiz istek" }, { status: 400 });
     }
 
-    // Yalnızca kendi gelen isteğini onaylayabilir
-    const follow = await prisma.follow.findUnique({
-      where: { id: followId },
-      include: { follower: { select: { name: true, id: true } } },
-    });
+    // followId veya followerId ile bulma
+    let follow;
+    if (followId) {
+      follow = await prisma.follow.findUnique({
+        where: { id: followId },
+        include: { follower: { select: { name: true, id: true } } },
+      });
+    } else {
+      follow = await prisma.follow.findFirst({
+        where: { followerId: followerId!, followingId: userId, status: "PENDING" },
+        include: { follower: { select: { name: true, id: true } } },
+      });
+    }
 
     if (!follow || follow.followingId !== userId) {
       return notFound("Takip isteği bulunamadı");

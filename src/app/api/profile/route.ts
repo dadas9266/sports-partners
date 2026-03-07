@@ -347,3 +347,166 @@ export async function PUT(request: Request) {
     );
   }
 }
+
+// ─── Hesap Silme (KVKK) ─────────────────────────────────
+export async function DELETE(request: Request) {
+  try {
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, error: "Giriş yapmanız gerekiyor" },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+    const { password } = body as { password?: string };
+
+    if (!password) {
+      return NextResponse.json(
+        { success: false, error: "Şifrenizi giriniz" },
+        { status: 400 }
+      );
+    }
+
+    // Rate limit
+    const rateCheck = await checkRateLimit(userId, "auth");
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        { success: false, error: "Çok fazla deneme. Lütfen bekleyin." },
+        { status: 429 }
+      );
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Kullanıcı bulunamadı" },
+        { status: 404 }
+      );
+    }
+
+    const isValid = await bcrypt.compare(password, user.passwordHash ?? "");
+    if (!isValid) {
+      return NextResponse.json(
+        { success: false, error: "Şifre hatalı" },
+        { status: 400 }
+      );
+    }
+
+    // İlişkili verileri sil, sonra kullanıcıyı anonimleştir
+    await prisma.$transaction(async (tx) => {
+      // Sosyal içerikler
+      await tx.postLike.deleteMany({ where: { userId } });
+      await tx.commentLike.deleteMany({ where: { userId } });
+      await tx.postComment.deleteMany({ where: { userId } });
+      await tx.post.deleteMany({ where: { userId } });
+      await tx.storyView.deleteMany({ where: { userId } });
+      await tx.story.deleteMany({ where: { userId } });
+      await tx.storyHighlight.deleteMany({ where: { userId } });
+
+      // Bildirimler, favoriler, takipler
+      await tx.notification.deleteMany({ where: { userId } });
+      await tx.favorite.deleteMany({ where: { userId } });
+      await tx.follow.deleteMany({ where: { OR: [{ followerId: userId }, { followingId: userId }] } });
+
+      // Mesajlar
+      await tx.message.deleteMany({ where: { OR: [{ senderId: userId }, { receiverId: userId }] } });
+      await tx.directConversation.deleteMany({ where: { OR: [{ user1Id: userId }, { user2Id: userId }] } });
+
+      // Grup/Kulüp/Topluluk üyelikleri
+      await tx.groupMembership.deleteMany({ where: { userId } });
+      await tx.userClubMembership.deleteMany({ where: { userId } });
+      await tx.communityMembership.deleteMany({ where: { userId } });
+
+      // Turnuva katılımları
+      await tx.tournamentParticipant.deleteMany({ where: { userId } });
+
+      // Push abonelikleri
+      await tx.pushSubscription.deleteMany({ where: { userId } });
+
+      // Şifre sıfırlama tokenları
+      await tx.passwordResetToken.deleteMany({ where: { email: user.email } });
+
+      // Blok/Rapor
+      await tx.userBlock.deleteMany({ where: { OR: [{ blockerId: userId }, { blockedId: userId }] } });
+      await tx.userReport.deleteMany({ where: { OR: [{ reporterId: userId }, { reportedId: userId }] } });
+
+      // NoShow raporları
+      await tx.noShowReport.deleteMany({ where: { OR: [{ reporterId: userId }, { reportedId: userId }] } });
+
+      // Antrenör/Mekan profilleri
+      const trainerProfile = await tx.trainerProfile.findUnique({ where: { userId } });
+      if (trainerProfile) {
+        await tx.trainerSpecialization.deleteMany({ where: { profileId: trainerProfile.id } });
+        await tx.trainerEnrollment.deleteMany({ where: { OR: [{ trainerId: userId }, { studentId: userId }] } });
+        await tx.trainerProfile.delete({ where: { userId } });
+      }
+      const venueProfile = await tx.venueProfile.findUnique({ where: { userId } });
+      if (venueProfile) {
+        await tx.venueProfile.delete({ where: { userId } });
+      }
+
+      // İlanlar: yanıtları, eşleşmeleri, puanları, ardından ilanları sil
+      const listingIds = (await tx.listing.findMany({ where: { userId }, select: { id: true } })).map(l => l.id);
+      if (listingIds.length > 0) {
+        await tx.rating.deleteMany({ where: { match: { listingId: { in: listingIds } } } });
+        await tx.match.deleteMany({ where: { listingId: { in: listingIds } } });
+        await tx.response.deleteMany({ where: { listingId: { in: listingIds } } });
+        await tx.listing.deleteMany({ where: { userId } });
+      }
+
+      // Kalan yanıtlar (başkalarının ilanlarına verdiği)
+      await tx.response.deleteMany({ where: { userId } });
+
+      // Kalan puanlar (verdiği/aldığı)
+      await tx.rating.deleteMany({ where: { OR: [{ ratedById: userId }, { ratedUserId: userId }] } });
+
+      // Direct challenges
+      await tx.directChallenge.deleteMany({ where: { OR: [{ challengerId: userId }, { targetId: userId }] } });
+
+      // Spor ilişkisini kes
+      await tx.user.update({
+        where: { id: userId },
+        data: { sports: { set: [] } },
+      });
+
+      // Kullanıcıyı anonimleştir (KVKK: kişisel veri silinir, kayıt kalır)
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          name: "Silinmiş Kullanıcı",
+          email: `deleted_${userId}@removed.local`,
+          passwordHash: null,
+          phone: null,
+          avatarUrl: null,
+          coverUrl: null,
+          bio: null,
+          gender: null,
+          birthDate: null,
+          instagram: null,
+          tiktok: null,
+          facebook: null,
+          twitterX: null,
+          vk: null,
+          isBanned: true, // Giriş yapılamasın
+          cityId: null,
+          districtId: null,
+        },
+      });
+    });
+
+    // Cache temizle
+    await cacheDel(cacheKey.profile(userId));
+
+    log.info("Hesap silindi (anonimleştirildi)", { userId });
+
+    return NextResponse.json({ success: true, message: "Hesabınız başarıyla silindi." });
+  } catch (error) {
+    log.error("Hesap silinirken hata", error);
+    return NextResponse.json(
+      { success: false, error: "Hesap silinemedi" },
+      { status: 500 }
+    );
+  }
+}

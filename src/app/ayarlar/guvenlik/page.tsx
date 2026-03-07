@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 import toast from "react-hot-toast";
 import { updateProfile } from "@/services/api";
 import Button from "@/components/ui/Button";
@@ -10,6 +12,7 @@ const inputClass =
 const labelClass = "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1";
 
 export default function GuvenlikPage() {
+  const router = useRouter();
   const [savingPassword, setSavingPassword] = useState(false);
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: "",
@@ -18,6 +21,11 @@ export default function GuvenlikPage() {
   });
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
+
+  // Hesap silme
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,19 +149,72 @@ export default function GuvenlikPage() {
         </form>
       </div>
 
-      {/* ─── Hesap Silme Uyarısı ──────────────────────────────── */}
+      {/* ─── Hesap Silme ──────────────────────────────── */}
       <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-2xl p-6">
         <h3 className="text-base font-semibold text-red-700 dark:text-red-400 mb-1">Tehlikeli Bölge</h3>
         <p className="text-sm text-red-600 dark:text-red-300 mb-4">
-          Hesabını kalıcı olarak silmek istersen lütfen destek ekibiyle iletişime geç.
-          Bu işlem geri alınamaz.
+          Hesabını kalıcı olarak silmek istersen aşağıdaki butonu kullan.
+          Bu işlem geri alınamaz; tüm verileriniz silinecektir.
         </p>
-        <a
-          href="mailto:destek@sportspartner.app"
-          className="text-sm text-red-600 dark:text-red-400 underline hover:no-underline"
-        >
-          destek@sportspartner.app ile iletişime geç
-        </a>
+
+        {!showDeleteConfirm ? (
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className="px-4 py-2 text-sm font-medium text-red-700 dark:text-red-400 border border-red-300 dark:border-red-700 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30 transition"
+          >
+            Hesabımı Sil
+          </button>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-sm font-medium text-red-700 dark:text-red-300">
+              Onaylamak için şifrenizi giriniz:
+            </p>
+            <input
+              type="password"
+              value={deletePassword}
+              onChange={(e) => setDeletePassword(e.target.value)}
+              className={inputClass}
+              placeholder="Mevcut şifreniz"
+              autoComplete="current-password"
+            />
+            <div className="flex gap-3">
+              <button
+                disabled={deleting || !deletePassword}
+                onClick={async () => {
+                  setDeleting(true);
+                  try {
+                    const res = await fetch("/api/profile", {
+                      method: "DELETE",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ password: deletePassword }),
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                      toast.success("Hesabınız silindi. Hoşça kalın.");
+                      await signOut({ redirect: false });
+                      router.push("/auth/login");
+                    } else {
+                      toast.error(data.error || "Hesap silinemedi");
+                    }
+                  } catch {
+                    toast.error("Bir hata oluştu");
+                  } finally {
+                    setDeleting(false);
+                  }
+                }}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-xl hover:bg-red-700 transition disabled:opacity-50"
+              >
+                {deleting ? "Siliniyor..." : "Evet, Hesabımı Sil"}
+              </button>
+              <button
+                onClick={() => { setShowDeleteConfirm(false); setDeletePassword(""); }}
+                className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+              >
+                Vazgeç
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

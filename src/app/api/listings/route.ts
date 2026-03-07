@@ -7,6 +7,7 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { createLogger } from "@/lib/logger";
 import { withCache, cacheDel, cacheKey, CACHE_TTL, cacheDelPattern } from "@/lib/cache";
 import { sendPushToUser } from "@/lib/push";
+import { containsProfanity } from "@/lib/content-filter";
 
 const log = createLogger("listings");
 
@@ -361,6 +362,13 @@ export async function POST(request: Request) {
       } else {
         expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000);
       }
+    }
+
+    if (parsed.data.description && containsProfanity(parsed.data.description)) {
+      return NextResponse.json(
+        { success: false, error: "İlan açıklamanız uygunsuz ifadeler içeriyor." },
+        { status: 400 }
+      );
     }
 
     const listing = await prisma.listing.create({

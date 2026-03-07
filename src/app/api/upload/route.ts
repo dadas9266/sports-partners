@@ -18,6 +18,7 @@ import {
 import { createLogger } from "@/lib/logger";
 import { cacheDel, cacheKey } from "@/lib/cache";
 import { prisma } from "@/lib/prisma";
+import { validateImageBuffer } from "@/lib/image-safety";
 
 const log = createLogger("api:upload");
 
@@ -119,6 +120,12 @@ export async function POST(req: NextRequest) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
+
+    // Magic-byte doğrulaması (uzantı sahteciğini engeller)
+    if (type !== "certificate" && !validateImageBuffer(buffer, file.type)) {
+      return NextResponse.json({ error: "Dosya içeriği geçersiz veya bozuk." }, { status: 400 });
+    }
+
     const { url, error } = await uploadFile(bucket, path, buffer, file.type);
 
     if (error) {

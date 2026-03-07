@@ -133,6 +133,29 @@ export async function PATCH(
       }),
     ]);
 
+    // Otomatik aktivite paylaşımı oluştur
+    try {
+      const listingDetail = await prisma.listing.findUnique({
+        where: { id: response.listingId },
+        include: { sport: true },
+      });
+      if (listingDetail) {
+        const sportName = listingDetail.sport?.name ?? "spor";
+        const u1Name = result.match.user1.name;
+        const u2Name = result.match.user2.name;
+        const activityText = `🤝 ${u1Name} ve ${u2Name} ${sportName} için eşleşti!`;
+        await prisma.post.create({
+          data: {
+            userId: response.listing.userId,
+            content: activityText,
+            images: [],
+          },
+        });
+      }
+    } catch (e) {
+      log.error("Aktivite paylaşımı oluşturulamadı", e);
+    }
+
     return NextResponse.json({ success: true, data: result });
   } catch (error) {
     log.error("İşlem gerçekleştirilirken hata", error);

@@ -117,6 +117,9 @@ export interface ListingSummary {
   isQuick: boolean;
   expiresAt?: string | null;
   _count: { responses: number };
+  // GPS koordinatları
+  latitude?: number | null;
+  longitude?: number | null;
   // Fiyat bilgisi (EQUIPMENT ve TRAINER ilanları için)
   equipmentDetail?: { price: number; isSold: boolean } | null;
   trainerProfile?: { hourlyRate?: number | null } | null;

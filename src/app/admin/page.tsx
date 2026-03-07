@@ -95,7 +95,7 @@ export default function AdminPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"users" | "venues" | "trainers" | "reports">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "venues" | "trainers" | "reports" | "content">("users");
   const [venueProfiles, setVenueProfiles] = useState<VenueProfileAdmin[]>([]);
   const [venueLoading, setVenueLoading] = useState(false);
   const [trainerProfiles, setTrainerProfiles] = useState<TrainerProfileAdmin[]>([]);
@@ -103,6 +103,11 @@ export default function AdminPage() {
   const [reports, setReports] = useState<AdminReport[]>([]);
   const [reportsLoading, setReportsLoading] = useState(false);
   const [reportFilter, setReportFilter] = useState<"PENDING" | "ALL">("PENDING");
+
+  // İçerik moderasyonu
+  const [contentItems, setContentItems] = useState<any[]>([]);
+  const [contentLoading, setContentLoading] = useState(false);
+  const [contentType, setContentType] = useState<"posts" | "comments">("posts");
   const [dbStats, setDbStats] = useState<{
     users: { total: number; new30d: number; new7d: number; banned: number; online: number };
     listings: { total: number; open: number };
@@ -233,6 +238,45 @@ export default function AdminPage() {
     if (session?.user?.isAdmin && activeTab === "reports") fetchReports(reportFilter);
   }, [session, activeTab, fetchReports, reportFilter]);
 
+  const fetchContent = useCallback(async (type: "posts" | "comments" = "posts") => {
+    setContentLoading(true);
+    try {
+      const res = await fetch(`/api/admin/content?type=${type}`);
+      if (res.ok) {
+        const data = await res.json();
+        setContentItems(data.data ?? []);
+      }
+    } catch {
+      toast.error("İçerikler yüklenemedi");
+    } finally {
+      setContentLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (session?.user?.isAdmin && activeTab === "content") fetchContent(contentType);
+  }, [session, activeTab, fetchContent, contentType]);
+
+  const handleDeleteContent = async (id: string, type: "post" | "comment") => {
+    if (!confirm("Bu içeriği silmek istediğinize emin misiniz?")) return;
+    try {
+      const res = await fetch("/api/admin/content", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, type }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("İçerik silindi");
+        setContentItems((prev) => prev.filter((item) => item.id !== id));
+      } else {
+        toast.error(data.error || "Silinemedi");
+      }
+    } catch {
+      toast.error("Hata oluştu");
+    }
+  };
+
   const handleReportAction = async (reportId: string, action: "resolve" | "ban_user" | "dismiss") => {
     setActionLoading(`report-${reportId}`);
     try {
@@ -360,7 +404,7 @@ export default function AdminPage() {
 
       {/* Sekme Butonları */}
       <div className="flex gap-2 mb-6 border-b border-gray-200 dark:border-gray-700">
-        {([[ "users", "👥 Kullanıcılar"], ["venues", "🏙️ Mekan Onayları"], ["trainers", "🎓 Antrenör Onayları"], ["reports", "🚨 Şikayetler"]] as const).map(([tab, label]) => (
+        {([[ "users", "👥 Kullanıcılar"], ["venues", "🏙️ Mekan Onayları"], ["trainers", "🎓 Antrenör Onayları"], ["reports", "🚨 Şikayetler"], ["content", "📝 İçerik"]] as const).map(([tab, label]) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -389,6 +433,76 @@ export default function AdminPage() {
           </button>
         ))}
       </div>
+
+      {/* ── İçerik Moderasyonu Sekmesi ──────────────────────────────────────── */}
+      {activeTab === "content" && (
+        <div>
+          <div className="flex gap-2 mb-4">
+            {(["posts", "comments"] as const).map((t) => (
+              <button key={t} onClick={() => setContentType(t)}
+                className={`text-xs px-3 py-1.5 rounded-full border transition ${
+                  contentType === t
+                    ? "bg-emerald-600 text-white border-emerald-600"
+                    : "border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
+                }`}>
+                {t === "posts" ? "📝 Paylaşımlar" : "💬 Yorumlar"}
+              </button>
+            ))}
+          </div>
+
+          {contentLoading ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600" />
+            </div>
+          ) : contentItems.length === 0 ? (
+            <p className="text-center text-gray-400 py-8">İçerik bulunamadı</p>
+          ) : (
+            <div className="space-y-3">
+              {contentItems.map((item) => (
+                <div key={item.id} className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        {item.user?.avatarUrl && (
+                          <img src={item.user.avatarUrl} alt="" className="w-6 h-6 rounded-full" />
+                        )}
+                        <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                          {item.user?.name ?? "Bilinmeyen"}
+                        </span>
+                        <span className="text-xs text-gray-400">
+                          {format(new Date(item.createdAt), "dd MMM yyyy HH:mm", { locale: tr })}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-300 break-words">
+                        {item.content ?? "(görsel paylaşım)"}
+                      </p>
+                      {contentType === "posts" && item._count && (
+                        <div className="flex gap-3 mt-1 text-xs text-gray-400">
+                          <span>❤️ {item._count.likes}</span>
+                          <span>💬 {item._count.comments}</span>
+                        </div>
+                      )}
+                      {contentType === "posts" && item.images?.length > 0 && (
+                        <div className="flex gap-2 mt-2">
+                          {item.images.slice(0, 3).map((img: string, i: number) => (
+                            <img key={i} src={img} alt="" className="w-16 h-16 rounded-lg object-cover" />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => handleDeleteContent(item.id, contentType === "posts" ? "post" : "comment")}
+                      className="text-xs px-3 py-1.5 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 hover:bg-red-200 transition font-medium shrink-0"
+                    >
+                      🗑️ Sil
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── Şikayetler Sekmesi ─────────────────────────────────────────────── */}
       {activeTab === "reports" && (

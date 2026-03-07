@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUserId, sanitizeText } from "@/lib/api-utils";
 import { createLogger } from "@/lib/logger";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { containsProfanity } from "@/lib/content-filter";
 import { z } from "zod";
 
 const log = createLogger("api:posts");
@@ -125,6 +126,10 @@ export async function POST(req: NextRequest) {
     const { images, groupId, clubId } = parsed.data;
     if (!content && images.length === 0) {
       return NextResponse.json({ error: "İçerik veya görsel zorunlu" }, { status: 400 });
+    }
+
+    if (content && containsProfanity(content)) {
+      return NextResponse.json({ error: "İçeriğiniz uygunsuz ifadeler içeriyor. Lütfen düzenleyin." }, { status: 400 });
     }
 
     const post = await prisma.post.create({

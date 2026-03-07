@@ -17,6 +17,11 @@ export async function GET(request: Request) {
     const term = q.toLowerCase();
     const currentUserId = await getCurrentUserId();
 
+    // Opsiyonel filtreler
+    const sportId = searchParams.get("sportId") ?? undefined;
+    const cityId = searchParams.get("cityId") ?? undefined;
+    const level = searchParams.get("level") ?? undefined;
+
     // Engellenen kullanıcıların ID'lerini topla
     let blockedIds: string[] = [];
     if (currentUserId) {
@@ -40,6 +45,9 @@ export async function GET(request: Request) {
         where: {
           status: "OPEN",
           dateTime: { gte: new Date() },
+          ...(sportId ? { sportId } : {}),
+          ...(cityId ? { cityId } : {}),
+          ...(level ? { level: level as any } : {}),
           OR: [
             { sport: { name: { contains: term, mode: "insensitive" } } },
             { district: { name: { contains: term, mode: "insensitive" } } },

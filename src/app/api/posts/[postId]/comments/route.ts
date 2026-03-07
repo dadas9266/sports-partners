@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUserId } from "@/lib/api-utils";
 import { createLogger } from "@/lib/logger";
 import { createNotification } from "@/lib/notifications";
+import { containsProfanity } from "@/lib/content-filter";
 import { z } from "zod";
 
 const log = createLogger("api:posts:comments");
@@ -21,8 +22,9 @@ export async function GET(
   const currentUserId = await getCurrentUserId();
 
   try {
-    const comments = await prisma.postComment.findMany({
-      where: { postId, parentId: null }, // Sadece ana yorumları getir
+    // Tüm yorumları tek sorguda çek (flat), sonra ağaç yapısına dönüştür
+    const allComments = await prisma.postComment.findMany({
+      where: { postId },
       orderBy: { createdAt: "asc" },
       include: {
         user: { select: { id: true, name: true, avatarUrl: true } },
@@ -31,31 +33,32 @@ export async function GET(
           where: { userId: currentUserId || "" },
           select: { id: true },
         },
-        replies: { // VK Tarzı: İlk seviye yanıtları dahil et
-          include: {
-            user: { select: { id: true, name: true, avatarUrl: true } },
-            _count: { select: { likes: true } },
-            likes: {
-              where: { userId: currentUserId || "" },
-              select: { id: true },
-            },
-          },
-          orderBy: { createdAt: "asc" },
-        }
       },
     });
-    
-    // Yardımcı fonksiyon: Like temizle ve likedByMe ekle
-    const formatComment = (c: any) => ({
-      ...c,
-      likedByMe: c.likes.length > 0,
-      likes: [],
-      replies: c.replies ? c.replies.map(formatComment) : []
-    });
 
-    const commentsFormatted = comments.map(formatComment);
+    // Flat → Tree dönüşümü (sınırsız derinlik)
+    const map = new Map<string, any>();
+    const roots: any[] = [];
 
-    return NextResponse.json({ success: true, comments: commentsFormatted });
+    for (const c of allComments) {
+      map.set(c.id, {
+        ...c,
+        likedByMe: c.likes.length > 0,
+        likes: [],
+        replies: [],
+      });
+    }
+
+    for (const c of allComments) {
+      const node = map.get(c.id);
+      if (c.parentId && map.has(c.parentId)) {
+        map.get(c.parentId).replies.push(node);
+      } else {
+        roots.push(node);
+      }
+    }
+
+    return NextResponse.json({ success: true, comments: roots });
   } catch (err) {
     log.error("Yorumları getirme hatası", err);
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
@@ -79,6 +82,10 @@ export async function POST(
     const parsed = commentSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    }
+
+    if (containsProfanity(parsed.data.content)) {
+      return NextResponse.json({ error: "Yorumunuz uygunsuz ifadeler içeriyor." }, { status: 400 });
     }
 
       const comment = await prisma.postComment.create({

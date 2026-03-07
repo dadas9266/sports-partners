@@ -79,12 +79,51 @@ export default function ListingsMap({ listings, className = "" }: MapProps) {
       layerGroupRef.current.clearLayers();
 
       const cityGroups: Record<string, ListingSummary[]> = {};
+      const gpsListings: ListingSummary[] = [];
+
       listings.forEach((listing) => {
-        const city = listing.district?.city?.name ?? "Other";
-        if (!cityGroups[city]) cityGroups[city] = [];
-        cityGroups[city].push(listing);
+        if (listing.latitude && listing.longitude) {
+          gpsListings.push(listing);
+        } else {
+          const city = listing.district?.city?.name ?? "Other";
+          if (!cityGroups[city]) cityGroups[city] = [];
+          cityGroups[city].push(listing);
+        }
       });
 
+      // GPS koordinatlı ilanlar
+      gpsListings.forEach((listing) => {
+        const color = TYPE_COLORS[listing.type] ?? "#6b7280";
+        const icon = L.divIcon({
+          html: `<div style="width:28px;height:28px;background:${color};border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3)">
+                   <span style="display:block;transform:rotate(45deg);text-align:center;line-height:24px;font-size:13px">${listing.sport.icon ?? "🏅"}</span>
+                 </div>`,
+          iconSize: [28, 28],
+          iconAnchor: [14, 28],
+          className: "",
+        });
+
+        const city = listing.district?.city?.name ?? "";
+        const dateStr = new Date(listing.dateTime).toLocaleDateString("tr-TR", {
+          day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
+        });
+        const typeLabel = listing.type === "RIVAL" ? "🥊 Rakip" : listing.type === "TRAINER" ? "🎓 Eğitmen" : listing.type === "EQUIPMENT" ? "🛒 Satılık" : "🤝 Partner";
+        const levelLabel: Record<string, string> = { BEGINNER: "Başlangıç", INTERMEDIATE: "Orta", ADVANCED: "İleri" };
+
+        L.marker([listing.latitude!, listing.longitude!], { icon }).addTo(layerGroupRef.current!)
+          .bindPopup(`
+            <div style="min-width:190px;font-family:system-ui">
+              <p style="font-weight:700;font-size:14px;margin:0 0 4px">${listing.sport.icon ?? "🏅"} ${listing.sport.name}</p>
+              <p style="font-size:12px;color:#555;margin:2px 0">${typeLabel} · ${levelLabel[listing.level] ?? listing.level}</p>
+              <p style="font-size:12px;color:#555;margin:2px 0">📍 ${listing.district?.name ?? ""}, ${city}</p>
+              <p style="font-size:12px;color:#555;margin:2px 0">📅 ${dateStr}</p>
+              <p style="font-size:12px;color:#555;margin:2px 0">👤 ${listing.user.name}</p>
+              <a href="/ilan/${listing.id}" style="display:inline-block;margin-top:6px;color:#fff;background:#059669;padding:3px 10px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none">Detay →</a>
+            </div>
+          `);
+      });
+
+      // Fallback: GPS'i olmayan ilanlar şehir merkezine random offset ile
       Object.entries(cityGroups).forEach(([city, cityListings]) => {
         const [baseLat, baseLng] = cityToLatLng(city);
         cityListings.forEach((listing) => {

@@ -133,25 +133,11 @@ export async function GET(
     const isFollowing = existingFollow?.status === "ACCEPTED";
     const pendingFollow = existingFollow?.status === "PENDING";
 
-    // Instagram Mantığı: 403 hatası yerine profil yüklenir ama içerik maskelenir.
-    let isPrivate = false;
-    if (!isOwnProfile) {
-      if (user.profileVisibility === "NOBODY") {
-        isPrivate = true;
-      } else if (user.profileVisibility === "FOLLOWERS" || user.isPrivateProfile) {
-        if (!isFollowing) {
-          isPrivate = true;
-        }
-      }
-    }
-
-    // Maskeleme mantığı: Eğer profil gizli ise sadece temel verileri gönder, listeleri boşalt.
-    const resultUser = { ...user };
-    if (isPrivate) {
-      resultUser.listings = [];
-      resultUser.bio = user.bio; // Bio ve temel bilgiler IG'de gözükür
-      resultUser.isPrivateContent = true; // Frontend'e kilidi bildir
-    }
+    // Instagram Mantığı: Profil her zaman yüklenir, içerik maskelenir.
+    const isRestricted = !isOwnProfile && (
+      user.profileVisibility === "NOBODY" ||
+      ((user.profileVisibility === "FOLLOWERS" || user.isPrivateProfile) && !isFollowing)
+    );
 
     // Ortalama puan hesapla
     const ratings = user.ratingsReceived || [];
@@ -174,32 +160,7 @@ export async function GET(
       prisma.follow.count({ where: { followerId: id, status: "ACCEPTED" } }),
     ]);
 
-    // KAPALI PROFİL KISITLAMASI (VK/Instagram Mantığı)
-    const shouldHideData = !isOwnProfile && user.isPrivateProfile && !isFollowing;
-
     log.info("Kullanıcı profili görüntülendi", { targetId: id, viewerId: currentUserId });
-
-    if (shouldHideData) {
-      return NextResponse.json({
-        success: true,
-        data: {
-          id: user.id,
-          name: user.name,
-          avatarUrl: user.avatarUrl,
-          city: user.city,
-          birthDate: user.birthDate,
-          gender: user.gender,
-          followersCount,
-          followingCount,
-          isPrivateProfile: true,
-          isFollowing,
-          pendingFollow,
-          isOwnProfile: false,
-          isRestricted: true, // Frontend'de "Bu profil kapalı" uyarısı için
-          // Diğer her şey gizlenir (listings, sports, bio, sosyal linkler vs.)
-        },
-      });
-    }
 
     return NextResponse.json({
       success: true,
@@ -207,34 +168,36 @@ export async function GET(
         id: user.id,
         name: user.name,
         avatarUrl: user.avatarUrl,
-        bio: user.bio,
+        // Gizli profillerde içerikleri maskele, temel bilgileri göster
+        bio: isRestricted ? null : user.bio,
         createdAt: user.createdAt,
         birthDate: user.birthDate,
         gender: user.gender,
         city: user.city,
-        sports: user.sports,
-        avgRating: avgRating ? Math.round(avgRating * 10) / 10 : null,
-        ratingCount: count.ratingsReceived || 0,
-        totalListings: count.listings || 0,
-        totalMatches,
-        activeListings: user.listings || [],
+        sports: isRestricted ? [] : user.sports,
+        avgRating: isRestricted ? null : (avgRating ? Math.round(avgRating * 10) / 10 : null),
+        ratingCount: isRestricted ? 0 : (count.ratingsReceived || 0),
+        totalListings: isRestricted ? 0 : (count.listings || 0),
+        totalMatches: isRestricted ? 0 : totalMatches,
+        activeListings: isRestricted ? [] : (user.listings || []),
         isOwnProfile,
-        trainerProfile: user.trainerProfile ?? null,
-        coverUrl: user.coverUrl ?? null,
-        instagram: user.instagram ?? null,
-        tiktok: user.tiktok ?? null,
-        facebook: user.facebook ?? null,
-        twitterX: user.twitterX ?? null,
-        vk: user.vk ?? null,
-        clubs: (user.clubMemberships ?? []).map((m: any) => ({ ...m.club, role: m.role })),
+        trainerProfile: isRestricted ? null : (user.trainerProfile ?? null),
+        coverUrl: isRestricted ? null : (user.coverUrl ?? null),
+        instagram: isRestricted ? null : (user.instagram ?? null),
+        tiktok: isRestricted ? null : (user.tiktok ?? null),
+        facebook: isRestricted ? null : (user.facebook ?? null),
+        twitterX: isRestricted ? null : (user.twitterX ?? null),
+        vk: isRestricted ? null : (user.vk ?? null),
+        clubs: isRestricted ? [] : (user.clubMemberships ?? []).map((m: any) => ({ ...m.club, role: m.role })),
         followersCount,
         followingCount,
-        currentStreak: user.currentStreak ?? 0,
-        longestStreak: user.longestStreak ?? 0,
+        currentStreak: isRestricted ? 0 : (user.currentStreak ?? 0),
+        longestStreak: isRestricted ? 0 : (user.longestStreak ?? 0),
         whoCanMessage: isOwnProfile ? undefined : (user.whoCanMessage ?? "EVERYONE"),
         whoCanChallenge: isOwnProfile ? undefined : (user.whoCanChallenge ?? "EVERYONE"),
         isBlockedByThem,
         isPrivateProfile: user.isPrivateProfile ?? false,
+        isRestricted, // Frontend kilit ekranı için
         pendingFollow,
       },
     });
