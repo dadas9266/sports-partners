@@ -445,6 +445,7 @@ export interface PublicProfile {
   isBlockedByThem?: boolean;
   isPrivateProfile?: boolean;
   isRestricted?: boolean;
+  isPrivateContent?: boolean;
   pendingFollow?: boolean;
 }
 

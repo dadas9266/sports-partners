@@ -12,6 +12,7 @@ import Dropdown from "@/components/ui/Dropdown";
 import Button from "@/components/ui/Button";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useTranslations } from "next-intl";
+import toast from "react-hot-toast";
 
 export default function Navbar() {
   const { data: session } = useSession();
@@ -346,26 +347,74 @@ export default function Navbar() {
                   <p className="text-gray-400 dark:text-gray-500 text-sm font-medium">{t("noNotifications")}</p>
                 </div>
               ) : (
-                notifications.map((n) => (
-                  <button
-                    key={n.id}
-                    className={`w-full text-left flex gap-3 px-5 py-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition border-b border-gray-50 dark:border-gray-700/50 last:border-0 ${!n.read ? "bg-emerald-50/70 dark:bg-emerald-900/10" : ""}`}
-                    onClick={() => {
-                      setNotifOpen(false);
-                      if (n.link && n.link !== "#") router.push(n.link);
-                    }}
-                  >
-                    <div className="shrink-0 w-9 h-9 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center text-base">
-                      {n.type === "NEW_MESSAGE" ? "💬" : n.type === "NEW_MATCH" ? "🤝" : n.type === "NEW_RATING" ? "⭐" : n.type === "NEW_FOLLOWER" ? "👤" : n.type === "NO_SHOW_WARNING" ? "⚠️" : n.type === "TRAINER_VERIFIED" ? "✓" : "🔔"}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 leading-snug">{n.title}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">{n.body}</p>
-                      <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">{new Date(n.createdAt).toLocaleDateString("tr-TR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</p>
-                    </div>
-                    {!n.read && <span className="shrink-0 w-2 h-2 bg-emerald-500 rounded-full mt-1.5" />}
-                  </button>
-                ))
+                        notifications.map((n) => (
+                          <div
+                            key={n.id}
+                            className={`w-full text-left flex gap-3 px-5 py-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition border-b border-gray-50 dark:border-gray-700/50 last:border-0 ${!n.read ? "bg-emerald-50/70 dark:bg-emerald-900/10" : ""}`}
+                          >
+                            <div className="shrink-0 w-9 h-9 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center text-base">
+                              {n.type === "NEW_MESSAGE" ? "💬" : n.type === "FOLLOW_REQUEST" ? "📩" : n.type === "NEW_MATCH" ? "🤝" : n.type === "NEW_RATING" ? "⭐" : n.type === "NEW_FOLLOWER" ? "👤" : n.type === "NO_SHOW_WARNING" ? "⚠️" : n.type === "TRAINER_VERIFIED" ? "✓" : "🔔"}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 leading-snug">{n.title}</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">{n.body}</p>
+                              <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">{new Date(n.createdAt).toLocaleDateString("tr-TR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</p>
+                              
+                              {/* Follow Request Actions */}
+                              {n.type === "FOLLOW_REQUEST" && (
+                                <div className="flex gap-2 mt-2">
+                                  <button 
+                                    onClick={async (e) => {
+                                      e.stopPropagation();
+                                      const userId = n.link?.split("/").pop();
+                                      if (!userId) return;
+                                      try {
+                                        const res = await fetch(`/api/follow-requests`, {
+                                          method: "PATCH",
+                                          body: JSON.stringify({ followerId: userId, action: "ACCEPT" })
+                                        });
+                                        if (res.ok) { refreshNotifs(); toast.success("İstek kabul edildi"); }
+                                      } catch {}
+                                    }}
+                                    className="px-3 py-1 bg-emerald-600 text-white text-[10px] font-bold rounded-lg hover:bg-emerald-700 transition"
+                                  >
+                                    Onayla
+                                  </button>
+                                  <button 
+                                    onClick={async (e) => {
+                                      e.stopPropagation();
+                                      const userId = n.link?.split("/").pop();
+                                      if (!userId) return;
+                                      try {
+                                        const res = await fetch(`/api/follow-requests`, {
+                                          method: "PATCH",
+                                          body: JSON.stringify({ followerId: userId, action: "REJECT" })
+                                        });
+                                        if (res.ok) { refreshNotifs(); toast("İstek reddedildi", { icon: "🗑️" }); }
+                                      } catch {}
+                                    }}
+                                    className="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-[10px] font-bold rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+                                  >
+                                    Sil
+                                  </button>
+                                </div>
+                              )}
+
+                              {!n.type?.includes("REQUEST") && (
+                                <button
+                                  onClick={() => {
+                                    setNotifOpen(false);
+                                    if (n.link && n.link !== "#") router.push(n.link);
+                                  }}
+                                  className="mt-2 text-[10px] text-emerald-600 font-bold hover:underline"
+                                >
+                                  Görüntüle →
+                                </button>
+                              )}
+                            </div>
+                            {!n.read && <span className="shrink-0 w-2 h-2 bg-emerald-500 rounded-full mt-1.5" />}
+                          </div>
+                        ))
               )}
             </div>
             {notifications.length > 0 && (

@@ -66,6 +66,9 @@ export default function PublicProfilePage({
   const [postsLoading, setPostsLoading] = useState(false);
   const [postsView, setPostsView] = useState<"grid" | "list">("grid");
 
+  // restricted state: kapalı profil ve takip etmiyoruz
+  const isRestricted = !session || (profile?.isPrivateContent && id !== session?.user?.id);
+
   // Follow Modal states
   const [showFollowersModal, setShowFollowersModal] = useState(false);
   const [showFollowingModal, setShowFollowingModal] = useState(false);
@@ -139,7 +142,7 @@ export default function PublicProfilePage({
       })
       .catch((err) => {
         if (err instanceof APIError && err.status === 403) {
-          // 403: engellendi veya gizli profil
+          // 403: engellendi
           setProfileAccessError("blocked");
         } else {
           toast.error("Profil yüklenemedi");
@@ -415,11 +418,8 @@ export default function PublicProfilePage({
 
   const joinDate = format(new Date(profile.createdAt), "MMMM yyyy", { locale: tr });
 
-  // restricted state: kapalı profil ve takip etmiyoruz
-  const isRestricted = profile.isRestricted;
-
-  // Gizlilik kontrolü: mesaj gönderme izni var mı?
-  const whoCanMessage = profile.whoCanMessage ?? "EVERYONE";
+      // Gizlilik kontrolü: mesaj gönderme izni var mı?
+      const whoCanMessage = profile.whoCanMessage ?? "EVERYONE";
   const canMessage =
     !isRestricted && (
       whoCanMessage === "EVERYONE" ||
@@ -668,7 +668,7 @@ export default function PublicProfilePage({
         <div className="flex max-w-2xl mx-auto">
           {[
             { key: "posts",    label: "Gönderiler" },
-            { key: "listings", label: `İlanlar${profile.activeListings.length > 0 ? ` (${profile.activeListings.length})` : ""}` },
+            { key: "listings", label: `İlanlar${(profile as any).activeListings?.length > 0 ? ` (${(profile as any).activeListings.length})` : ""}` },
             { key: "ratings",  label: `Değerlendirmeler${ratings.length > 0 ? ` (${ratings.length})` : ""}` },
             { key: "stats",    label: "İstatistikler" },
           ].map(t => (
@@ -705,7 +705,7 @@ export default function PublicProfilePage({
           </p>
           {!session && (
             <button 
-              onClick={() => router.push("/auth/login")}
+              onClick={() => router.push("/auth/giris")}
               className="mt-5 px-6 py-2 bg-emerald-600 text-white rounded-xl font-bold text-xs shadow-lg shadow-emerald-500/20 active:scale-95 transition-transform"
             >
               Giriş Yap ve Takip Et

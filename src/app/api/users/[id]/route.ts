@@ -133,16 +133,24 @@ export async function GET(
     const isFollowing = existingFollow?.status === "ACCEPTED";
     const pendingFollow = existingFollow?.status === "PENDING";
 
-    // Profil gizlilik ayarı (Görünürlük)
-    if (!isOwnProfile && user.profileVisibility) {
+    // Instagram Mantığı: 403 hatası yerine profil yüklenir ama içerik maskelenir.
+    let isPrivate = false;
+    if (!isOwnProfile) {
       if (user.profileVisibility === "NOBODY") {
-        return NextResponse.json({ success: false, error: "Bu profil gizlidir", code: "PRIVATE_PROFILE" }, { status: 403 });
-      }
-      if (user.profileVisibility === "FOLLOWERS") {
+        isPrivate = true;
+      } else if (user.profileVisibility === "FOLLOWERS" || user.isPrivateProfile) {
         if (!isFollowing) {
-          return NextResponse.json({ success: false, error: "Bu profil yalnızca takipçilere açık", code: "PRIVATE_PROFILE" }, { status: 403 });
+          isPrivate = true;
         }
       }
+    }
+
+    // Maskeleme mantığı: Eğer profil gizli ise sadece temel verileri gönder, listeleri boşalt.
+    const resultUser = { ...user };
+    if (isPrivate) {
+      resultUser.listings = [];
+      resultUser.bio = user.bio; // Bio ve temel bilgiler IG'de gözükür
+      resultUser.isPrivateContent = true; // Frontend'e kilidi bildir
     }
 
     // Ortalama puan hesapla
