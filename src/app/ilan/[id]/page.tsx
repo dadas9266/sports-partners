@@ -233,7 +233,12 @@ export default function ListingDetailPage({
   const isMatched = listing.status === "MATCHED";
   const isClosed = listing.status === "CLOSED";
   const acceptedCount = listing.responses?.filter((r: ListingResponse) => r.status === "ACCEPTED").length ?? 0;
-  const capacityFill = listing.maxParticipants > 2 ? Math.min((acceptedCount / (listing.maxParticipants - 1)) * 100, 100) : 0;
+  
+  // Kapasite kontrolü: (Sahibi + kabul edilenler) < Toplam Kapasite
+  const isCapacityFull = (acceptedCount + 1) >= listing.maxParticipants;
+  const canRespond = !isOwner && !isMatched && !isClosed && !hasResponded && !isCapacityFull && session;
+
+  const capacityFill = listing.maxParticipants > 2 ? Math.min(((acceptedCount + 1) / listing.maxParticipants) * 100, 100) : 0;
   const isMatchParticipant = listing.match && (currentUserId === listing.match.user1Id || currentUserId === listing.match.user2Id);
   const matchInPast = listing.match && new Date(listing.dateTime) < new Date();
 
@@ -525,7 +530,7 @@ export default function ListingDetailPage({
       )}
 
       {/* Karşılık gönder */}
-      {!isOwner && !isMatched && !isClosed && !hasResponded && session && (
+      {canRespond && (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 mb-4">
           <h3 className="font-semibold text-gray-800 dark:text-gray-100 mb-3">💬 Karşılık Ver</h3>
           <textarea
@@ -543,7 +548,7 @@ export default function ListingDetailPage({
         </div>
       )}
 
-      {!session && !isMatched && (
+      {!session && !isMatched && !isClosed && (
         <div className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl p-6 mb-4 text-center">
           <p className="text-gray-600 dark:text-gray-300">
             Karşılık vermek için{" "}
@@ -558,6 +563,12 @@ export default function ListingDetailPage({
       {hasResponded && !isOwner && (
         <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-4 text-center">
           <p className="text-blue-700 dark:text-blue-300">✅ Bu ilana zaten karşılık verdiniz</p>
+        </div>
+      )}
+
+      {!isOwner && !isMatched && !isClosed && !hasResponded && isCapacityFull && session && (
+        <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/50 rounded-xl p-4 mb-4 text-center">
+          <p className="text-amber-700 dark:text-amber-400 font-medium italic">⚠️ Kontenjan Dolu</p>
         </div>
       )}
 

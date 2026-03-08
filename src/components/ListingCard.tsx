@@ -280,11 +280,15 @@ export default function ListingCard({
       <div className="mt-3 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-xs text-gray-400 dark:text-gray-500 truncate">
-            💬 {listing._count.responses} {listing.type === "TRAINER" ? "başvuru" : "karşılık"}
+            {listing.maxParticipants > 2 ? (
+              <>👥 {listing._count.responses + 1}/{listing.maxParticipants}</>
+            ) : (
+              <>💬 {listing._count.responses} {listing.type === "TRAINER" ? "başvuru" : "karşılık"}</>
+            )}
           </span>
           {listing.maxParticipants > 2 && (
             <span className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-1.5 py-0.5 rounded-full font-medium shrink-0">
-              👥 {listing.maxParticipants} kişi
+              Grup
             </span>
           )}
         </div>

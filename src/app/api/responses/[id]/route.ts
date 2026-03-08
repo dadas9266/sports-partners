@@ -88,15 +88,18 @@ export async function PATCH(
         include: { _count: { select: { responses: { where: { status: "ACCEPTED" } } } } }
       });
 
-      if (!listing || listing.status !== "OPEN") {
+      if (!listing || (listing.status !== "OPEN" && listing.status !== "MATCHED")) {
         throw new Error("İlan artık aktif değil");
       }
 
       // Mevcut kabul edilmiş başvuru sayısı (bu dahil edilmeden önce) + 1
       const acceptedCount = listing._count.responses + 1;
-      const isCapacityFull = acceptedCount >= listing.maxParticipants - 1; // maxParticipants kendisi dahil (2 kişilik maçta 1 başvuru yetmeli)
+      // Kapasite kontrolü: 
+      // maxParticipants=2 (1v1) ise acceptedCount=1 olduğunda dolar (sahibi + 1 kişi)
+      // maxParticipants=3 ise acceptedCount=2 olduğunda dolar (sahibi + 2 kişi)
+      const isCapacityFull = acceptedCount >= (listing.maxParticipants - 1);
       
-      // Eğer tekil eşleşme ise (maxParticipants=2) veya kapasite dolduysa MATCHED yap
+      // Eğer kapasite dolduysa MATCHED yap, dolmadıysa OPEN kalmaya devam etsin
       if (isCapacityFull) {
         await tx.listing.update({
           where: { id: response.listingId },
@@ -112,16 +115,23 @@ export async function PATCH(
           },
           data: { status: "REJECTED" },
         });
+      } else {
+        // Kapasite dolmadıysa ilanın OPEN olduğundan emin ol (belki manuel kapatılmıştır vs)
+        await tx.listing.update({
+          where: { id: response.listingId },
+          data: { status: "OPEN" },
+        });
       }
 
-      // Match kaydı oluştur (her kabulde bir match record mu yoksa grup maçı mı?)
-      // Mevcut yapı 1 listing -> 1 match (unique listingId). 
-      // Grup maçları için Match modelinin değişmesi gerekebilir ama şimdilik mevcut yapıyı koruyalım
-      // ve sadece 1v1 (max=2) durumunda MATCHED/Match record mantığını işletelim.
+      // Match kaydı oluştur (Sadece 1v1 durumunda veya ilk eşleşmede mi?)
+      // Mevcut yapıda 1 listing -> 1 match (unique listingId). 
+      // Grup maçları için Match modelinin bire-bir olması bir kısıt.
+      // Eğer bir match kaydı zaten varsa (grup maçı devam ediyorsa) tekrar oluşturma.
+      const existingMatch = await tx.match.findUnique({ where: { listingId: response.listingId } });
       
       let match = null;
-      if (listing.maxParticipants <= 2) {
-        match = await tx.match.create({
+      if (!existingMatch) {
+         match = await tx.match.create({
           data: {
             listingId: response.listingId,
             responseId: id,
@@ -133,6 +143,8 @@ export async function PATCH(
             user2: { select: { id: true, name: true, avatarUrl: true } },
           },
         });
+      } else {
+        match = existingMatch;
       }
 
       return { response: updatedResponse, match };
@@ -144,11 +156,18 @@ export async function PATCH(
     const notifications = [
       createNotification({
         userId: response.userId,
-        ...NOTIF.accepted(response.listingId),
+        ...{
+          type: "SYSTEM",
+          title: result.match ? "🤝 Eşleşme Gerçekleşti!" : "✅ Katılım Onaylandı",
+          body: result.match 
+            ? `"${response.listing.sport.name}" ilanı için kadro tamamlandı ve eşleşme gerçekleşti!` 
+            : `"${response.listing.sport.name}" etkinliğine katılımınız onaylandı. Kontenjan dolduğunda eşleşme tamamlanacak.`,
+          link: `/ilan/${response.listingId}`
+        }
       })
     ];
 
-    // Eğer eşleşme oluştuysa ilan sahibine de "Yeni Maç" bildirimi
+    // Eğer eşleşme oluştuysa (Kadro dolduysa) ilan sahibine de "Yeni Maç" bildirimi
     if (result.match) {
       notifications.push(
         createNotification({

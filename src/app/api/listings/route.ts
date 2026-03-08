@@ -228,7 +228,13 @@ export async function GET(request: Request) {
                   preferredStyle: true,
                 },
               },
-              _count: { select: { responses: true } },
+              _count: { 
+                select: { 
+                  responses: { 
+                    where: { status: "ACCEPTED" } 
+                  } 
+                } 
+              },
               equipmentDetail: { select: { price: true, isSold: true } },
               trainerProfile: { select: { hourlyRate: true } },
             },
