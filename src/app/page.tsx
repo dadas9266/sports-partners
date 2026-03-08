@@ -7,7 +7,7 @@ import {
   getTurkeyId,
 } from "@/lib/server-data";
 
-// Server Component - veriyi sunucuda çeker, HTML olarak gönderir
+// v1.1.2 - Force deployment trigger
 export default async function HomePage() {
   // Batch 1: 4 bağımsız sorgu paralel çalışır (hiçbiri diğerini beklemez)
   const [turkeyId, locations, sports, recommendations] = await Promise.all([
