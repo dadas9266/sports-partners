@@ -288,18 +288,34 @@ export async function DELETE(
       );
     }
 
-    // İlişkili kayıtları da sil (cascade)
+    // İlan silme yerine "CLOSED" durumuna çekip match geçmişini koruyoruz
+    // Eğer match yoksa tamamen silinmesine izin verebiliriz ama tutarlılık için hep CLOSED daha güvenli
     await prisma.$transaction(async (tx) => {
-      await tx.favorite.deleteMany({ where: { listingId: id } });
-      await tx.noShowReport.deleteMany({ where: { listingId: id } });
-      await (tx as any).trainerProfile.deleteMany({ where: { listingId: id } });
-      await (tx as any).equipmentDetail.deleteMany({ where: { listingId: id } });
-      await tx.match.deleteMany({ where: { listingId: id } });
-      await tx.response.deleteMany({ where: { listingId: id } });
-      await tx.listing.delete({ where: { id } });
+      // Eğer match varsa ilanı silmek yerine CLOSED yapalım ki match geçmişi bozulmasın
+      const hasMatch = await tx.match.findUnique({ where: { listingId: id } });
+      
+      if (hasMatch) {
+         await tx.listing.update({
+          where: { id },
+          data: { status: "CLOSED" },
+        });
+        // Bekleyenleri reddet (Match zaten var ama diğerleri PENDING kalmış olabilir)
+        await tx.response.updateMany({
+          where: { listingId: id, status: "PENDING" },
+          data: { status: "REJECTED" },
+        });
+      } else {
+        // Match yoksa tamamen silebiliriz
+        await tx.favorite.deleteMany({ where: { listingId: id } });
+        await tx.noShowReport.deleteMany({ where: { listingId: id } });
+        await (tx as any).trainerProfile?.deleteMany({ where: { listingId: id } });
+        await (tx as any).equipmentDetail?.deleteMany({ where: { listingId: id } });
+        await tx.response.deleteMany({ where: { listingId: id } });
+        await tx.listing.delete({ where: { id } });
+      }
     });
 
-    log.info("İlan silindi", { listingId: id, userId });
+    log.info("İlan silindi/kapatıldı", { listingId: id, userId });
     return NextResponse.json({ success: true, data: null });
   } catch (error) {
     log.error("İlan silinirken hata", error);

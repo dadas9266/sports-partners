@@ -82,78 +82,107 @@ export async function PATCH(
         data: { status: "ACCEPTED" },
       });
 
-      // İlanı eşleşti olarak işaretle (sadece hâlâ OPEN ise — race condition koruması)
-      const updated = await tx.listing.updateMany({
-        where: { id: response.listingId, status: "OPEN" },
-        data: { status: "MATCHED" },
+      // İlanı bul (kapasite kontrolü için)
+      const listing = await tx.listing.findUnique({
+        where: { id: response.listingId },
+        include: { _count: { select: { responses: { where: { status: "ACCEPTED" } } } } }
       });
 
-      if (updated.count === 0) {
+      if (!listing || listing.status !== "OPEN") {
         throw new Error("İlan artık aktif değil");
       }
 
-      // Diğer bekleyen karşılıkları reddet
-      await tx.response.updateMany({
-        where: {
-          listingId: response.listingId,
-          id: { not: id },
-          status: "PENDING",
-        },
-        data: { status: "REJECTED" },
-      });
+      // Mevcut kabul edilmiş başvuru sayısı (bu dahil edilmeden önce) + 1
+      const acceptedCount = listing._count.responses + 1;
+      const isCapacityFull = acceptedCount >= listing.maxParticipants - 1; // maxParticipants kendisi dahil (2 kişilik maçta 1 başvuru yetmeli)
+      
+      // Eğer tekil eşleşme ise (maxParticipants=2) veya kapasite dolduysa MATCHED yap
+      if (isCapacityFull) {
+        await tx.listing.update({
+          where: { id: response.listingId },
+          data: { status: "MATCHED" },
+        });
 
-      // Match kaydı oluştur
-      const match = await tx.match.create({
-        data: {
-          listingId: response.listingId,
-          responseId: id,
-          user1Id: response.listing.userId,
-          user2Id: response.userId,
-        },
-        include: {
-          user1: { select: { id: true, name: true, avatarUrl: true } },
-          user2: { select: { id: true, name: true, avatarUrl: true } },
-        },
-      });
+        // Diğer bekleyen karşılıkları reddet (sadece kapasite dolunca)
+        await tx.response.updateMany({
+          where: {
+            listingId: response.listingId,
+            id: { not: id },
+            status: "PENDING",
+          },
+          data: { status: "REJECTED" },
+        });
+      }
+
+      // Match kaydı oluştur (her kabulde bir match record mu yoksa grup maçı mı?)
+      // Mevcut yapı 1 listing -> 1 match (unique listingId). 
+      // Grup maçları için Match modelinin değişmesi gerekebilir ama şimdilik mevcut yapıyı koruyalım
+      // ve sadece 1v1 (max=2) durumunda MATCHED/Match record mantığını işletelim.
+      
+      let match = null;
+      if (listing.maxParticipants <= 2) {
+        match = await tx.match.create({
+          data: {
+            listingId: response.listingId,
+            responseId: id,
+            user1Id: response.listing.userId,
+            user2Id: response.userId,
+          },
+          include: {
+            user1: { select: { id: true, name: true, avatarUrl: true } },
+            user2: { select: { id: true, name: true, avatarUrl: true } },
+          },
+        });
+      }
 
       return { response: updatedResponse, match };
     });
 
-    log.info("Karşılık kabul edildi, eşleşme oluşturuldu", { responseId: id, matchId: result.match.id });
+    log.info("Karşılık kabul edildi", { responseId: id, matchId: result.match?.id });
 
-    // Her iki kullanıcıya bildirim gönder
-    await Promise.all([
+    // Karşılık verene bildirim gönder
+    const notifications = [
       createNotification({
         userId: response.userId,
         ...NOTIF.accepted(response.listingId),
-      }),
-      createNotification({
-        userId: response.listing.userId,
-        ...NOTIF.newMatch(response.listingId),
-      }),
-    ]);
+      })
+    ];
 
-    // Otomatik aktivite paylaşımı oluştur
-    try {
-      const listingDetail = await prisma.listing.findUnique({
-        where: { id: response.listingId },
-        include: { sport: true },
-      });
-      if (listingDetail) {
-        const sportName = listingDetail.sport?.name ?? "spor";
-        const u1Name = result.match.user1.name;
-        const u2Name = result.match.user2.name;
-        const activityText = `🤝 ${u1Name} ve ${u2Name} ${sportName} için eşleşti!`;
-        await prisma.post.create({
-          data: {
-            userId: response.listing.userId,
-            content: activityText,
-            images: [],
-          },
+    // Eğer eşleşme oluştuysa ilan sahibine de "Yeni Maç" bildirimi
+    if (result.match) {
+      notifications.push(
+        createNotification({
+          userId: response.listing.userId,
+          ...NOTIF.newMatch(response.listingId),
+        })
+      );
+    }
+    
+    await Promise.all(notifications);
+
+    // Otomatik aktivite paylaşımı oluştur (Sadece gerçek eşleşme/match oluştuğunda)
+    if (result.match) {
+      try {
+        const listingDetail = await prisma.listing.findUnique({
+          where: { id: response.listingId },
+          include: { sport: true },
         });
+        if (listingDetail) {
+          const sportName = listingDetail.sport?.name ?? "spor";
+          const u1Name = result.match.user1.name;
+          const u2Name = result.match.user2.name;
+          const activityText = `🤝 ${u1Name} ve ${u2Name} ${sportName} için eşleşti!`;
+          await prisma.post.create({
+            data: {
+              userId: response.listing.userId,
+              content: activityText,
+              images: [],
+            },
+          });
+        }
+      } catch (e) {
+        log.error("Aktivite paylaşımı oluşturulamadı", e);
       }
-    } catch (e) {
-      log.error("Aktivite paylaşımı oluşturulamadı", e);
     }
 
     return NextResponse.json({ success: true, data: result });

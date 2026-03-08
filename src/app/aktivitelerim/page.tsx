@@ -171,17 +171,19 @@ export default function AktivitelerimPage() {
   const handleResponseAction = async (id: string, action: "accept" | "reject", listingId: string) => {
     setAnsweringResponse(id);
     try {
-      const res = await fetch(`/api/ilan/${listingId}`, {
+      const res = await fetch(`/api/responses/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action, responseId: id }),
+        body: JSON.stringify({ action }),
       });
       const json = await res.json();
       if (json.success) {
         toast.success(action === "accept" ? "✅ Başvuru kabul edildi!" : "Başvuru reddedildi");
         if (action === "accept") {
+          // İlanın durumunu ve başvuruları güncelle
           setListings(prev => prev.map(l => l.id === listingId ? { ...l, status: "MATCHED", responses: [] } : l));
         } else {
+          // Sadece o başvuruyu listeden çıkar
           setListings(prev => prev.map(l => l.id === listingId ? { ...l, responses: l.responses?.filter(r => r.id !== id) } : l));
         }
       } else {

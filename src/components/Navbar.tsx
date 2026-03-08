@@ -350,7 +350,13 @@ export default function Navbar() {
                         notifications.map((n) => (
                           <div
                             key={n.id}
-                            className={`w-full text-left flex gap-3 px-5 py-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition border-b border-gray-50 dark:border-gray-700/50 last:border-0 ${!n.read ? "bg-emerald-50/70 dark:bg-emerald-900/10" : ""}`}
+                            onClick={() => {
+                              setNotifOpen(false);
+                              if (n.link && n.link !== "#") {
+                                router.push(n.link);
+                              }
+                            }}
+                            className={`w-full text-left flex gap-3 px-5 py-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition border-b border-gray-50 dark:border-gray-700/50 last:border-0 cursor-pointer ${!n.read ? "bg-emerald-50/70 dark:bg-emerald-900/10" : ""}`}
                           >
                             <div className="shrink-0 w-9 h-9 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center text-base">
                               {n.type === "NEW_MESSAGE" ? "💬" : n.type === "FOLLOW_REQUEST" ? "📩" : n.type === "NEW_MATCH" ? "🤝" : n.type === "NEW_RATING" ? "⭐" : n.type === "NEW_FOLLOWER" ? "👤" : n.type === "NO_SHOW_WARNING" ? "⚠️" : n.type === "TRAINER_VERIFIED" ? "✓" : "🔔"}
@@ -362,7 +368,7 @@ export default function Navbar() {
                               
                               {/* Follow Request Actions */}
                               {n.type === "FOLLOW_REQUEST" && (
-                                <div className="flex gap-2 mt-2">
+                                <div className="flex gap-2 mt-2" onClick={(e) => e.stopPropagation()}>
                                   <button 
                                     onClick={async (e) => {
                                       e.stopPropagation();
