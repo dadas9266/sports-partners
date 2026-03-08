@@ -152,16 +152,23 @@ export async function PATCH(
 
     log.info("Karşılık kabul edildi", { responseId: id, matchId: result.match?.id });
 
+    // Karşılığın bağlı olduğu ilanı spor bilgisiyle birlikte tekrar çekiyoruz (TypeScript hatasını önlemek için)
+    const listingWithSport = await prisma.listing.findUnique({
+      where: { id: response.listingId },
+      include: { sport: true }
+    });
+    const sportName = listingWithSport?.sport?.name ?? "Etkinlik";
+
     // Karşılık verene bildirim gönder
     const notifications = [
       createNotification({
         userId: response.userId,
-        // NotificationType'a uygun tipler kullanıyoruz (Örn: RESPONSE_ACCEPTED)
+        // NotificationType'a uygun tipler kullanıyoruz (RESETPONSE_ACCEPTED veya NEW_MATCH)
         type: result.match ? "NEW_MATCH" : "RESPONSE_ACCEPTED", 
         title: result.match ? "🤝 Eşleşme Gerçekleşti!" : "✅ Katılım Onaylandı",
         body: result.match 
-          ? `"${response.listing.sport.name}" ilanı için kadro tamamlandı ve eşleşme gerçekleşti!` 
-          : `"${response.listing.sport.name}" etkinliğine katılımınız onaylandı. Kontenjan dolduğunda eşleşme tamamlanacak.`,
+          ? `"${sportName}" ilanı için kadro tamamlandı ve eşleşme gerçekleşti!` 
+          : `"${sportName}" etkinliğine katılımınız onaylandı. Kontenjan dolduğunda eşleşme tamamlanacak.`,
         link: `/ilan/${response.listingId}`
       })
     ];
