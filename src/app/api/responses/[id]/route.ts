@@ -188,14 +188,20 @@ export async function PATCH(
     // Otomatik aktivite paylaşımı oluştur (Sadece gerçek eşleşme/match oluştuğunda)
     if (result.match) {
       try {
-        const listingDetail = await prisma.listing.findUnique({
-          where: { id: response.listingId },
-          include: { sport: true },
+        // Match detaylarını (user1, user2 ve sport) TypeScript hatasını önlemek için tam çekiyoruz
+        const matchDetail = await prisma.match.findUnique({
+          where: { id: (result.match as any).id },
+          include: {
+            user1: { select: { name: true } },
+            user2: { select: { name: true } },
+            listing: { include: { sport: true } }
+          }
         });
-        if (listingDetail) {
-          const sportName = listingDetail.sport?.name ?? "spor";
-          const u1Name = result.match.user1.name;
-          const u2Name = result.match.user2.name;
+
+        if (matchDetail) {
+          const sportName = matchDetail.listing.sport?.name ?? "spor";
+          const u1Name = matchDetail.user1.name;
+          const u2Name = matchDetail.user2.name;
           const activityText = `🤝 ${u1Name} ve ${u2Name} ${sportName} için eşleşti!`;
           await prisma.post.create({
             data: {
