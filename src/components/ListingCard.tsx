@@ -119,11 +119,17 @@ export default function ListingCard({
 
   const typeConfig = LISTING_TYPE_CONFIG[listing.type] ?? LISTING_TYPE_CONFIG.PARTNER;
 
+  const isUrgent = !!(listing as any).isUrgent;
+
   return (
     <article
       onClick={() => router.push(`/ilan/${listing.id}`)}
       onKeyDown={(e) => e.key === "Enter" && router.push(`/ilan/${listing.id}`)}
-      className={`bg-white dark:bg-gray-800 rounded-xl border border-gray-200/80 dark:border-gray-700/60 border-l-[3px] ${typeConfig.accentColor} hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200 cursor-pointer h-full relative group`}
+      className={`rounded-xl border hover:shadow-md transition-all duration-200 cursor-pointer h-full relative group ${
+        isUrgent
+          ? "bg-red-50 dark:bg-red-950/30 border-red-300 dark:border-red-700 border-l-[3px] border-l-red-500 ring-1 ring-red-200 dark:ring-red-800"
+          : `bg-white dark:bg-gray-800 border-gray-200/80 dark:border-gray-700/60 border-l-[3px] ${typeConfig.accentColor} hover:border-gray-300 dark:hover:border-gray-600`
+      }`}
       role="button"
       tabIndex={0}
       aria-label={`${listing.sport.name} ilanı detayı`}

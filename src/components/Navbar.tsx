@@ -31,6 +31,7 @@ export default function Navbar() {
   // Gerçek zamanlı bildirimler — NotificationContext'ten (SSE Providers.tsx'de açık)
   const { notifications, unreadCount, unreadMessages, markAllRead, refresh: refreshNotifs } = useNotifications();
   const activityCount = useActivityCount(!!session);
+  const [actionedFollowIds, setActionedFollowIds] = useState<Map<string, "accepted" | "rejected">>(new Map());
 
   useEffect(() => {
     if (!session) return;
@@ -367,7 +368,7 @@ export default function Navbar() {
                               <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">{new Date(n.createdAt).toLocaleDateString("tr-TR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</p>
                               
                               {/* Follow Request Actions */}
-                              {n.type === "FOLLOW_REQUEST" && (
+                              {n.type === "FOLLOW_REQUEST" && !actionedFollowIds.has(n.id) && !n.read && (
                                 <div className="flex gap-2 mt-2" onClick={(e) => e.stopPropagation()}>
                                   <button 
                                     onClick={async (e) => {
@@ -380,10 +381,11 @@ export default function Navbar() {
                                           headers: { "Content-Type": "application/json" },
                                           body: JSON.stringify({ followerId: userId, action: "ACCEPT" })
                                         });
-                                        const json = await res.ok ? await res.json() : null;
                                         if (res.ok) { 
-                                          refreshNotifs(); 
-                                          toast.success(json?.message || "İstek kabul edildi"); 
+                                          setActionedFollowIds((prev) => new Map(prev).set(n.id, "accepted"));
+                                          // Bildirimi okundu olarak işaretle
+                                          fetch("/api/notifications", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids: [n.id] }) }).catch(() => {});
+                                          toast.success("✅ Takip isteği kabul edildi"); 
                                         }
                                       } catch {}
                                     }}
@@ -402,10 +404,10 @@ export default function Navbar() {
                                           headers: { "Content-Type": "application/json" },
                                           body: JSON.stringify({ followerId: userId, action: "REJECT" })
                                         });
-                                        const json = await res.ok ? await res.json() : null;
                                         if (res.ok) { 
-                                          refreshNotifs(); 
-                                          toast.success(json?.message || "İstek reddedildi"); 
+                                          setActionedFollowIds((prev) => new Map(prev).set(n.id, "rejected"));
+                                          fetch("/api/notifications", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids: [n.id] }) }).catch(() => {});
+                                          toast.success("İstek reddedildi"); 
                                         }
                                       } catch {}
                                     }}
@@ -414,6 +416,14 @@ export default function Navbar() {
                                     Sil
                                   </button>
                                 </div>
+                              )}
+                              {n.type === "FOLLOW_REQUEST" && (actionedFollowIds.has(n.id) || n.read) && (
+                                <p className="text-[10px] font-semibold mt-1">
+                                  {actionedFollowIds.get(n.id) === "rejected"
+                                    ? <span className="text-gray-400">✘ İstek reddedildi</span>
+                                    : <span className="text-emerald-600 dark:text-emerald-400">✔ Artık takipçiniz</span>
+                                  }
+                                </p>
                               )}
 
                               {!n.type?.includes("REQUEST") && (

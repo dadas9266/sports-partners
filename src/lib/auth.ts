@@ -111,27 +111,34 @@ const config: NextAuthConfig = {
         if (account?.provider === "google" || account?.provider === "github") {
           const dbUser = await prisma.user.findUnique({
             where: { email: token.email! },
-            select: { id: true, isAdmin: true, userType: true, avatarUrl: true },
+            select: { id: true, isAdmin: true, userType: true, avatarUrl: true, onboardingDone: true },
           });
           token.id = dbUser?.id ?? token.sub;
           token.isAdmin = dbUser?.isAdmin ?? false;
           token.userType = dbUser?.userType ?? "INDIVIDUAL";
           token.avatarUrl = dbUser?.avatarUrl ?? user.image ?? null;
+          token.onboardingDone = dbUser?.onboardingDone ?? false;
         } else {
           token.id = user.id;
           token.isAdmin = (user as { id: string; isAdmin?: boolean }).isAdmin ?? false;
           token.userType = (user as { id: string; userType?: string }).userType ?? "INDIVIDUAL";
           token.avatarUrl = user.image ?? null;
+          // Credentials login: onboardingDone DB'den çek
+          const dbCheck = await prisma.user.findUnique({ where: { id: user.id }, select: { onboardingDone: true } });
+          token.onboardingDone = dbCheck?.onboardingDone ?? false;
         }
       }
-      // Refresh avatarUrl periodically from DB (every token refresh)
+      // Refresh avatarUrl + onboardingDone periodically from DB (every token refresh)
       if (!user && token.id) {
         try {
           const dbUser = await prisma.user.findUnique({
             where: { id: token.id as string },
-            select: { avatarUrl: true },
+            select: { avatarUrl: true, onboardingDone: true },
           });
-          if (dbUser) token.avatarUrl = dbUser.avatarUrl ?? null;
+          if (dbUser) {
+            token.avatarUrl = dbUser.avatarUrl ?? null;
+            token.onboardingDone = dbUser.onboardingDone;
+          }
         } catch { /* ignore */ }
       }
       return token;
@@ -142,6 +149,7 @@ const config: NextAuthConfig = {
         session.user.isAdmin = token.isAdmin as boolean;
         session.user.userType = token.userType as string;
         session.user.image = (token.avatarUrl as string) ?? null;
+        (session.user as any).onboardingDone = token.onboardingDone ?? true;
       }
       return session;
     },

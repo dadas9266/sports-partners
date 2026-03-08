@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "";
 
@@ -37,6 +37,16 @@ export function usePushNotification(): UsePushNotificationReturn {
   );
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Mount sırasında mevcut push aboneliğini kontrol et
+  useEffect(() => {
+    if (!isSupported) return;
+    navigator.serviceWorker.ready.then((registration) => {
+      registration.pushManager.getSubscription().then((sub) => {
+        setIsSubscribed(!!sub);
+      });
+    });
+  }, [isSupported]);
 
   const subscribe = useCallback(async () => {
     if (!isSupported || !VAPID_PUBLIC_KEY) return;

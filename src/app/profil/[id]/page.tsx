@@ -437,7 +437,7 @@ export default function PublicProfilePage({
     );
 
   return (
-    <div className="max-w-2xl mx-auto pb-24">
+    <div className="max-w-2xl mx-auto pb-24 overflow-x-hidden">
 
       {/* ── COVER ─────────────────────────────────────────── */}
       <div className="relative">
@@ -457,9 +457,9 @@ export default function PublicProfilePage({
       </div>
 
       {/* ── PROFILE INFO ──────────────────────────────────── */}
-      <div className="px-4 sm:px-5">
+      <div className="px-4 sm:px-5 relative z-10">
         {/* Avatar row */}
-        <div className="flex items-end justify-between -mt-10 sm:-mt-12 mb-3">
+        <div className="flex items-end justify-between -mt-10 sm:-mt-12 mb-1">
           <button
             onClick={() => storyGroups.length > 0 ? setStoryViewerOpen(true) : undefined}
             disabled={storyGroups.length === 0}
@@ -476,7 +476,7 @@ export default function PublicProfilePage({
           </button>
 
           {/* Actions — right side */}
-          <div className="flex items-center gap-2 pb-1">
+          <div className="flex items-center gap-2 pb-1 pt-6 sm:pt-8 flex-wrap justify-end">
             {session && !profile.isOwnProfile && blockStatus !== "BLOCK" && (
               <button
                 onClick={handleFollow}
@@ -493,7 +493,7 @@ export default function PublicProfilePage({
               </button>
             )}
             {!profile.isOwnProfile && (
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 flex-wrap justify-end">
                 {/* Mesaj butonu: gizlilik ayarına göre gizle */}
                 {session && blockStatus !== "BLOCK" && canMessage && (
                   <button
@@ -617,7 +617,7 @@ export default function PublicProfilePage({
         })()}
 
         {/* Stats — clean inline row */}
-        <div className="flex items-center gap-4 text-sm mb-3">
+        <div className="flex items-center gap-4 text-sm mb-3 flex-wrap">
           <span><strong className="text-gray-900 dark:text-white">{profile.totalMatches ?? 0}</strong> <span className="text-gray-500 dark:text-gray-400">maç</span></span>
           <button onClick={() => !isRestricted && loadFollowers()} className="hover:opacity-80 transition">
             <strong className="text-gray-900 dark:text-white">{followerCount}</strong> <span className="text-gray-500 dark:text-gray-400">takipçi</span>

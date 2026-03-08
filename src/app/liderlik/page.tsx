@@ -58,6 +58,7 @@ export default function LiderlikPage() {
   const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState<"global" | "friends">("global");
   const [friendEntries, setFriendEntries] = useState<FriendEntry[]>([]);
+  const [period, setPeriod] = useState<"all" | "weekly" | "monthly">("all");
 
   useEffect(() => {
     getSports()
@@ -67,11 +68,11 @@ export default function LiderlikPage() {
 
   useEffect(() => {
     setLoading(true);
-    getLeaderboard(selectedSport || undefined, 20)
+    getLeaderboard(selectedSport || undefined, 20, period)
       .then((res) => { if (res.success && res.data) setEntries(res.data); })
       .catch(() => toast.error("Liderlik tablosu yüklenemedi"))
       .finally(() => setLoading(false));
-  }, [selectedSport]);
+  }, [selectedSport, period]);
 
   useEffect(() => {
     if (mode !== "friends") return;
@@ -110,7 +111,26 @@ export default function LiderlikPage() {
       </div>
 
       {/* Sport filter tabs — sadece global modda */}
-      {mode === "global" && (<div className="flex flex-wrap gap-2 mb-6 justify-center">
+      {mode === "global" && (
+        <>
+        {/* Time Period Filter */}
+        <div className="flex justify-center mb-4">
+          <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1 gap-1">
+            {([
+              { key: "all" as const, label: "Tüm Zamanlar" },
+              { key: "monthly" as const, label: "Bu Ay" },
+              { key: "weekly" as const, label: "Bu Hafta" },
+            ]).map(p => (
+              <button key={p.key} onClick={() => setPeriod(p.key)}
+                className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition ${
+                  period === p.key ? "bg-emerald-500 text-white shadow-sm" : "text-gray-500 dark:text-gray-400 hover:text-gray-700"
+                }`}>
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2 mb-6 justify-center">
         <button
           onClick={() => setSelectedSport("")}
           className={`px-4 py-2 rounded-full text-sm font-medium transition ${
@@ -134,7 +154,9 @@ export default function LiderlikPage() {
             {sport.icon} {sport.name}
           </button>
         ))}
-      </div>)}
+      </div>
+      </>
+      )}
 
       {/* Arkadaş Sıralaması */}
       {mode === "friends" && !loading && (

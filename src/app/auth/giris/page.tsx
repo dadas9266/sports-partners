@@ -33,7 +33,18 @@ export default function LoginPage() {
         toast.error(res.error);
       } else {
         toast.success("Giriş başarılı!");
-        router.push("/");
+        // Onboarding kontrolü: yeni kullanıcıyı onboarding'e yönlendir
+        try {
+          const sessionRes = await fetch("/api/auth/session");
+          const sessionData = await sessionRes.json();
+          if (sessionData?.user && !(sessionData.user as any).onboardingDone) {
+            router.push("/onboarding");
+          } else {
+            router.push("/");
+          }
+        } catch {
+          router.push("/");
+        }
         router.refresh();
       }
     } catch {
@@ -102,7 +113,7 @@ export default function LoginPage() {
           <div className="flex gap-3">
             <button
               type="button"
-              onClick={() => signIn("google", { callbackUrl: "/" })}
+              onClick={() => signIn("google", { callbackUrl: "/onboarding" })}
               className="flex-1 flex items-center justify-center gap-2 border border-gray-300 dark:border-gray-600 rounded-lg py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
@@ -115,7 +126,7 @@ export default function LoginPage() {
             </button>
             <button
               type="button"
-              onClick={() => signIn("github", { callbackUrl: "/" })}
+              onClick={() => signIn("github", { callbackUrl: "/onboarding" })}
               className="flex-1 flex items-center justify-center gap-2 border border-gray-300 dark:border-gray-600 rounded-lg py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">

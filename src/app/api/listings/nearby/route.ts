@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { createLogger } from "@/lib/logger";
+import { getCurrentUserId } from "@/lib/api-utils";
 
 const log = createLogger("listings-nearby");
 
@@ -19,6 +21,17 @@ export async function GET(request: Request) {
     }
 
     const now = new Date();
+    const userId = await getCurrentUserId();
+
+    // Engellenen kullanıcı ID'lerini al
+    let blockedUserIds: string[] = [];
+    if (userId) {
+      const blocks = await prisma.userBlock.findMany({
+        where: { OR: [{ blockerId: userId }, { blockedId: userId }], type: "BLOCK" },
+        select: { blockerId: true, blockedId: true },
+      });
+      blockedUserIds = blocks.map(b => b.blockerId === userId ? b.blockedId : b.blockerId);
+    }
 
     // Haversine: 6371 * acos(...) — PostgreSQL raw query
     const results = await prisma.$queryRaw<
@@ -69,6 +82,7 @@ export async function GET(request: Request) {
         l.status = 'OPEN' AND
         (l."expiresAt" IS NULL OR l."expiresAt" > ${now}) AND
         (l.type IN ('TRAINER', 'EQUIPMENT') OR l."dateTime" >= ${now}) AND
+        ${blockedUserIds.length > 0 ? Prisma.sql`l."userId" NOT IN (${Prisma.join(blockedUserIds)}) AND` : Prisma.empty}
         (6371 * acos(
           LEAST(1.0,
             cos(radians(${lat})) * cos(radians(l.latitude)) *

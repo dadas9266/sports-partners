@@ -41,8 +41,8 @@ export async function GET(req: NextRequest) {
       // Kulüp gönderileri
       whereFilter = { clubId, ...cursorFilter };
     } else if (targetUserId) {
-      // Belirli kullanıcının gönderileri
-      whereFilter = { userId: targetUserId, ...cursorFilter };
+      // Belirli kullanıcının gönderileri (grup/kulüp postlarını hariç tut)
+      whereFilter = { userId: targetUserId, groupId: null, clubId: null, ...cursorFilter };
     } else {
       // Feed: kendi gönderileri + takip edilenlerin gönderileri
       const following = await prisma.follow.findMany({

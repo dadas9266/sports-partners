@@ -255,8 +255,8 @@ export async function getFeed(page = 1): Promise<PaginatedResponse<ListingSummar
 }
 
 // ========== LİDERLİK TABLOSU ==========
-export async function getLeaderboard(sportId?: string, limit = 20): Promise<ApiResponse<LeaderboardEntry[]>> {
-  const params = new URLSearchParams({ limit: String(limit) });
+export async function getLeaderboard(sportId?: string, limit = 20, period = "all"): Promise<ApiResponse<LeaderboardEntry[]>> {
+  const params = new URLSearchParams({ limit: String(limit), period });
   if (sportId) params.set("sport", sportId);
   return fetchAPI(`/api/leaderboard?${params.toString()}`);
 }
@@ -320,7 +320,9 @@ export async function getRecommendations(limit = 6): Promise<ApiResponse<Listing
 
 // ========== NO-SHOW ==========
 export async function reportNoShow(matchId: string): Promise<ApiResponse<{ noShowCount: number }>> {
-  return fetchAPI(`/api/matches/${matchId}/no-show`, {
-    method: "POST",
+  return fetchAPI(`/api/matches/${matchId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "report_no_show" }),
   });
 }

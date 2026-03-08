@@ -5,12 +5,23 @@ import { computeBadges } from "@/lib/badges";
 
 const log = createLogger("leaderboard");
 
-// GET /api/leaderboard?sport=id&limit=20
+// GET /api/leaderboard?sport=id&limit=20&period=all|weekly|monthly
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const sportId = searchParams.get("sport");
     const limit = Math.min(50, Math.max(5, Number(searchParams.get("limit") ?? 20)));
+    const period = searchParams.get("period") ?? "all";
+
+    // Period: tarih aralığı hesapla
+    let dateFilter: Date | undefined;
+    if (period === "weekly") {
+      dateFilter = new Date();
+      dateFilter.setDate(dateFilter.getDate() - 7);
+    } else if (period === "monthly") {
+      dateFilter = new Date();
+      dateFilter.setMonth(dateFilter.getMonth() - 1);
+    }
 
     // En yüksek puan ortalaması olan kullanıcılar (min 3 değerlendirme)
     const users = await prisma.user.findMany({
@@ -19,7 +30,9 @@ export async function GET(req: NextRequest) {
         ...(sportId
           ? { sports: { some: { id: sportId } } }
           : {}),
-        ratingsReceived: { some: {} },
+        ratingsReceived: dateFilter
+          ? { some: { createdAt: { gte: dateFilter } } }
+          : { some: {} },
       },
       select: {
         id: true,
@@ -28,7 +41,10 @@ export async function GET(req: NextRequest) {
         cityId: true,
         city: { select: { name: true } },
         sports: { select: { id: true, name: true, icon: true } },
-        ratingsReceived: { select: { score: true } },
+        ratingsReceived: { 
+          select: { score: true },
+          ...(dateFilter ? { where: { createdAt: { gte: dateFilter } } } : {}),
+        },
         totalPoints: true,
         currentStreak: true,
         _count: {

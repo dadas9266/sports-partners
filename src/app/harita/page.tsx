@@ -27,7 +27,7 @@ export default function HaritaPage() {
   const loadListings = async (filters: Record<string, string> = {}) => {
     setLoading(true);
     try {
-      const res = await getListings(filters, 1, 100);
+      const res = await getListings(filters, 1, 50);
       if (res.success && res.data) setListings(res.data);
     } catch {
       toast.error("İlanlar yüklenemedi");

@@ -399,35 +399,37 @@ export default function ProfilePage() {
         const matchesCount = data.myMatches?.length ?? 0;
         const isMoreActive = activeTab === "calendar" || activeTab === "templates";
         return (
-          <div className="flex items-center border-b border-gray-200 dark:border-gray-700 mb-4 overflow-x-auto scrollbar-hide" role="tablist">
-            {([
-              { key: "posts", label: "📸 Gönderiler", badge: 0 },
-              { key: "listings", label: "📋 İlanlarım", badge: pendingIncoming },
-              { key: "responses", label: "📩 Başvurularım", badge: myResponsesCount },
-              { key: "matches", label: "🤝 Eşleşmeler", badge: matchesCount },
-              { key: "challenges", label: "⚔️ Tekliflerim", badge: 0 },
-            ] as { key: string; label: string; badge: number }[]).map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => { setActiveTab(tab.key as typeof activeTab); setMoreMenuOpen(false); }}
-                role="tab"
-                aria-selected={activeTab === tab.key}
-                className={`shrink-0 flex items-center gap-1.5 px-4 py-3 text-sm font-medium transition border-b-2 whitespace-nowrap ${
-                  activeTab === tab.key
-                    ? "border-emerald-600 text-emerald-600 dark:text-emerald-400"
-                    : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-                }`}
-              >
-                {tab.label}
-                {tab.badge > 0 && (
-                  <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] text-[10px] font-bold rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 px-1">
-                    {tab.badge}
-                  </span>
-                )}
-              </button>
-            ))}
-            {/* ··· Daha dropdown */}
-            <div className="relative shrink-0 ml-auto">
+          <div className="flex items-center border-b border-gray-200 dark:border-gray-700 mb-4" role="tablist">
+            <div className="flex items-center flex-1 min-w-0 overflow-x-auto scrollbar-hide">
+              {([
+                { key: "posts", label: "📸 Gönderiler", badge: 0 },
+                { key: "listings", label: "📋 İlanlarım", badge: pendingIncoming },
+                { key: "responses", label: "📩 Başvurularım", badge: myResponsesCount },
+                { key: "matches", label: "🤝 Eşleşmeler", badge: matchesCount },
+                { key: "challenges", label: "⚔️ Tekliflerim", badge: 0 },
+              ] as { key: string; label: string; badge: number }[]).map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => { setActiveTab(tab.key as typeof activeTab); setMoreMenuOpen(false); }}
+                  role="tab"
+                  aria-selected={activeTab === tab.key}
+                  className={`shrink-0 flex items-center gap-1.5 px-4 py-3 text-sm font-medium transition border-b-2 whitespace-nowrap ${
+                    activeTab === tab.key
+                      ? "border-emerald-600 text-emerald-600 dark:text-emerald-400"
+                      : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                  }`}
+                >
+                  {tab.label}
+                  {tab.badge > 0 && (
+                    <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] text-[10px] font-bold rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 px-1">
+                      {tab.badge}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+            {/* ··· Daha dropdown — outside scroll container so it's not clipped */}
+            <div className="relative shrink-0">
               <button
                 onClick={() => setMoreMenuOpen((v) => !v)}
                 className={`flex items-center gap-1 px-4 py-3 text-sm font-medium transition border-b-2 whitespace-nowrap ${

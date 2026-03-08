@@ -5,7 +5,7 @@ const BAD_WORDS_TR = [
   "amk", "aq", "orospu", "piç", "sik", "sikerim", "sikeyim", "yarrak",
   "göt", "götünü", "ananı", "pezevenk", "kahpe", "oç", "mk", "mq",
   "amına", "taşak", "dalyarak", "gerizekalı", "salak", "aptal", "dangalak",
-  "hıyar", "ibne", "top", "s2m", "s2k", "am",
+  "hıyar", "ibne", "s2m", "s2k", "amcık",
 ];
 
 const BAD_WORDS_EN = [
@@ -13,10 +13,15 @@ const BAD_WORDS_EN = [
   "cunt", "nigger", "faggot", "retard", "whore", "slut",
 ];
 
-// Kelime sınırı ile eşleştirmek için regex oluştur
+// Türkçe karakterleri de destekleyen kelime sınırı ile eşleştirme
+// JS \b Türkçe harfleri (ş,ç,ğ,ü,ö,ı,İ) tanımaz → Unicode-aware lookbehind/lookahead
+const turkishWordChar = "[a-zA-ZçÇğĞıİöÖşŞüÜâÂ0-9]";
+const wordBoundaryBefore = `(?<!${turkishWordChar})`;
+const wordBoundaryAfter = `(?!${turkishWordChar})`;
+
 const allWords = [...BAD_WORDS_TR, ...BAD_WORDS_EN];
 const pattern = new RegExp(
-  "\\b(" + allWords.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|") + ")\\b",
+  wordBoundaryBefore + "(" + allWords.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|") + ")" + wordBoundaryAfter,
   "gi"
 );
 

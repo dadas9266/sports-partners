@@ -87,7 +87,11 @@ export default function EslesmelerDetailPage({ params }: { params: Promise<{ mat
   const handleNoShow = async () => {
     if (!confirm("Bu kişi etkinliğe gelmedi mi? Bu bildirim geri alınamaz.")) return;
     try {
-      const res = await fetch(`/api/matches/${matchId}/no-show`, { method: "POST" });
+      const res = await fetch(`/api/matches/${matchId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "report_no_show" }),
+      });
       const json = await res.json();
       if (json.success) {
         toast.success("Gelmedi bildirimi gönderildi");

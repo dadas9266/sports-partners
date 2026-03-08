@@ -84,6 +84,8 @@ export async function GET(request: Request) {
       sports: { id: string }[];
     } | null = null;
 
+    let blockedUserIds: string[] = [];
+
     if (userId) {
       viewerProfile = await prisma.user.findUnique({
         where: { id: userId },
@@ -97,6 +99,16 @@ export async function GET(request: Request) {
         },
       });
       viewerGender = viewerProfile?.gender ?? null;
+
+      // Engellenen kullanıcı ID'lerini al (her iki yön: ben engellediğim + beni engelleyen)
+      const blocks = await prisma.userBlock.findMany({
+        where: {
+          OR: [{ blockerId: userId }, { blockedId: userId }],
+          type: "BLOCK",
+        },
+        select: { blockerId: true, blockedId: true },
+      });
+      blockedUserIds = blocks.map(b => b.blockerId === userId ? b.blockedId : b.blockerId);
     }
 
     const where: Prisma.ListingWhereInput = {
@@ -108,6 +120,13 @@ export async function GET(request: Request) {
         { OR: [{ type: { in: ["TRAINER", "EQUIPMENT"] } }, { dateTime: { gte: now } }] },
       ],
     };
+
+    // Engellenen kullanıcıların ilanlarını gizle
+    if (blockedUserIds.length > 0) {
+      (where.AND as Prisma.ListingWhereInput[]).push({
+        userId: { notIn: blockedUserIds },
+      });
+    }
 
     if (sportId) where.sportId = sportId;
     

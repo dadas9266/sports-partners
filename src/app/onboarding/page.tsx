@@ -28,7 +28,11 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/auth/giris");
-  }, [status, router]);
+    // Onboarding zaten tamamlanmışsa ana sayfaya yönlendir
+    if (status === "authenticated" && (session?.user as any)?.onboardingDone) {
+      router.push("/");
+    }
+  }, [status, session, router]);
 
   useEffect(() => {
     getSports().then((res) => {
