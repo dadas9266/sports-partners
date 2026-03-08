@@ -156,14 +156,13 @@ export async function PATCH(
     const notifications = [
       createNotification({
         userId: response.userId,
-        ...{
-          type: "SYSTEM",
-          title: result.match ? "🤝 Eşleşme Gerçekleşti!" : "✅ Katılım Onaylandı",
-          body: result.match 
-            ? `"${response.listing.sport.name}" ilanı için kadro tamamlandı ve eşleşme gerçekleşti!` 
-            : `"${response.listing.sport.name}" etkinliğine katılımınız onaylandı. Kontenjan dolduğunda eşleşme tamamlanacak.`,
-          link: `/ilan/${response.listingId}`
-        }
+        // NotificationType'a uygun tipler kullanıyoruz (Örn: RESPONSE_ACCEPTED)
+        type: result.match ? "NEW_MATCH" : "RESPONSE_ACCEPTED", 
+        title: result.match ? "🤝 Eşleşme Gerçekleşti!" : "✅ Katılım Onaylandı",
+        body: result.match 
+          ? `"${response.listing.sport.name}" ilanı için kadro tamamlandı ve eşleşme gerçekleşti!` 
+          : `"${response.listing.sport.name}" etkinliğine katılımınız onaylandı. Kontenjan dolduğunda eşleşme tamamlanacak.`,
+        link: `/ilan/${response.listingId}`
       })
     ];
 
