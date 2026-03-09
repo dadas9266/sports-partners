@@ -15,6 +15,15 @@ export const authConfig: NextAuthConfig = {
   },
   providers: [], // real providers are in auth.ts (server-only)
   callbacks: {
+    // Edge-safe session callback: JWT token'daki custom claim'leri session.user'a aktarır
+    session({ session, token }) {
+      if (session.user) {
+        session.user.id = (token.sub ?? (token as any).id) as string;
+        (session.user as any).isAdmin = (token as any).isAdmin ?? false;
+        (session.user as any).userType = (token as any).userType ?? "INDIVIDUAL";
+      }
+      return session;
+    },
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
       const { pathname } = nextUrl;

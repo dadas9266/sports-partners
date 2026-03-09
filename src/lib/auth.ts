@@ -128,16 +128,17 @@ const config: NextAuthConfig = {
           token.onboardingDone = dbCheck?.onboardingDone ?? false;
         }
       }
-      // Refresh avatarUrl + onboardingDone periodically from DB (every token refresh)
+      // Refresh avatarUrl + onboardingDone + isAdmin periodically from DB (every token refresh)
       if (!user && token.id) {
         try {
           const dbUser = await prisma.user.findUnique({
             where: { id: token.id as string },
-            select: { avatarUrl: true, onboardingDone: true },
+            select: { avatarUrl: true, onboardingDone: true, isAdmin: true },
           });
           if (dbUser) {
             token.avatarUrl = dbUser.avatarUrl ?? null;
             token.onboardingDone = dbUser.onboardingDone;
+            token.isAdmin = dbUser.isAdmin;
           }
         } catch { /* ignore */ }
       }
