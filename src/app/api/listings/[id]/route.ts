@@ -29,7 +29,7 @@ export async function GET(
         equipmentDetail: true,
         responses: {
           include: {
-            user: { select: { id: true, name: true } },
+            user: { select: { id: true, name: true, avatarUrl: true } },
           },
           orderBy: { createdAt: "desc" },
         },

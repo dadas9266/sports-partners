@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserId, isValidId, notFound } from "@/lib/api-utils";
 import { createLogger } from "@/lib/logger";
-import { createNotification, NOTIF } from "@/lib/notifications";
+import { createNotification } from "@/lib/notifications";
 
 const log = createLogger("responses:action");
 
@@ -74,7 +74,7 @@ export async function PATCH(
       return NextResponse.json({ success: true, data: updated });
     }
 
-    // KABUL ET: Transaction ile match oluştur
+    // KABUL ET: Transaction ile kapasite kontrolü ve eşleşme mantığı
     const result = await prisma.$transaction(async (tx) => {
       // Karşılığı kabul et
       const updatedResponse = await tx.response.update({
@@ -85,28 +85,29 @@ export async function PATCH(
       // İlanı bul (kapasite kontrolü için)
       const listing = await tx.listing.findUnique({
         where: { id: response.listingId },
-        include: { _count: { select: { responses: { where: { status: "ACCEPTED" } } } } }
+        include: { _count: { select: { responses: { where: { status: "ACCEPTED" } } } } },
       });
 
-      if (!listing || (listing.status !== "OPEN" && listing.status !== "MATCHED")) {
-        throw new Error("İlan artık aktif değil");
+      // Sadece OPEN ilanlar kabul işlemi yapabilir
+      if (!listing || listing.status !== "OPEN") {
+        throw new Error("İlan artık yeni başvuru kabul etmiyor");
       }
 
-      // Mevcut kabul edilmiş başvuru sayısı (bu dahil edilmeden önce) + 1
+      // Bu kabul dahil toplam kabul sayısı
       const acceptedCount = listing._count.responses + 1;
-      // Kapasite kontrolü: 
-      // maxParticipants=2 (1v1) ise acceptedCount=1 olduğunda dolar (sahibi + 1 kişi)
-      // maxParticipants=3 ise acceptedCount=2 olduğunda dolar (sahibi + 2 kişi)
-      const isCapacityFull = acceptedCount >= (listing.maxParticipants - 1);
-      
-      // Eğer kapasite dolduysa MATCHED yap, dolmadıysa OPEN kalmaya devam etsin
+      // Sahibi hariç gereken slot sayısı (maxParticipants sahibi dahil toplam)
+      const slotsNeeded = listing.maxParticipants - 1;
+      const isCapacityFull = acceptedCount >= slotsNeeded;
+      const remaining = slotsNeeded - acceptedCount; // 0 veya daha fazla
+
       if (isCapacityFull) {
+        // ── Tüm kontenjan doldu → MATCHED ──────────────────────────────────
         await tx.listing.update({
           where: { id: response.listingId },
           data: { status: "MATCHED" },
         });
 
-        // Diğer bekleyen karşılıkları reddet (sadece kapasite dolunca)
+        // Bekleyen diğer başvuruları otomatik reddet
         await tx.response.updateMany({
           where: {
             listingId: response.listingId,
@@ -115,75 +116,101 @@ export async function PATCH(
           },
           data: { status: "REJECTED" },
         });
-      } else {
-        // Kapasite dolmadıysa ilanın OPEN olduğundan emin ol (belki manuel kapatılmıştır vs)
-        await tx.listing.update({
-          where: { id: response.listingId },
-          data: { status: "OPEN" },
-        });
-      }
 
-      // Match kaydı oluştur (Sadece 1v1 durumunda veya ilk eşleşmede mi?)
-      // Mevcut yapıda 1 listing -> 1 match (unique listingId). 
-      // Grup maçları için Match modelinin bire-bir olması bir kısıt.
-      // Eğer bir match kaydı zaten varsa (grup maçı devam ediyorsa) tekrar oluşturma.
-      const existingMatch = await tx.match.findUnique({ where: { listingId: response.listingId } });
-      
-      let match = null;
-      if (!existingMatch) {
-         match = await tx.match.create({
-          data: {
-            listingId: response.listingId,
-            responseId: id,
-            user1Id: response.listing.userId,
-            user2Id: response.userId,
-          },
-          include: {
-            user1: { select: { id: true, name: true, avatarUrl: true } },
-            user2: { select: { id: true, name: true, avatarUrl: true } },
-          },
-        });
-      } else {
-        match = existingMatch;
-      }
+        // 1v1 için Match kaydı oluştur (sadece maxParticipants=2 durumunda)
+        let match = null;
+        if (listing.maxParticipants === 2) {
+          const existingMatch = await tx.match.findUnique({ where: { listingId: response.listingId } });
+          if (!existingMatch) {
+            match = await tx.match.create({
+              data: {
+                listingId: response.listingId,
+                responseId: id,
+                user1Id: response.listing.userId,
+                user2Id: response.userId,
+              },
+              include: {
+                user1: { select: { id: true, name: true, avatarUrl: true } },
+                user2: { select: { id: true, name: true, avatarUrl: true } },
+              },
+            });
+          } else {
+            match = existingMatch;
+          }
+        }
 
-      return { response: updatedResponse, match };
+        // Kontenjan dolunca tüm kabul edilmiş kullanıcıların ID'lerini al
+        const acceptedResponses = await tx.response.findMany({
+          where: { listingId: response.listingId, status: "ACCEPTED" },
+          select: { userId: true },
+        });
+
+        return {
+          response: updatedResponse,
+          match,
+          acceptedUserIds: acceptedResponses.map((r) => r.userId),
+          isCapacityFull: true,
+          remaining: 0,
+        };
+      } else {
+        // ── Kontenjan dolmadı → ilan OPEN kalmaya devam eder ──────────────
+        return {
+          response: updatedResponse,
+          match: null,
+          acceptedUserIds: [],
+          isCapacityFull: false,
+          remaining,
+        };
+      }
     });
 
-    log.info("Karşılık kabul edildi", { responseId: id, matchId: result.match?.id });
+    log.info("Karşılık kabul edildi", { responseId: id, isCapacityFull: result.isCapacityFull });
 
-    // Karşılığın bağlı olduğu ilanı spor bilgisiyle birlikte tekrar çekiyoruz (TypeScript hatasını önlemek için)
     const listingWithSport = await prisma.listing.findUnique({
       where: { id: response.listingId },
-      include: { sport: true }
+      include: { sport: true },
     });
     const sportName = listingWithSport?.sport?.name ?? "Etkinlik";
 
-    // Karşılık verene bildirim gönder
-    const notifications = [
-      createNotification({
-        userId: response.userId,
-        // NotificationType'a uygun tipler kullanıyoruz (RESETPONSE_ACCEPTED veya NEW_MATCH)
-        type: result.match ? "NEW_MATCH" : "RESPONSE_ACCEPTED", 
-        title: result.match ? "🤝 Eşleşme Gerçekleşti!" : "✅ Katılım Onaylandı",
-        body: result.match 
-          ? `"${sportName}" ilanı için kadro tamamlandı ve eşleşme gerçekleşti!` 
-          : `"${sportName}" etkinliğine katılımınız onaylandı. Kontenjan dolduğunda eşleşme tamamlanacak.`,
-        link: `/ilan/${response.listingId}`
-      })
-    ];
+    const notificationPromises: Promise<any>[] = [];
 
-    // Eğer eşleşme oluştuysa (Kadro dolduysa) ilan sahibine de "Yeni Maç" bildirimi
-    if (result.match) {
-      notifications.push(
+    if (result.isCapacityFull) {
+      // Kontenjan doldu — tüm kabul edilmiş kullanıcılara "Eşleşme gerçekleşti!" bildirimi
+      for (const acceptedUserId of result.acceptedUserIds) {
+        notificationPromises.push(
+          createNotification({
+            userId: acceptedUserId,
+            type: "NEW_MATCH",
+            title: "🎉 Eşleşme Gerçekleşti!",
+            body: `"${sportName}" ilanı için kadro tamamlandı! Eşleşme gerçekleşti.`,
+            link: `/ilan/${response.listingId}`,
+          })
+        );
+      }
+      // İlan sahibine de bildirim
+      notificationPromises.push(
         createNotification({
           userId: response.listing.userId,
-          ...NOTIF.newMatch(response.listingId),
+          type: "NEW_MATCH",
+          title: "🎉 Kadronuz Tamamlandı!",
+          body: `"${sportName}" ilanınız için tüm katılımcılar tamamlandı. Eşleşme gerçekleşti!`,
+          link: `/ilan/${response.listingId}`,
+        })
+      );
+    } else {
+      // Kontenjan dolmadı — kabul edilen kişiye "X kişi daha gerekiyor" bildirimi
+      notificationPromises.push(
+        createNotification({
+          userId: response.userId,
+          type: "RESPONSE_ACCEPTED",
+          title: "✅ Katılımınız Onaylandı!",
+          body: `"${sportName}" etkinliğine katılımınız onaylandı. Eşleşme için ${result.remaining} kişi daha gerekiyor.`,
+          link: `/ilan/${response.listingId}`,
         })
       );
     }
-    
-    await Promise.all(notifications);
+
+    await Promise.all(notificationPromises);
 
     // Otomatik aktivite paylaşımı kaldırıldı — eşleşme duyurusu artık sosyal akışta gösterilmiyor
     // Kullanıcılar isterse eşleşmeyi kendileri paylaşabilir

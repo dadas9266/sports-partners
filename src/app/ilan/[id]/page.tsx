@@ -465,26 +465,52 @@ export default function ListingDetailPage({
       </article>
 
       {/* Match bilgisi */}
-      {isMatched && listing.match && (
+      {isMatched && (
         <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-6 mb-4">
           <h3 className="font-semibold text-green-800 dark:text-green-300 mb-3">
             🎉 Eşleşme Gerçekleşti!
           </h3>
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 bg-white dark:bg-gray-800 rounded-lg p-4">
-              <p className="text-sm text-gray-500 dark:text-gray-400">İlan Sahibi</p>
-              <Link href={`/profil/${listing.match.user1Id}`} className="font-semibold text-gray-800 dark:text-gray-100 hover:text-emerald-600 transition">
-                {listing.match.user1?.name}
-              </Link>
+
+          {listing.maxParticipants > 2 ? (
+            // Grup eşleşmesi: tüm kabul edilmiş katılımcıları göster
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {/* İlan sahibi */}
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-4 text-center">
+                <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mb-1">👑 İlan Sahibi</p>
+                <Link href={`/profil/${listing.userId}`} className="font-semibold text-sm text-gray-800 dark:text-gray-100 hover:text-emerald-600 transition">
+                  {listing.user?.name}
+                </Link>
+              </div>
+              {/* Kabul edilen katılımcılar */}
+              {listing.responses
+                ?.filter((r: ListingResponse) => r.status === "ACCEPTED")
+                .map((r: ListingResponse) => (
+                  <div key={r.id} className="bg-white dark:bg-gray-800 rounded-lg p-4 text-center">
+                    <p className="text-xs font-semibold text-blue-600 dark:text-blue-400 mb-1">✅ Katılımcı</p>
+                    <Link href={`/profil/${r.userId}`} className="font-semibold text-sm text-gray-800 dark:text-gray-100 hover:text-emerald-600 transition">
+                      {r.user?.name}
+                    </Link>
+                  </div>
+                ))}
             </div>
-            <div className="flex items-center justify-center text-2xl" aria-hidden="true">🤝</div>
-            <div className="flex-1 bg-white dark:bg-gray-800 rounded-lg p-4">
-              <p className="text-sm text-gray-500 dark:text-gray-400">Eşleşen Kişi</p>
-              <Link href={`/profil/${listing.match.user2Id}`} className="font-semibold text-gray-800 dark:text-gray-100 hover:text-emerald-600 transition">
-                {listing.match.user2?.name}
-              </Link>
+          ) : listing.match ? (
+            // 1v1 eşleşmesi
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1 bg-white dark:bg-gray-800 rounded-lg p-4">
+                <p className="text-sm text-gray-500 dark:text-gray-400">İlan Sahibi</p>
+                <Link href={`/profil/${listing.match.user1Id}`} className="font-semibold text-gray-800 dark:text-gray-100 hover:text-emerald-600 transition">
+                  {listing.match.user1?.name}
+                </Link>
+              </div>
+              <div className="flex items-center justify-center text-2xl" aria-hidden="true">🤝</div>
+              <div className="flex-1 bg-white dark:bg-gray-800 rounded-lg p-4">
+                <p className="text-sm text-gray-500 dark:text-gray-400">Eşleşen Kişi</p>
+                <Link href={`/profil/${listing.match.user2Id}`} className="font-semibold text-gray-800 dark:text-gray-100 hover:text-emerald-600 transition">
+                  {listing.match.user2?.name}
+                </Link>
+              </div>
             </div>
-          </div>
+          ) : null}
           {/* Post-match panel — only for participants after the event */}
           {isMatchParticipant && matchInPast && listing.match && (() => {
             const matchStatus = listing.match.status;

@@ -59,6 +59,17 @@ export async function POST(request: Request) {
       );
     }
 
+    // Kapasite kontrolü: kabul edilen başvuru sayısı + ilan sahibi >= maxParticipants
+    const acceptedCount = await prisma.response.count({
+      where: { listingId, status: "ACCEPTED" },
+    });
+    if (acceptedCount >= listing.maxParticipants - 1) {
+      return NextResponse.json(
+        { success: false, error: "Bu ilanın kontenjanı dolmuştur" },
+        { status: 400 }
+      );
+    }
+
     // Hızlı ilan süresi dolmuş mu?
     if (listing.expiresAt && listing.expiresAt < new Date()) {
       return NextResponse.json(
