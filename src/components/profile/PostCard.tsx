@@ -115,11 +115,12 @@ export default function PostCard({ post, onLikeToggle }: PostCardProps) {
         if (replyingTo) {
           // Recursive: find the parent comment at any depth and add reply
           const addReplyRecursive = (list: any[]): any[] => {
+            if (!Array.isArray(list)) return [];
             return list.map(c => {
               if (c.id === replyingTo.id) {
                 return { ...c, replies: [...(c.replies || []), json.comment] };
               }
-              if (c.replies?.length > 0) {
+              if (c.replies && c.replies.length > 0) {
                 return { ...c, replies: addReplyRecursive(c.replies) };
               }
               return c;
@@ -127,7 +128,7 @@ export default function PostCard({ post, onLikeToggle }: PostCardProps) {
           };
           setComments(prev => addReplyRecursive(prev));
         } else {
-          setComments((prev) => [...prev, json.comment]);
+          setComments((prev) => [...(Array.isArray(prev) ? prev : []), json.comment]);
         }
         setCommentCount((n: number) => n + 1);
         setCommentText("");
@@ -262,7 +263,7 @@ export default function PostCard({ post, onLikeToggle }: PostCardProps) {
       {showComments && (
         <div className="mt-3 space-y-3">
           <div className="max-h-[400px] overflow-y-auto space-y-3 pr-1">
-            {comments.map((c) => (
+            {Array.isArray(comments) && comments.map((c) => (
               <RenderComment 
                 key={c.id} 
                 comment={c} 
