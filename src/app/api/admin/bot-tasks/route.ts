@@ -44,11 +44,12 @@ export async function POST(req: Request) {
   const {
     listingBotId,
     responderBotId,
-    cityId,        // tek şehir veya null (toplu mod için)
+    cityId,           // tek şehir veya null (toplu mod için)
     countryId,
     sportId,
     delaySeconds = 30,
-    bulk = false,  // true ise countryId içindeki tüm şehirlere görev yarat
+    bulk = false,     // true ise countryId içindeki tüm şehirlere görev yarat
+    listingDateTime,  // Admin'in belirlediği ilan tarihi/saati (ISO string)
   } = body;
 
   if (!listingBotId || !responderBotId) {
@@ -81,6 +82,7 @@ export async function POST(req: Request) {
           countryId: countryId ?? null,
           sportId: sportId ?? null,
           delaySeconds,
+          listingDateTime: listingDateTime ? new Date(listingDateTime) : null,
           status: "PENDING",
         },
       })
@@ -125,7 +127,8 @@ async function executeTasks(taskIds: string[]) {
           level: (task.listingBot.userLevel as "BEGINNER" | "INTERMEDIATE" | "ADVANCED") ?? "BEGINNER",
           status: "OPEN",
           description: generateListingDesc(task.listingBot.name ?? "Sporcu", task.sport?.name ?? "spor"),
-          dateTime: getFutureDate(1),
+          // Admin'in belirlediği tarih/saat; yoksa 1 gün sonraya otomatik
+          dateTime: task.listingDateTime ?? getFutureDate(1),
           maxParticipants: 2,
         },
       });

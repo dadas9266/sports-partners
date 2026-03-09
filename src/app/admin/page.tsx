@@ -115,7 +115,7 @@ export default function AdminPage() {
   const [botTasks, setBotTasks] = useState<any[]>([]);
   const [botsLoading, setBotsLoading] = useState(false);
   const [botForm, setBotForm] = useState({ name: "", gender: "MALE", birthYear: 1995, cityId: "", botPersona: "", sportIds: [] as string[] });
-  const [taskForm, setTaskForm] = useState({ listingBotId: "", responderBotId: "", cityId: "", sportId: "", delaySeconds: 30, bulk: false, countryId: "" });
+  const [taskForm, setTaskForm] = useState({ listingBotId: "", responderBotId: "", cityId: "", sportId: "", delaySeconds: 30, bulk: false, countryId: "", listingDateTime: "" });
   const [taskRunning, setTaskRunning] = useState(false);
   const [dbStats, setDbStats] = useState<{
     users: { total: number; new30d: number; new7d: number; banned: number; online: number };

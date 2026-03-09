@@ -51,7 +51,7 @@ interface BotPanelProps {
   setBotsLoading: (v: boolean) => void;
   botForm: { name: string; gender: string; birthYear: number; cityId: string; botPersona: string; sportIds: string[] };
   setBotForm: (f: BotPanelProps["botForm"]) => void;
-  taskForm: { listingBotId: string; responderBotId: string; cityId: string; sportId: string; delaySeconds: number; bulk: boolean; countryId: string };
+  taskForm: { listingBotId: string; responderBotId: string; cityId: string; sportId: string; delaySeconds: number; bulk: boolean; countryId: string; listingDateTime: string };
   setTaskForm: (f: BotPanelProps["taskForm"]) => void;
   taskRunning: boolean;
   setTaskRunning: (v: boolean) => void;
@@ -257,6 +257,16 @@ export default function BotPanel({
           <div>
             <label className="text-xs text-gray-500 mb-1 block">Basvuru Gecikmesi (sn)</label>
             <input type="number" min={5} max={3600} className="w-full border rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:border-gray-600" value={taskForm.delaySeconds} onChange={e => setTaskForm({ ...taskForm, delaySeconds: parseInt(e.target.value) || 30 })} />
+          </div>
+          <div className="md:col-span-2 lg:col-span-3">
+            <label className="text-xs text-gray-500 mb-1 block">Ilan Tarihi ve Saati * (bu saatten sonra ilan otomatik kalkar)</label>
+            <input
+              type="datetime-local"
+              className="border rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              value={taskForm.listingDateTime}
+              onChange={e => setTaskForm({ ...taskForm, listingDateTime: e.target.value })}
+            />
+            <p className="text-xs text-gray-400 mt-1">Bos birakirsan 1 gun sonraya otomatik ayarlanir</p>
           </div>
         </div>
         <button onClick={runTask} disabled={taskRunning} className="mt-4 bg-blue-600 text-white rounded-lg px-6 py-2 text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 transition">

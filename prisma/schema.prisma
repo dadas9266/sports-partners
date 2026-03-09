@@ -1175,6 +1175,7 @@ model BotTask {
   // Görev meta
   status          BotTaskStatus @default(PENDING)
   delaySeconds    Int           @default(300)       // Başvuru gecikmesi (sn)
+  listingDateTime DateTime?                         // Bot ilanının tarihi ve saati
   listingId       String?                           // Açılan ilanın ID'si
   responseId      String?                           // Yapılan başvurunun ID'si
   matchId         String?                           // Oluşan eşleşmenin ID'si

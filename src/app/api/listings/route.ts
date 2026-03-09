@@ -112,7 +112,8 @@ export async function GET(request: Request) {
     }
 
     const where: Prisma.ListingWhereInput = {
-      status: "OPEN",
+      // OPEN veya MATCHED ilanlar — her ikisi de gösterilir (MATCHED = dolu ama henüz zamanı gelmemiş)
+      status: { in: ["OPEN", "MATCHED"] },
       AND: [
         // Süresi dolmuş hızlı ilanları gizle
         { OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },

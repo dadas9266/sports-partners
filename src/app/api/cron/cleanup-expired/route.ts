@@ -27,10 +27,10 @@ export async function GET(req: NextRequest) {
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
   // ── 1. Süresi dolmuş ilanları EXPIRED yap ─────────────────────────────────
-  // a) Etkinlik tarihi/saati geçmiş açık ilanlar
+  // a) Etkinlik tarihi/saati geçmiş açık ilanlar (OPEN veya MATCHED)
   const expiredByDate = await prisma.listing.updateMany({
     where: {
-      status: "OPEN",
+      status: { in: ["OPEN", "MATCHED"] },
       dateTime: { lt: now },
     },
     data: { status: "EXPIRED" },
