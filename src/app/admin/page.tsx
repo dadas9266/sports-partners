@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
+import BotPanel from "@/components/admin/BotPanel";
 
 interface AdminUser {
   id: string;
@@ -95,7 +96,7 @@ export default function AdminPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"users" | "venues" | "trainers" | "reports" | "content">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "venues" | "trainers" | "reports" | "content" | "bots">("users");
   const [venueProfiles, setVenueProfiles] = useState<VenueProfileAdmin[]>([]);
   const [venueLoading, setVenueLoading] = useState(false);
   const [trainerProfiles, setTrainerProfiles] = useState<TrainerProfileAdmin[]>([]);
@@ -108,6 +109,14 @@ export default function AdminPage() {
   const [contentItems, setContentItems] = useState<any[]>([]);
   const [contentLoading, setContentLoading] = useState(false);
   const [contentType, setContentType] = useState<"posts" | "comments">("posts");
+
+  // Bot yönetimi
+  const [bots, setBots] = useState<any[]>([]);
+  const [botTasks, setBotTasks] = useState<any[]>([]);
+  const [botsLoading, setBotsLoading] = useState(false);
+  const [botForm, setBotForm] = useState({ name: "", gender: "MALE", birthYear: 1990, cityId: "", botPersona: "" });
+  const [taskForm, setTaskForm] = useState({ listingBotId: "", responderBotId: "", cityId: "", sportId: "", delaySeconds: 30, bulk: false, countryId: "" });
+  const [taskRunning, setTaskRunning] = useState(false);
   const [dbStats, setDbStats] = useState<{
     users: { total: number; new30d: number; new7d: number; banned: number; online: number };
     listings: { total: number; open: number };
@@ -404,7 +413,7 @@ export default function AdminPage() {
 
       {/* Sekme Butonları */}
       <div className="flex gap-2 mb-6 border-b border-gray-200 dark:border-gray-700">
-        {([[ "users", "👥 Kullanıcılar"], ["venues", "🏙️ Mekan Onayları"], ["trainers", "🎓 Antrenör Onayları"], ["reports", "🚨 Şikayetler"], ["content", "📝 İçerik"]] as const).map(([tab, label]) => (
+        {([[ "users", "👥 Kullanıcılar"], ["venues", "🏙️ Mekan Onayları"], ["trainers", "🎓 Antrenör Onayları"], ["reports", "🚨 Şikayetler"], ["content", "📝 İçerik"], ["bots", "🤖 Botlar"]] as const).map(([tab, label]) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -1035,6 +1044,25 @@ export default function AdminPage() {
       )}
       {/* ── Kullanıcı sekmesi sonu ── */}
       </>}
+
+      {/* ── Bot Yönetimi Sekmesi ──────────────────────────────────────────── */}
+      {activeTab === "bots" && (
+        <BotPanel
+          bots={bots}
+          setBots={setBots}
+          botTasks={botTasks}
+          setBotTasks={setBotTasks}
+          botsLoading={botsLoading}
+          setBotsLoading={setBotsLoading}
+          botForm={botForm}
+          setBotForm={setBotForm}
+          taskForm={taskForm}
+          setTaskForm={setTaskForm}
+          taskRunning={taskRunning}
+          setTaskRunning={setTaskRunning}
+          locations={[]}
+        />
+      )}
     </div>
   );
 }

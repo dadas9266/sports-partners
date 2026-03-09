@@ -79,6 +79,9 @@ model User {
   showOnLeaderboard Boolean     @default(true)       // Liderlik tablosunda göster
   isPrivateProfile  Boolean     @default(false)      // Kapalı profil: takipçi onayı gerektirir
   lastSeenAt   DateTime? @default(now())             // Son görülme
+  // Bot alanları
+  isBot        Boolean   @default(false)             // Bot kullanıcı mı?
+  botPersona   String?                               // Bot kişilik tipi (örn: genç-rekabetçi)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
@@ -127,6 +130,8 @@ model User {
   enrollmentsAsTrainer TrainerEnrollment[] @relation("TrainerEnrollments")
   enrollmentsAsStudent TrainerEnrollment[] @relation("StudentEnrollments")
   commentLikes         CommentLike[]
+  botTasksAsLister     BotTask[]           @relation("BotTaskLister")
+  botTasksAsResponder  BotTask[]           @relation("BotTaskResponder")
 }
 
 // ========== SPOR ==========
@@ -142,6 +147,7 @@ model Sport {
   groups      Group[]
   communities Community[]
   tournaments Tournament[]
+  botTasks    BotTask[]
 }
 
 // ========== KONUM ==========
@@ -151,6 +157,7 @@ model Country {
   code     String    @unique
   cities   City[]
   listings Listing[]
+  botTasks BotTask[]
 }
 
 model City {
@@ -164,6 +171,7 @@ model City {
   groups      Group[]
   communities Community[]
   listings    Listing[]
+  botTasks    BotTask[]
 
   @@unique([name, countryId])
 }
@@ -1146,4 +1154,45 @@ model TrainerLesson {
 
   @@index([enrollmentId])
   @@index([status])
+}
+
+// ========== BOT GÖREV SİSTEMİ ==========
+model BotTask {
+  id              String        @id @default(cuid())
+  // İlan açacak bot
+  listingBotId    String
+  listingBot      User          @relation("BotTaskLister",   fields: [listingBotId], references: [id])
+  // Başvuru yapacak bot
+  responderBotId  String
+  responderBot    User          @relation("BotTaskResponder", fields: [responderBotId], references: [id])
+  // Hedef konum
+  countryId       String?
+  country         Country?      @relation(fields: [countryId], references: [id])
+  cityId          String?
+  city            City?         @relation(fields: [cityId], references: [id])
+  sportId         String?
+  sport           Sport?        @relation(fields: [sportId], references: [id])
+  // Görev meta
+  status          BotTaskStatus @default(PENDING)
+  delaySeconds    Int           @default(300)       // Başvuru gecikmesi (sn)
+  listingId       String?                           // Açılan ilanın ID'si
+  responseId      String?                           // Yapılan başvurunun ID'si
+  matchId         String?                           // Oluşan eşleşmenin ID'si
+  errorMessage    String?       @db.Text
+  scheduledAt     DateTime      @default(now())
+  executedAt      DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([status])
+  @@index([cityId])
+  @@index([listingBotId])
+}
+
+enum BotTaskStatus {
+  PENDING
+  LISTING_CREATED
+  RESPONSE_SENT
+  MATCH_DONE
+  FAILED
 }
