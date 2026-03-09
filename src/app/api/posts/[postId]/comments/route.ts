@@ -10,7 +10,7 @@ const log = createLogger("api:posts:comments");
 
 const commentSchema = z.object({
   content: z.string().min(1).max(500),
-  parentId: z.string().optional(),
+  parentId: z.string().nullish(),
 });
 
 // GET /api/posts/[postId]/comments

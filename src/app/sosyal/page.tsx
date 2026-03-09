@@ -292,7 +292,8 @@ export default function SosyalPage() {
           )
         );
       } else {
-        toast.error(json.error || "Yorum eklenemedi");
+        const msg = typeof json.error === "string" ? json.error : "Yorum eklenemedi";
+        toast.error(msg);
       }
     } finally {
       setSubmittingComment(null);

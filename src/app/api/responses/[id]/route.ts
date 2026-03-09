@@ -82,10 +82,14 @@ export async function PATCH(
         data: { status: "ACCEPTED" },
       });
 
-      // İlanı bul (kapasite kontrolü için)
+      // Bu kabul DAHİL toplam kabul edilen karşılık sayısını doğrudan say
+      const acceptedCount = await tx.response.count({
+        where: { listingId: response.listingId, status: "ACCEPTED" },
+      });
+
+      // İlanı bul
       const listing = await tx.listing.findUnique({
         where: { id: response.listingId },
-        include: { _count: { select: { responses: { where: { status: "ACCEPTED" } } } } },
       });
 
       // Sadece OPEN ilanlar kabul işlemi yapabilir
@@ -93,8 +97,6 @@ export async function PATCH(
         throw new Error("İlan artık yeni başvuru kabul etmiyor");
       }
 
-      // Bu kabul dahil toplam kabul sayısı
-      const acceptedCount = listing._count.responses + 1;
       // Sahibi hariç gereken slot sayısı (maxParticipants sahibi dahil toplam)
       const slotsNeeded = listing.maxParticipants - 1;
       const isCapacityFull = acceptedCount >= slotsNeeded;
