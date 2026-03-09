@@ -14,7 +14,7 @@ export async function POST(
   const { id: commentId } = await params;
 
   try {
-    const existing = await (prisma as any).commentLike.findUnique({
+    const existing = await prisma.commentLike.findUnique({
       where: {
         commentId_userId: {
           commentId,
@@ -24,22 +24,22 @@ export async function POST(
     });
 
     if (existing) {
-      await (prisma as any).commentLike.delete({
+      await prisma.commentLike.delete({
         where: { id: existing.id },
       });
-      const count = await (prisma as any).commentLike.count({ where: { commentId } });
+      const count = await prisma.commentLike.count({ where: { commentId } });
       return NextResponse.json({ liked: false, likeCount: count });
     } else {
-      await (prisma as any).commentLike.create({
+      await prisma.commentLike.create({
         data: {
           commentId,
           userId,
         },
       });
-      const count = await (prisma as any).commentLike.count({ where: { commentId } });
+      const count = await prisma.commentLike.count({ where: { commentId } });
 
       // Yorum sahibine bildirim gönder
-      const comment = await (prisma as any).postComment.findUnique({
+      const comment = await prisma.postComment.findUnique({
         where: { id: commentId },
         select: { userId: true, postId: true },
       });

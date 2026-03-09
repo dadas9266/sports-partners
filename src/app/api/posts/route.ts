@@ -41,11 +41,11 @@ export async function GET(req: NextRequest) {
       // Kulüp gönderileri
       whereFilter = { clubId, ...cursorFilter };
     } else if (targetUserId) {
-      // Belirli kullanıcının gönderileri (grup/kulüp postlarını hariç tut)
-      whereFilter = { userId: targetUserId, groupId: null, clubId: null, ...cursorFilter };
+      // Belirli kullanıcının gönderileri (grup/kulüp/topluluk postlarını hariç tut)
+      whereFilter = { userId: targetUserId, groupId: null, clubId: null, communityId: null, ...cursorFilter };
     } else {
-      // Feed: herkese açık tüm gönderiler (grup/kulüp postlarını hariç tut)
-      whereFilter = { groupId: null, clubId: null, ...cursorFilter };
+      // Feed: herkese açık tüm gönderiler (grup/kulüp/topluluk postlarını hariç tut)
+      whereFilter = { groupId: null, clubId: null, communityId: null, ...cursorFilter };
     }
 
     const posts = await prisma.post.findMany({

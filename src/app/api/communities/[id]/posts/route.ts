@@ -14,8 +14,7 @@ const createPostSchema = z.object({
 
 /**
  * GET /api/communities/[id]/posts
- * Topluluğun üye kullanıcılarının gönderilerini döner.
- * (Post modeline communityId migration olmadan çalışan alternatif)
+ * Topluluğa ait gönderileri döner (communityId ile filtrelenir).
  */
 export async function GET(req: NextRequest, { params }: Params) {
   try {
@@ -25,24 +24,31 @@ export async function GET(req: NextRequest, { params }: Params) {
     const cursor = searchParams.get("cursor");
     const limit = Math.min(parseInt(searchParams.get("limit") ?? "15"), 30);
 
-    // Topluluk üyelerini al
-    const memberships = await (prisma as any).communityMembership.findMany({
-      where: { communityId, status: "APPROVED" },
-      select: { userId: true },
+    // Topluluk bilgisini al
+    const community = await (prisma as any).community.findUnique({
+      where: { id: communityId },
+      select: { isPrivate: true },
     });
-    const memberIds = memberships.map((m: { userId: string }) => m.userId);
 
-    if (memberIds.length === 0) {
-      return NextResponse.json({ success: true, data: [], nextCursor: null });
+    // Kapalı toplulukta üyelik kontrolü
+    if (community?.isPrivate) {
+      if (!userId) {
+        return NextResponse.json({ error: "Giriş yapmanız gerekiyor" }, { status: 401 });
+      }
+      const membership = await (prisma as any).communityMembership.findUnique({
+        where: { userId_communityId: { userId, communityId } },
+        select: { status: true },
+      });
+      if (!membership || membership.status !== "APPROVED") {
+        return NextResponse.json({ error: "Bu topluluğun gönderilerini görmek için üye olmalısınız" }, { status: 403 });
+      }
     }
 
     const cursorFilter = cursor ? { id: { lt: cursor } } : {};
 
     const posts = await prisma.post.findMany({
       where: {
-        userId: { in: memberIds },
-        groupId: null,
-        clubId: null,
+        communityId,
         ...cursorFilter,
       },
       orderBy: { createdAt: "desc" },
@@ -106,7 +112,7 @@ export async function POST(req: NextRequest, { params }: Params) {
         userId,
         content: content ? sanitizeText(content) : null,
         images,
-        // communityId yok (migration olmadan workaround)
+        communityId,
       },
       include: {
         user: { select: { id: true, name: true, avatarUrl: true } },

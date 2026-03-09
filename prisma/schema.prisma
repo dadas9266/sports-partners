@@ -771,17 +771,19 @@ model DirectChallenge {
 
 // ========== DOĞRUDAN TEKLIF SONU ==========
 model Post {
-  id        String    @id @default(cuid())
-  userId    String
-  user      User      @relation(fields: [userId], references: [id])
-  content   String?                          // Yazı içeriği
-  images    String[]  @default([])           // Görsel URL'leri (Supabase Storage)
-  groupId   String?                          // Grup gönderisi
-  group     Group?    @relation(fields: [groupId], references: [id])
-  clubId    String?                          // Kulüb gönderisi
-  club      Club?     @relation(fields: [clubId], references: [id])
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id          String     @id @default(cuid())
+  userId      String
+  user        User       @relation(fields: [userId], references: [id])
+  content     String?                          // Yazı içeriği
+  images      String[]   @default([])           // Görsel URL'leri (Supabase Storage)
+  groupId     String?                          // Grup gönderisi
+  group       Group?     @relation(fields: [groupId], references: [id])
+  clubId      String?                          // Kulüb gönderisi
+  club        Club?      @relation(fields: [clubId], references: [id])
+  communityId String?                          // Topluluk gönderisi
+  community   Community? @relation(fields: [communityId], references: [id])
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 
   likes     PostLike[]
   comments  PostComment[]
@@ -790,6 +792,7 @@ model Post {
   @@index([createdAt])
   @@index([groupId])
   @@index([clubId])
+  @@index([communityId])
 }
 
 model PostLike {
@@ -967,6 +970,7 @@ model Community {
   updatedAt   DateTime      @updatedAt
 
   members     CommunityMembership[]
+  posts       Post[]
 
   @@unique([name, cityId, type])
   @@index([sportId])
