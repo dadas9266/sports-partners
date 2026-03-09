@@ -22,8 +22,8 @@ export default function CreatePostBox({ onCreated }: CreatePostBoxProps) {
         body: JSON.stringify({ content: content.trim(), images: [] }),
       });
       const json = await res.json();
-      if (json.post) {
-        onCreated(json.post);
+      if (res.ok && json.id) {
+        onCreated(json);
         setContent("");
         toast.success("Gönderi paylaşıldı!");
       } else {

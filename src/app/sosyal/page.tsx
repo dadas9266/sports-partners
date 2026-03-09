@@ -265,7 +265,8 @@ export default function SosyalPage() {
           parentId: parent?.id || null 
         }),
       });
-      const json = await res.json();
+      let json: any = {};
+      try { json = await res.json(); } catch { /* non-JSON response */ }
       if (res.ok) {
         const newComment = { ...(json.comment || json), likedByMe: false, _count: { likes: 0, replies: 0 }, replies: [] };
         if (parent) {
@@ -294,6 +295,8 @@ export default function SosyalPage() {
       } else {
         toast.error(json.error || "Yorum eklenemedi");
       }
+    } catch {
+      toast.error("Bağlantı hatası");
     } finally {
       setSubmittingComment(null);
     }
@@ -773,7 +776,7 @@ function FacebookComment({
           {/* Actions row */}
           <div className="flex items-center gap-3 mt-1 ml-1">
             <span className="text-[10px] text-gray-400 dark:text-gray-500">
-              {format(new Date(comment.createdAt), "d MMM, HH:mm", { locale: tr })}
+              {comment.createdAt ? (() => { try { return format(new Date(comment.createdAt), "d MMM, HH:mm", { locale: tr }); } catch { return ""; } })() : ""}
             </span>
             <button
               onClick={() => onLike(comment.id)}

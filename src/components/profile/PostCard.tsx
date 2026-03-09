@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
+import toast from "react-hot-toast";
 import Button from "@/components/ui/Button";
 
 interface PostCardProps {
@@ -110,6 +111,11 @@ export default function PostCard({ post, onLikeToggle }: PostCardProps) {
           parentId: replyingTo?.id || null
         }),
       });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        toast.error((err as any).error || "Yorum eklenemedi");
+        return;
+      }
       const json = await res.json();
       if (json.comment) {
         if (replyingTo) {
@@ -134,6 +140,8 @@ export default function PostCard({ post, onLikeToggle }: PostCardProps) {
         setCommentText("");
         setReplyingTo(null);
       }
+    } catch {
+      toast.error("Bağlantı hatası");
     } finally {
       setAddingComment(false);
     }
@@ -338,7 +346,7 @@ function RenderComment({ comment, onLike, onReply, isReply = false }: { comment:
         </div>
         <div className="flex items-center gap-3 mt-1 ml-1">
           <p className="text-[9px] text-gray-400">
-            {format(new Date(comment.createdAt), "d MMM, HH:mm", { locale: tr })}
+            {comment.createdAt ? (() => { try { return format(new Date(comment.createdAt), "d MMM, HH:mm", { locale: tr }); } catch { return ""; } })() : ""}
           </p>
           <button 
             onClick={() => onReply({ id: comment.id, name: comment.user?.name })}

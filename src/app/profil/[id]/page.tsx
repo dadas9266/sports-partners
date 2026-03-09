@@ -15,6 +15,7 @@ import BadgeComp from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import StoryViewer from "@/components/StoryViewer";
 import TrainerBadgePopup from "@/components/profile/TrainerBadgePopup";
+import PostCard from "@/components/profile/PostCard";
 function StarRating({ value, onChange }: { value: number; onChange?: (v: number) => void }) {
   return (
     <div className="flex gap-1">
@@ -753,29 +754,13 @@ export default function PublicProfilePage({
           ) : (
             <div className="space-y-4">
               {posts.map((post) => (
-                <div key={post.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-9 h-9 rounded-full bg-emerald-100 dark:bg-emerald-900/30 overflow-hidden flex items-center justify-center text-base shrink-0">
-                      {profile.avatarUrl ? <img src={profile.avatarUrl} alt={profile.name} className="w-full h-full object-cover" /> : profile.name.charAt(0)}
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">{profile.name}</p>
-                      <p className="text-xs text-gray-400">{format(new Date(post.createdAt), "d MMM yyyy, HH:mm", { locale: tr })}</p>
-                    </div>
-                  </div>
-                  {post.content && <p className="text-sm text-gray-800 dark:text-gray-100 whitespace-pre-wrap mb-3">{post.content}</p>}
-                  {post.images?.length > 0 && (
-                    <div className={`grid gap-1.5 mb-3 ${post.images.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
-                      {post.images.slice(0, 4).map((url: string, i: number) => (
-                        <img key={i} src={url} alt="" className="w-full h-48 object-cover rounded-lg" />
-                      ))}
-                    </div>
-                  )}
-                  <div className="flex gap-4 pt-2 border-t border-gray-100 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400">
-                    <span>❤️ {post._count?.likes ?? 0}</span>
-                    <span>💬 {post._count?.comments ?? 0}</span>
-                  </div>
-                </div>
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  onLikeToggle={(pid, liked, count) => {
+                    setPosts(prev => prev.map(p => p.id === pid ? { ...p, liked, _count: { ...p._count, likes: count } } : p));
+                  }}
+                />
               ))}
             </div>
           )}
