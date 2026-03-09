@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserId, isValidId, notFound } from "@/lib/api-utils";
 import { createLogger } from "@/lib/logger";
-import { createNotification } from "@/lib/notifications";
+import { createNotification, NOTIF } from "@/lib/notifications";
 
 const log = createLogger("responses:action");
 
