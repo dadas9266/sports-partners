@@ -44,13 +44,8 @@ export async function GET(req: NextRequest) {
       // Belirli kullanıcının gönderileri (grup/kulüp postlarını hariç tut)
       whereFilter = { userId: targetUserId, groupId: null, clubId: null, ...cursorFilter };
     } else {
-      // Feed: kendi gönderileri + takip edilenlerin gönderileri
-      const following = await prisma.follow.findMany({
-        where: { followerId: userId },
-        select: { followingId: true },
-      });
-      const followingIds = [userId, ...following.map((f: { followingId: string }) => f.followingId)];
-      whereFilter = { userId: { in: followingIds }, groupId: null, clubId: null, ...cursorFilter };
+      // Feed: herkese açık tüm gönderiler (grup/kulüp postlarını hariç tut)
+      whereFilter = { groupId: null, clubId: null, ...cursorFilter };
     }
 
     const posts = await prisma.post.findMany({

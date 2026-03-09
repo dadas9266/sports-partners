@@ -21,6 +21,7 @@ export const authConfig: NextAuthConfig = {
         session.user.id = (token.sub ?? (token as any).id) as string;
         (session.user as any).isAdmin = (token as any).isAdmin ?? false;
         (session.user as any).userType = (token as any).userType ?? "INDIVIDUAL";
+        (session.user as any).onboardingDone = (token as any).onboardingDone ?? true;
       }
       return session;
     },

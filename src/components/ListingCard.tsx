@@ -4,11 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { format, formatDistanceToNow, differenceInYears } from "date-fns";
 import { tr } from "date-fns/locale";
-import { useSession } from "next-auth/react";
-import toast from "react-hot-toast";
 import type { ListingSummary } from "@/types";
-import { LEVEL_LABELS, LEVEL_COLORS, GENDER_LABELS } from "@/types";
-import { toggleFavorite } from "@/services/api";
+import { LEVEL_LABELS, LEVEL_COLORS, GENDER_LABELS, STATUS_LABELS } from "@/types";
 
 // Acil ilan geri sayım
 function UrgentCountdown({ expiresAt }: { expiresAt: string }) {
@@ -68,19 +65,10 @@ const GENDER_ICONS: Record<string, string> = {
 
 type ListingCardProps = {
   listing: ListingSummary;
-  isFavorited?: boolean;
-  onFavoriteChange?: (listingId: string, favorited: boolean) => void;
 };
 
-export default function ListingCard({
-  listing,
-  isFavorited = false,
-  onFavoriteChange,
-}: ListingCardProps) {
+export default function ListingCard({ listing }: ListingCardProps) {
   const router = useRouter();
-  const { data: session } = useSession();
-  const [favorited, setFavorited] = useState(isFavorited);
-  const [favLoading, setFavLoading] = useState(false);
 
   const dateStr = format(new Date(listing.dateTime), "d MMM yyyy, HH:mm", {
     locale: tr,
@@ -89,28 +77,6 @@ export default function ListingCard({
   const timeLeft = listing.expiresAt
     ? formatDistanceToNow(new Date(listing.expiresAt), { locale: tr, addSuffix: false })
     : null;
-
-  const handleFavorite = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!session) {
-      toast.error("Favorilere eklemek için giriş yapın");
-      return;
-    }
-    setFavLoading(true);
-    try {
-      const res = await toggleFavorite(listing.id);
-      if (res.success) {
-        const next = res.data?.favorited ?? !favorited;
-        setFavorited(next);
-        onFavoriteChange?.(listing.id, next);
-        toast.success(next ? "Favorilere eklendi" : "Favorilerden kaldırıldı");
-      }
-    } catch {
-      toast.error("İşlem başarısız");
-    } finally {
-      setFavLoading(false);
-    }
-  };
 
   const handleUserClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -135,21 +101,6 @@ export default function ListingCard({
       aria-label={`${listing.sport.name} ilanı detayı`}
     >
       <div className="p-4">
-      {/* Favori Butonu */}
-      <button
-        onClick={handleFavorite}
-        disabled={favLoading}
-        className={`absolute top-3 right-3 text-lg transition-all hover:scale-125 disabled:opacity-60 z-10 w-8 h-8 flex items-center justify-center rounded-full ${
-          favorited
-            ? "text-red-500 bg-red-50 dark:bg-red-900/30"
-            : "text-gray-300 dark:text-gray-600 hover:text-red-400 bg-gray-50 dark:bg-gray-700/50"
-        }`}
-        aria-label={favorited ? "Favorilerden kaldır" : "Favorilere ekle"}
-        title={favorited ? "Favorilerden kaldır" : "Favorilere ekle"}
-      >
-        {favorited ? "❤️" : "🤍"}
-      </button>
-
       {/* Üst etiketler */}
       <div className="flex flex-wrap gap-1.5 mb-2 items-center">
         <span className={`text-xs font-semibold ${typeConfig.badgeCls}`}>
@@ -194,6 +145,12 @@ export default function ListingCard({
             }`}
           >
             🎯 %{listing.compatibilityScore} uyumlu
+          </span>
+        )}
+        {listing.status && STATUS_LABELS[listing.status] && (
+          <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${STATUS_LABELS[listing.status].className}`}>
+            {listing.status === "MATCHED" ? "🤝 " : listing.status === "OPEN" ? "🟢 " : ""}
+            {STATUS_LABELS[listing.status].label}
           </span>
         )}
       </div>

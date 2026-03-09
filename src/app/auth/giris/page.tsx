@@ -10,15 +10,20 @@ import Button from "@/components/ui/Button";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { status } = useSession();
+  const { data: session, status } = useSession();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState<LoginForm>({ email: "", password: "" });
 
   useEffect(() => {
     if (status === "authenticated") {
-      router.push("/");
+      // Onboarding tamamlanmamışsa onboarding'e yönlendir
+      if ((session?.user as any)?.onboardingDone === false) {
+        router.push("/onboarding");
+      } else {
+        router.push("/");
+      }
     }
-  }, [status, router]);
+  }, [status, session, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,19 +38,8 @@ export default function LoginPage() {
         toast.error(res.error);
       } else {
         toast.success("Giriş başarılı!");
-        // Onboarding kontrolü: yeni kullanıcıyı onboarding'e yönlendir
-        try {
-          const sessionRes = await fetch("/api/auth/session");
-          const sessionData = await sessionRes.json();
-          if (sessionData?.user && !(sessionData.user as any).onboardingDone) {
-            router.push("/onboarding");
-          } else {
-            router.push("/");
-          }
-        } catch {
-          router.push("/");
-        }
         router.refresh();
+        // Yönlendirme useEffect tarafından yapılacak (onboardingDone kontrolüyle)
       }
     } catch {
       toast.error("Bir hata oluştu");

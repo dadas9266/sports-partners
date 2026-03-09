@@ -240,15 +240,15 @@ function CommentItem({ comment, onReply, onLike }: { comment: any, onReply: (p: 
     return (
         <div id={`comment-${comment.id}`} className="group transition-all duration-300 p-1 rounded-2xl">
             <div className="flex gap-3">
-                <Link href={`/profil/${comment.user.id}`} className="shrink-0">
+                <Link href={`/profil/${comment.user?.id ?? ""}`} className="shrink-0">
                     <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center font-bold text-sm shadow-sm">
-                    {comment.user.avatarUrl ? <img src={comment.user.avatarUrl} className="w-full h-full object-cover" /> : comment.user.name[0]}
+                    {comment.user?.avatarUrl ? <img src={comment.user.avatarUrl} className="w-full h-full object-cover" /> : (comment.user?.name?.[0] ?? "?")}
                     </div>
                 </Link>
                 <div className="flex-1 min-w-0">
                     <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-2xl rounded-tl-none shadow-sm relative">
                         <div className="flex justify-between items-start mb-1">
-                            <Link href={`/profil/${comment.user.id}`} className="text-xs font-bold text-gray-800 dark:text-gray-100 hover:text-emerald-500 transition">{comment.user.name}</Link>
+                            <Link href={`/profil/${comment.user?.id ?? ""}`} className="text-xs font-bold text-gray-800 dark:text-gray-100 hover:text-emerald-500 transition">{comment.user?.name ?? "Silinmiş Kullanıcı"}</Link>
                             <button 
                                 onClick={() => onLike(comment.id)}
                                 className={`text-xs flex items-center gap-1 transition ${comment.likedByMe ? "text-rose-500" : "text-gray-400 hover:text-rose-400"}`}
@@ -261,7 +261,7 @@ function CommentItem({ comment, onReply, onLike }: { comment: any, onReply: (p: 
                     <div className="flex items-center gap-4 mt-2 ml-1">
                         <p className="text-[10px] text-gray-400 font-medium">{format(new Date(comment.createdAt), "d MMM, HH:mm", { locale: tr })}</p>
                         <button 
-                            onClick={() => onReply({ id: comment.id, name: comment.user.name })}
+                            onClick={() => onReply({ id: comment.id, name: comment.user?.name ?? "Kullanıcı" })}
                             className="text-[11px] font-bold text-gray-500 hover:text-emerald-600 uppercase tracking-tighter"
                         >
                             Yanıtla
