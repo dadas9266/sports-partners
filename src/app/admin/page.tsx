@@ -114,7 +114,7 @@ export default function AdminPage() {
   const [bots, setBots] = useState<any[]>([]);
   const [botTasks, setBotTasks] = useState<any[]>([]);
   const [botsLoading, setBotsLoading] = useState(false);
-  const [botForm, setBotForm] = useState({ name: "", gender: "MALE", birthYear: 1990, cityId: "", botPersona: "" });
+  const [botForm, setBotForm] = useState({ name: "", gender: "MALE", birthYear: 1995, cityId: "", botPersona: "", sportIds: [] as string[] });
   const [taskForm, setTaskForm] = useState({ listingBotId: "", responderBotId: "", cityId: "", sportId: "", delaySeconds: 30, bulk: false, countryId: "" });
   const [taskRunning, setTaskRunning] = useState(false);
   const [dbStats, setDbStats] = useState<{
@@ -1060,7 +1060,6 @@ export default function AdminPage() {
           setTaskForm={setTaskForm}
           taskRunning={taskRunning}
           setTaskRunning={setTaskRunning}
-          locations={[]}
         />
       )}
     </div>
