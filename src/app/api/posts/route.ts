@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
   const groupId = searchParams.get("groupId");
   const clubId = searchParams.get("clubId");
   const cursor = searchParams.get("cursor");
-  const limit = Math.min(parseInt(searchParams.get("limit") ?? "10"), 20);
+  const limit = Math.min(parseInt(searchParams.get("limit") ?? "10", 10) || 10, 20);
 
   try {
     const cursorFilter = cursor ? { id: { lt: cursor } } : {};

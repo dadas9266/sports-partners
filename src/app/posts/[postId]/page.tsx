@@ -148,7 +148,7 @@ export default function PostDetailPage() {
         <div className="p-4 flex items-center gap-3">
           <Link href={`/profil/${post.user.id}`}>
             <div className="w-10 h-10 rounded-full bg-emerald-100 overflow-hidden flex items-center justify-center font-bold text-emerald-700">
-              {post.user.avatarUrl ? <img src={post.user.avatarUrl} className="w-full h-full object-cover" /> : post.user.name[0]}
+              {post.user.avatarUrl ? <img src={post.user.avatarUrl} className="w-full h-full object-cover" /> : (post.user.name?.[0] ?? "?")}
             </div>
           </Link>
           <div>

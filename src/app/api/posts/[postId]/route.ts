@@ -45,7 +45,7 @@ export async function GET(
         });
         
         // Takip yoksa veya onaylı değilse gizle
-        if (!follow || follow.status.toString() !== "APPROVED") {
+        if (!follow || follow.status !== "ACCEPTED") {
             return NextResponse.json({ error: "Bu gönderi gizli bir profile ait." }, { status: 403 });
         }
     }

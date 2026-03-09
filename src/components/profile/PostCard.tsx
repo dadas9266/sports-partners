@@ -198,7 +198,7 @@ export default function PostCard({ post, onLikeToggle }: PostCardProps) {
                 likesList.map((like, idx) => (
                   <Link key={idx} href={`/profil/${like.user.id}`} className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-xl transition" onClick={() => setShowLikesModal(false)}>
                     <div className="w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-900/20 overflow-hidden flex items-center justify-center border border-emerald-100 dark:border-emerald-800">
-                      {like.user.avatarUrl ? <img src={like.user.avatarUrl} className="w-full h-full object-cover" /> : like.user.name[0]}
+                      {like.user.avatarUrl ? <img src={like.user.avatarUrl} className="w-full h-full object-cover" /> : (like.user.name?.[0] ?? "?")}
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-bold text-gray-800 dark:text-gray-100">{like.user.name}</p>

@@ -1107,7 +1107,7 @@ export default function PublicProfilePage({
                         <img src={item.avatarUrl} alt={item.name} className="w-10 h-10 rounded-full object-cover ring-2 ring-transparent group-hover:ring-emerald-500/30 transition-all" />
                       ) : (
                         <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold">
-                          {item.name[0]}
+                          {item.name?.[0] ?? "?"}
                         </div>
                       )}
                     </div>
