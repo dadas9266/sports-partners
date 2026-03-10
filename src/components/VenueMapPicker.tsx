@@ -130,6 +130,7 @@ export default function VenueMapPicker({ sportName, districtName, districtId, on
     setSelected(v);
     setCustomPin(null);
     setCustomName("");
+    onSelect(v);
   };
 
   // Custom pin'i onayla
@@ -145,6 +146,7 @@ export default function VenueMapPicker({ sportName, districtName, districtId, on
     };
     setSelected(venue);
     setCustomPin(null);
+    onSelect(venue);
   };
 
   const handleConfirm = () => {

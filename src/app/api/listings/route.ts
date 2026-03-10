@@ -383,7 +383,7 @@ export async function POST(request: Request) {
     const isTrainer = user?.userType === "TRAINER" || !!user?.trainerProfile;
     if (parsed.data.type === "TRAINER" && !isTrainer) {
       return NextResponse.json(
-        { success: false, error: "Eğitmen ilanı verebilmek için profilinizin Eğitmen tipine sahip olması gereklidir." },
+        { success: false, error: "Eğitmen ilanı verebilmek için profil sayfanızdan eğitmen başvurusu yapmanız gerekir." },
         { status: 403 }
       );
     }

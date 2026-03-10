@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import toast from "react-hot-toast";
 
+
 interface Member {
   id: string;
   role: string;
@@ -70,6 +71,12 @@ export default function CommunityDetailPage() {
   const [postContent, setPostContent] = useState("");
   const [postSubmitting, setPostSubmitting] = useState(false);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [likedPosts, setLikedPosts] = useState<Record<string, boolean>>({});
+  const [likingPost, setLikingPost] = useState<Record<string, boolean>>({});
+  const [openComments, setOpenComments] = useState<string | null>(null);
+  const [commentsData, setCommentsData] = useState<Record<string, any[]>>({});
+  const [commentLoading, setCommentLoading] = useState<Record<string, boolean>>({});
+  const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -135,7 +142,11 @@ export default function CommunityDetailPage() {
       .then(r => r.json())
       .then(j => {
         if (j.success) {
-          setPosts(j.data ?? []);
+          const postsData = j.data ?? [];
+          setPosts(postsData);
+          const liked: Record<string, boolean> = {};
+          for (const p of postsData) { liked[p.id] = Array.isArray(p.likes) && p.likes.length > 0; }
+          setLikedPosts(prev => ({ ...prev, ...liked }));
           setNextCursor(j.nextCursor ?? null);
         }
       })
@@ -595,6 +606,26 @@ export default function CommunityDetailPage() {
                       </Link>
                       <p className="text-xs text-gray-400">{new Date(post.createdAt).toLocaleDateString("tr-TR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</p>
                     </div>
+                    {session?.user?.id && session.user.id !== post.user.id && (
+                      <button
+                        onClick={async () => {
+                          if (!confirm("Bu gönderiyi uygunsuz içerik olarak bildirmek istiyor musunuz?")) return;
+                          try {
+                            const res = await fetch(`/api/users/${post.user.id}/report`, {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ reason: "INAPPROPRIATE_CONTENT", details: `Topluluk gönderisi: ${post.id}` }),
+                            });
+                            if (res.ok) toast.success("Bildiriminiz alındı, incelenecektir.");
+                            else toast.error("Bildirim gönderilemedi");
+                          } catch { toast.error("Bir hata oluştu"); }
+                        }}
+                        className="text-gray-300 hover:text-red-500 dark:text-gray-600 dark:hover:text-red-400 transition p-1"
+                        title="Bildir"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+                      </button>
+                    )}
                   </div>
                   {post.content && <p className="text-sm text-gray-700 dark:text-gray-200 whitespace-pre-line leading-relaxed">{post.content}</p>}
                   {post.images?.length > 0 && (
@@ -605,10 +636,101 @@ export default function CommunityDetailPage() {
                       ))}
                     </div>
                   )}
-                  <div className="flex items-center gap-4 mt-3 pt-2 border-t border-gray-100 dark:border-gray-800 text-xs text-gray-400">
-                    <span>❤️ {post._count?.likes ?? 0}</span>
-                    <span>💬 {post._count?.comments ?? 0}</span>
-                    <Link href={`/sosyal`} className="ml-auto hover:text-emerald-500 transition">Sosyal akışta görüntüle →</Link>
+                  <div className="mt-3 pt-2 border-t border-gray-100 dark:border-gray-800 space-y-2">
+                    <div className="flex items-center gap-3">
+                      <button
+                        className={`flex items-center gap-1 text-xs px-2 py-1 rounded-lg transition ${likedPosts[post.id] ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400" : "hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500"}`}
+                        disabled={likingPost[post.id]}
+                        onClick={async () => {
+                          setLikingPost(l => ({ ...l, [post.id]: true }));
+                          try {
+                            const res = await fetch(`/api/posts/${post.id}/like`, { method: "POST" });
+                            const json = await res.json();
+                            setLikedPosts(lp => ({ ...lp, [post.id]: json.liked }));
+                            setPosts(ps => ps.map(p => p.id === post.id ? { ...p, _count: { ...p._count, likes: json.liked ? p._count.likes + 1 : p._count.likes - 1 } } : p));
+                          } finally { setLikingPost(l => ({ ...l, [post.id]: false })); }
+                        }}
+                      >
+                        <span>{likedPosts[post.id] ? "❤️" : "🤍"}</span>
+                        <span>{post._count?.likes ?? 0}</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (openComments === post.id) { setOpenComments(null); return; }
+                          setOpenComments(post.id);
+                          if (!commentsData[post.id]) {
+                            setCommentLoading(c => ({ ...c, [post.id]: true }));
+                            fetch(`/api/posts/${post.id}/comments`)
+                              .then(r => r.json())
+                              .then(json => setCommentsData(c => ({ ...c, [post.id]: json.comments ?? [] })))
+                              .finally(() => setCommentLoading(c => ({ ...c, [post.id]: false })));
+                          }
+                        }}
+                        className="flex items-center gap-1 text-xs text-gray-400 hover:text-emerald-500 transition"
+                      >
+                        💬 {post._count?.comments ?? 0} Yorum
+                      </button>
+                    </div>
+                    {openComments === post.id && (
+                      <div className="mt-3 border-t border-gray-100 dark:border-gray-800 pt-3">
+                        {commentLoading[post.id] ? (
+                          <div className="text-center text-gray-400 text-sm py-2">Yorumlar yükleniyor...</div>
+                        ) : (
+                          <>
+                            {commentsData[post.id]?.length === 0 && (
+                              <div className="text-gray-400 text-sm">Henüz yorum yok.</div>
+                            )}
+                            {commentsData[post.id]?.map((c: any) => (
+                              <div key={c.id} className="flex items-start gap-2 mb-2">
+                                {c.user?.avatarUrl ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img src={c.user.avatarUrl} alt="" className="w-7 h-7 rounded-full object-cover" />
+                                ) : (
+                                  <div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-800 flex items-center justify-center text-emerald-700 font-bold text-xs">{(c.user?.name ?? "?")[0]}</div>
+                                )}
+                                <div>
+                                  <p className="text-xs font-medium text-gray-800 dark:text-gray-100">{c.user?.name}</p>
+                                  <p className="text-sm text-gray-700 dark:text-gray-300 mt-0.5">{c.content}</p>
+                                </div>
+                              </div>
+                            ))}
+                            {session?.user?.id && (
+                              <form
+                                onSubmit={async e => {
+                                  e.preventDefault();
+                                  const val = commentInputs[post.id]?.trim();
+                                  if (!val) return;
+                                  setCommentLoading(c => ({ ...c, [post.id]: true }));
+                                  try {
+                                    const res = await fetch(`/api/posts/${post.id}/comments`, {
+                                      method: "POST",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({ content: val }),
+                                    });
+                                    const json = await res.json();
+                                    if (json.comment) {
+                                      setCommentsData(c => ({ ...c, [post.id]: [...(c[post.id] ?? []), json.comment] }));
+                                      setCommentInputs(inp => ({ ...inp, [post.id]: "" }));
+                                      setPosts(ps => ps.map(p => p.id === post.id ? { ...p, _count: { ...p._count, comments: (p._count?.comments ?? 0) + 1 } } : p));
+                                    }
+                                  } finally { setCommentLoading(c => ({ ...c, [post.id]: false })); }
+                                }}
+                                className="flex gap-2 mt-2"
+                              >
+                                <input
+                                  type="text"
+                                  value={commentInputs[post.id] ?? ""}
+                                  onChange={e => setCommentInputs(inp => ({ ...inp, [post.id]: e.target.value }))}
+                                  placeholder="Yorum ekle..."
+                                  className="flex-1 rounded-lg border border-gray-200 dark:border-gray-700 px-2 py-1 text-sm bg-gray-50 dark:bg-gray-900"
+                                />
+                                <button type="submit" className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs rounded-lg">Gönder</button>
+                              </form>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))

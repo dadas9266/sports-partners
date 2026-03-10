@@ -97,6 +97,55 @@ async function searchNominatimInCity(
   return allResults.slice(0, 15);
 }
 
+// Overpass API ile spor tesisi arama (Nominatim zayıf kaldığında)
+const SPORT_TO_OVERPASS: Record<string, string> = {
+  futbol: '"leisure"="pitch"]["sport"="soccer',
+  basketbol: '"leisure"="pitch"]["sport"="basketball',
+  tenis: '"leisure"="pitch"]["sport"="tennis',
+  voleybol: '"leisure"="pitch"]["sport"="volleyball',
+  yüzme: '"leisure"="swimming_pool',
+  fitness: '"leisure"="fitness_centre',
+  boks: '"leisure"="fitness_centre',
+  koşu: '"leisure"="track',
+  golf: '"leisure"="golf_course',
+  bowling: '"leisure"="bowling_alley',
+  bisiklet: '"leisure"="track"]["sport"="cycling',
+  default: '"leisure"~"pitch|sports_centre|fitness_centre|stadium',
+};
+
+function getOverpassFilter(sportName: string): string {
+  const lower = sportName.toLowerCase();
+  for (const key of Object.keys(SPORT_TO_OVERPASS)) {
+    if (lower.includes(key)) return SPORT_TO_OVERPASS[key];
+  }
+  return SPORT_TO_OVERPASS.default;
+}
+
+async function searchOverpass(sportName: string, lat: number, lon: number, radiusKm = 8): Promise<NominatimResult[]> {
+  const filter = getOverpassFilter(sportName);
+  const radius = radiusKm * 1000;
+  const query = `[out:json][timeout:10];(node[${filter}](around:${radius},${lat},${lon});way[${filter}](around:${radius},${lat},${lon}););out center 15;`;
+  try {
+    const res = await fetch("https://overpass-api.de/api/interpreter", {
+      method: "POST",
+      body: `data=${encodeURIComponent(query)}`,
+      headers: { "Content-Type": "application/x-www-form-urlencoded", "User-Agent": "SportsPartnerApp/1.0" },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.elements ?? []).map((el: any) => ({
+      place_id: el.id,
+      display_name: el.tags?.name || el.tags?.["name:tr"] || "Spor Tesisi",
+      lat: String(el.lat ?? el.center?.lat ?? 0),
+      lon: String(el.lon ?? el.center?.lon ?? 0),
+      address: {},
+    })).filter((r: any) => parseFloat(r.lat) !== 0);
+  } catch {
+    return [];
+  }
+}
+
 // ---------------------------------------------------------------------------
 // GET /api/places?sport=Fitness&district=Şehzadeler&districtId=xxx
 // ---------------------------------------------------------------------------
@@ -171,6 +220,22 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ debug: true, cityName, district, queries, cacheKey, testUrl, testCount: testResult.length, testError });
     }
     const results = await searchNominatimInCity(queries, cityName);
+
+    // Nominatim sonuç az ise Overpass API ile tamamla
+    if (results.length < 5) {
+      const districtCoord = results.length > 0
+        ? { lat: parseFloat(results[0].lat), lon: parseFloat(results[0].lon) }
+        : null;
+      if (districtCoord) {
+        const overpassResults = await searchOverpass(sport, districtCoord.lat, districtCoord.lon);
+        const existingIds = new Set(results.map(r => r.place_id));
+        for (const op of overpassResults) {
+          if (!existingIds.has(op.place_id) && results.length < 15) {
+            results.push(op);
+          }
+        }
+      }
+    }
 
     // İlçeye ait sonuçları öne al
     const districtLower = district.toLowerCase();

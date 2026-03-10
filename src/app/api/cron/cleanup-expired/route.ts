@@ -165,6 +165,32 @@ export async function GET(req: NextRequest) {
     where: { expiresAt: { lt: now } },
   });
 
+  // ── 6b. EXPIRED ilanların equipment görsellerini temizle ──────────────────
+  let deletedEquipmentFiles = 0;
+  try {
+    const expiredEquipmentListings = await prisma.listing.findMany({
+      where: { status: "EXPIRED", type: "EQUIPMENT" },
+      select: { id: true, equipmentDetail: { select: { images: true } } },
+      take: 50,
+    });
+    const supabase = getSupabaseAdminClient();
+    for (const listing of expiredEquipmentListings) {
+      const images = (listing.equipmentDetail as any)?.images;
+      if (!Array.isArray(images)) continue;
+      for (const imgUrl of images) {
+        if (typeof imgUrl !== "string") continue;
+        const match = imgUrl.match(/\/storage\/v1\/object\/public\/([^/]+)\/(.+)/);
+        if (match) {
+          const [, bucket, path] = match;
+          const { error } = await supabase.storage.from(bucket).remove([decodeURIComponent(path)]);
+          if (!error) deletedEquipmentFiles++;
+        }
+      }
+    }
+  } catch {
+    // Equipment image cleanup hatası kritik değil
+  }
+
   // ── 7. Trust Score toplu güncelleme — son 7 günde aktif kullanıcılar ────────
   let trustScoreUpdated = 0;
   try {
@@ -200,6 +226,7 @@ export async function GET(req: NextRequest) {
       deletedNotifications: deletedNotifs.count,
       deletedPasswordTokens: deletedTokens.count,
       deletedStories: { db: deletedStories.count, storage: deletedStorageFiles },
+      deletedEquipmentFiles,
       trustScoreUpdated,
     },
     timestamp: now.toISOString(),

@@ -226,3 +226,54 @@ export async function PATCH(
     );
   }
 }
+
+// DELETE /api/responses/[id] — Başvuruyu geri çek (sadece PENDING durumunda)
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      return NextResponse.json({ success: false, error: "Giriş yapmanız gerekiyor" }, { status: 401 });
+    }
+
+    const { id } = await params;
+    if (!isValidId(id)) return notFound("Geçersiz karşılık ID");
+
+    const response = await prisma.response.findUnique({
+      where: { id },
+      include: { listing: { select: { userId: true, sport: { select: { name: true } } } } },
+    });
+
+    if (!response) {
+      return NextResponse.json({ success: false, error: "Başvuru bulunamadı" }, { status: 404 });
+    }
+
+    // Sadece başvuruyu yapan kişi geri çekebilir
+    if (response.userId !== userId) {
+      return NextResponse.json({ success: false, error: "Bu başvuru size ait değil" }, { status: 403 });
+    }
+
+    // Sadece PENDING başvurular geri çekilebilir
+    if (response.status !== "PENDING") {
+      return NextResponse.json({ success: false, error: "Sadece bekleyen başvurular geri çekilebilir" }, { status: 400 });
+    }
+
+    await prisma.response.delete({ where: { id } });
+
+    // İlan sahibine bildirim
+    await createNotification({
+      userId: response.listing.userId,
+      ...NOTIF.rejected(response.listingId),
+      title: "↩️ Başvuru Geri Çekildi",
+      body: `"${response.listing.sport?.name ?? "Etkinlik"}" ilanınıza yapılan bir başvuru geri çekildi.`,
+    });
+
+    log.info("Başvuru geri çekildi", { responseId: id, userId });
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    log.error("Başvuru geri çekilirken hata", error);
+    return NextResponse.json({ success: false, error: "İşlem gerçekleştirilemedi" }, { status: 500 });
+  }
+}

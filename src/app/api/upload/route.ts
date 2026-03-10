@@ -107,8 +107,7 @@ export async function POST(req: NextRequest) {
         path = getCoverPath(userId, extension);
         break;
       case "equipment":
-        if (!resourceId) return NextResponse.json({ error: "resourceId zorunlu" }, { status: 400 });
-        path = getEquipmentPath(resourceId, index, extension);
+        path = getEquipmentPath(resourceId || userId, index, extension);
         break;
       case "certificate":
         path = getCertificatePath(userId, index, extension);

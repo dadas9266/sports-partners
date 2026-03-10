@@ -6,8 +6,10 @@ import { useSession } from "next-auth/react";
 
 const navItems = [
   { href: "/", icon: HomeIcon, label: "Ana Sayfa" },
-  { href: "/arama", icon: SearchIcon, label: "Arama" },
-  { href: "/ayarlar", icon: SettingsIcon, label: "Ayarlar" },
+  { href: "/arama", icon: SearchIcon, label: "Keşfet" },
+];
+
+const rightItems = [
   { href: "/sosyal", icon: SocialIcon, label: "Sosyal" },
 ];
 
@@ -29,11 +31,11 @@ function SearchIcon({ active }: { active: boolean }) {
   );
 }
 
-function SettingsIcon({ active }: { active: boolean }) {
+function PlusIcon() {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? "2.2" : "1.8"} strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="3" />
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
     </svg>
   );
 }
@@ -86,6 +88,7 @@ export default function BottomNav() {
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <div className="flex items-stretch h-16">
+        {/* Sol taraf: Ana Sayfa, Keşfet */}
         {navItems.map(({ href, icon: Icon, label }) => {
           const active = isActive(href);
           return (
@@ -104,7 +107,44 @@ export default function BottomNav() {
           );
         })}
 
-        {/* Profil tab — direkt /profil sayfasına yönlendir */}
+        {/* Ortadaki İlan Ver butonu */}
+        <div className="flex-1 flex items-center justify-center">
+          <button
+            type="button"
+            onClick={() => {
+              if (!session) {
+                router.push("/auth/giris");
+              } else {
+                router.push("/ilan/olustur");
+              }
+            }}
+            className="w-12 h-12 -mt-4 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/30 flex items-center justify-center transition-transform active:scale-95"
+            aria-label="İlan Oluştur"
+          >
+            <PlusIcon />
+          </button>
+        </div>
+
+        {/* Sağ taraf: Sosyal */}
+        {rightItems.map(({ href, icon: Icon, label }) => {
+          const active = isActive(href);
+          return (
+            <Link
+              key={href}
+              href={href}
+              className={`flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors ${
+                active
+                  ? "text-emerald-600 dark:text-emerald-400"
+                  : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
+              }`}
+            >
+              <Icon active={active} />
+              <span>{label}</span>
+            </Link>
+          );
+        })}
+
+        {/* Profil tab */}
         <button
           type="button"
           onClick={handleProfileTap}
@@ -118,21 +158,6 @@ export default function BottomNav() {
           <ProfileIcon active={profileActive} />
           <span>Profil</span>
         </button>
-          {/* Çıkış yap butonu — sadece oturum açıkken */}
-          {session && (
-            <button
-              type="button"
-              onClick={() => {
-                // next-auth signOut fonksiyonu
-                import("next-auth/react").then(mod => mod.signOut());
-              }}
-              className="flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors"
-              aria-label="Çıkış Yap"
-            >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-              <span>Çıkış</span>
-            </button>
-          )}
       </div>
     </nav>
   );

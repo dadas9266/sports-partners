@@ -54,13 +54,13 @@ export async function GET(request: Request) {
     >`
       SELECT
         l.id,
-        ROUND((6371 * acos(
+        ROUND(GREATEST(0.4, (6371 * acos(
           LEAST(1.0,
             cos(radians(${lat})) * cos(radians(l.latitude)) *
             cos(radians(l.longitude) - radians(${lon})) +
             sin(radians(${lat})) * sin(radians(l.latitude))
           )
-        ))::numeric, 1) AS distance,
+        )))::numeric, 1) AS distance,
         l.type,
         l.description,
         l.level,

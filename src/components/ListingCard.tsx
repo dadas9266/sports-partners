@@ -103,7 +103,12 @@ export default function ListingCard({ listing }: ListingCardProps) {
       <div className="p-4">
       {/* Üst etiketler */}
       <div className="flex flex-wrap gap-1.5 mb-2 items-center">
-        <span className={`text-xs font-semibold ${typeConfig.badgeCls}`}>
+        <span className={`text-sm font-bold px-2.5 py-1 rounded-lg ${
+          listing.type === "RIVAL" ? "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300" :
+          listing.type === "PARTNER" ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300" :
+          listing.type === "TRAINER" ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300" :
+          "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300"
+        }`}>
           {typeConfig.label}
         </span>
         {(listing as any).isUrgent && (
@@ -147,9 +152,9 @@ export default function ListingCard({ listing }: ListingCardProps) {
             🎯 %{listing.compatibilityScore} uyumlu
           </span>
         )}
-        {listing.status && STATUS_LABELS[listing.status] && (
+        {listing.status && STATUS_LABELS[listing.status] && listing.status !== "OPEN" && (
           <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${STATUS_LABELS[listing.status].className}`}>
-            {listing.status === "MATCHED" ? "🤝 " : listing.status === "OPEN" ? "🟢 " : ""}
+            {listing.status === "MATCHED" ? "✅ " : ""}
             {STATUS_LABELS[listing.status].label}
           </span>
         )}

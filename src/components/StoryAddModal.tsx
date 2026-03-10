@@ -24,29 +24,6 @@ export default function StoryAddModal({ onClose, onCreated }: Props) {
   const [matchResult, setMatchResult] = useState("");
   const [badgeKey, setBadgeKey] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [uploading, setUploading] = useState(false);
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const res = await fetch("/api/upload", { method: "POST", body: formData });
-      const json = await res.json();
-      if (json.url) {
-        setMediaUrl(json.url);
-        setMediaType(file.type.startsWith("video") ? "video" : "image");
-      } else {
-        toast.error("Yükleme başarısız");
-      }
-    } catch {
-      toast.error("Yükleme hatası");
-    } finally {
-      setUploading(false);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,7 +114,7 @@ export default function StoryAddModal({ onClose, onCreated }: Props) {
           {type === "MEDIA" && (
             <div className="space-y-2">
               <label className="text-zinc-400 text-xs font-medium uppercase tracking-wider">
-                Fotoğraf / Video
+                Fotoğraf / Video URL
               </label>
               {mediaUrl ? (
                 <div className="relative">
@@ -164,29 +141,17 @@ export default function StoryAddModal({ onClose, onCreated }: Props) {
                   </button>
                 </div>
               ) : (
-                <label className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-zinc-600 rounded-xl cursor-pointer hover:border-emerald-500 transition">
-                  <span className="text-3xl mb-1">{uploading ? "⏳" : "📷"}</span>
-                  <span className="text-zinc-400 text-sm">
-                    {uploading ? "Yükleniyor..." : "Dosya seç veya URL yaz"}
-                  </span>
-                  <input
-                    type="file"
-                    accept="image/*,video/*"
-                    className="hidden"
-                    onChange={handleFileChange}
-                    disabled={uploading}
-                  />
-                </label>
+                <div className="flex flex-col items-center justify-center h-20 border-2 border-dashed border-zinc-600 rounded-xl">
+                  <span className="text-zinc-400 text-sm">Bir görsel veya video URL'si yapıştırın</span>
+                </div>
               )}
-              {!mediaUrl && (
-                <input
-                  type="url"
-                  placeholder="veya direkt URL yapıştır..."
-                  value={mediaUrl}
-                  onChange={(e) => setMediaUrl(e.target.value)}
-                  className="w-full bg-zinc-800 text-white placeholder-zinc-500 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                />
-              )}
+              <input
+                type="url"
+                placeholder="https://... görsel veya video URL'si"
+                value={mediaUrl}
+                onChange={(e) => setMediaUrl(e.target.value)}
+                className="w-full bg-zinc-800 text-white placeholder-zinc-500 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
               <div className="flex gap-2">
                 {(["image", "video"] as const).map((mt) => (
                   <button

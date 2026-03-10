@@ -221,13 +221,13 @@ export default function CreateListingPage() {
               </button>
             ))}
           </div>
-          {/* TRAINER role warning */}
+          {/* TRAINER role info */}
           {form.type === "TRAINER" && (session?.user as any)?.userType !== "TRAINER" && (
-            <div className="mt-3 flex items-start gap-2 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 p-3 text-sm text-amber-800 dark:text-amber-300">
-              <span className="flex-shrink-0 text-base">⚠️</span>
+            <div className="mt-3 flex items-start gap-2 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 p-3 text-sm text-blue-800 dark:text-blue-300">
+              <span className="flex-shrink-0 text-base">ℹ️</span>
               <span>
-                Eğitmen ilanı verebilmek için hesap tipinizin <strong>Eğitmen</strong> olması gerekir.
-                Profil ayarlarından hesap tipinizi güncelleyebilirsiniz.
+                Eğitmen ilanı verebilmek için eğitmen başvurunuzun onaylanmış olması gerekir.
+                Henüz başvurmadıysanız <a href="/profil" className="underline font-medium">profilinizden</a> başvurabilirsiniz.
               </span>
             </div>
           )}
@@ -333,7 +333,7 @@ export default function CreateListingPage() {
                 type="button"
                 onClick={() => {
                   setSelectedMapVenue(null);
-                  setForm({ ...form, venueId: "" });
+                  setForm({ ...form, venueId: "", latitude: null, longitude: null });
                 }}
                 className="text-gray-400 hover:text-red-500 text-lg flex-shrink-0"
                 aria-label="Mekan seçimini kaldır"
@@ -367,7 +367,7 @@ export default function CreateListingPage() {
             initialVenue={selectedMapVenue}
             onSelect={(venue) => {
               setSelectedMapVenue(venue);
-              setForm({ ...form, venueId: venue.place_id });
+              setForm({ ...form, venueId: venue.place_id, latitude: venue.lat, longitude: venue.lng });
               setShowMapPicker(false);
             }}
             onClose={() => setShowMapPicker(false)}

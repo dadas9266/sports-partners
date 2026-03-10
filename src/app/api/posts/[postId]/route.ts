@@ -64,3 +64,41 @@ export async function GET(
 }
 
 // DELETE /api/posts/[postId]
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ postId: string }> }
+) {
+  const userId = await getCurrentUserId();
+  if (!userId) {
+    return NextResponse.json({ error: "Giriş yapmanız gerekiyor" }, { status: 401 });
+  }
+
+  const { postId } = await params;
+
+  try {
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+      select: { userId: true, images: true },
+    });
+
+    if (!post) {
+      return NextResponse.json({ error: "Gönderi bulunamadı" }, { status: 404 });
+    }
+
+    if (post.userId !== userId) {
+      return NextResponse.json({ error: "Bu gönderiyi silme yetkiniz yok" }, { status: 403 });
+    }
+
+    // İlişkili beğeni ve yorumları silip sonra gönderiyi sil
+    await prisma.$transaction([
+      prisma.commentLike.deleteMany({ where: { comment: { postId } } }),
+      prisma.postComment.deleteMany({ where: { postId } }),
+      prisma.postLike.deleteMany({ where: { postId } }),
+      prisma.post.delete({ where: { id: postId } }),
+    ]);
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    return NextResponse.json({ error: "Gönderi silinemedi" }, { status: 500 });
+  }
+}
