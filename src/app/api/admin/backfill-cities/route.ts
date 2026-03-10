@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserId } from "@/lib/api-utils";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("api:admin:backfill");
 
 /**
  * POST /api/admin/backfill-cities
@@ -53,7 +56,7 @@ export async function POST() {
       message: `${updated} ilan güncellendi, ${skipped} atlandı, ${withoutBoth} ilan hem cityId hem districtId yok`,
     });
   } catch (e) {
-    console.error("Backfill hatası:", e);
+    log.error("Backfill hatası", e);
     return NextResponse.json({ error: "Backfill başarısız" }, { status: 500 });
   }
 }

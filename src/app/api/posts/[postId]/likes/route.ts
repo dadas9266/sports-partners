@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserId } from "@/lib/api-utils";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("api:post-likes");
 
 // GET /api/posts/[postId]/likes
 export async function GET(
@@ -34,7 +37,7 @@ export async function GET(
 
     return NextResponse.json({ success: true, data });
   } catch (err) {
-    console.error("Likes fetch error:", err);
+    log.error("Likes fetch error", err);
     return NextResponse.json({ success: false, error: "Sunucu hatası" }, { status: 500 });
   }
 }

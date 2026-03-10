@@ -1,3 +1,6 @@
+/**
+ * @deprecated Prefer /api/communities with type=GROUP. This endpoint will be removed in a future version.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";

@@ -323,13 +323,32 @@ export async function POST(request: Request) {
     // Banned kullanıcı ilan oluşturamaz
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { isBanned: true, currentStreak: true, userType: true, trainerProfile: { select: { id: true } } },
+      select: {
+        isBanned: true, currentStreak: true, userType: true,
+        name: true, birthDate: true, sports: { select: { id: true } },
+        trainerProfile: { select: { id: true } },
+      },
     });
 
     if (user?.isBanned) {
       return NextResponse.json(
         { success: false, error: "Hesabınız geçici olarak kısıtlandı. İlan oluşturamazsınız." },
         { status: 403 }
+      );
+    }
+
+    // Profil tamamlama kontrolü: minimum alanlar gerekli
+    const { getRequiredProfileFields } = await import("@/lib/profile-utils");
+    const missingFields = getRequiredProfileFields({
+      name: user?.name,
+      birthDate: user?.birthDate,
+      userType: user?.userType,
+      sports: user?.sports,
+    });
+    if (missingFields.length > 0) {
+      return NextResponse.json(
+        { success: false, error: `İlan açmak için profilinizi tamamlamanız gerekiyor. Eksik: ${missingFields.join(", ")}`, code: "PROFILE_INCOMPLETE" },
+        { status: 400 }
       );
     }
 

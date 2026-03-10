@@ -5,6 +5,9 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
 import Button from "@/components/ui/Button";
+import ReactionButton from "@/components/social/ReactionButton";
+import LikesModal from "@/components/social/LikesModal";
+import CommentThread from "@/components/social/CommentThread";
 
 interface PostCardProps {
   post: any;
@@ -23,19 +26,47 @@ export default function PostCard({ post, onLikeToggle }: PostCardProps) {
   const [addingComment, setAddingComment] = useState(false);
   const [likedByMe, setLikedByMe] = useState(post.likedByMe || post.liked);
   const [likeCount, setLikeCount] = useState(post._count?.likes ?? 0);
+  const [userReaction, setUserReaction] = useState<string | null>(post.userReaction ?? (post.liked ? "like" : null));
+  const [reactions, setReactions] = useState<Record<string, number>>(post.reactions ?? {});
   const [replyingTo, setReplyingTo] = useState<any>(null); // { id: string, name: string }
 
-  const handleLike = async () => {
+  const handleReact = async (reaction: string) => {
     if (toggling) return;
     setToggling(true);
+    // Optimistic update
+    const wasLiked = likedByMe;
+    const prevReaction = userReaction;
+    const sameReaction = wasLiked && prevReaction === reaction;
+    const newReactions = { ...reactions };
+
+    if (sameReaction) {
+      newReactions[reaction] = Math.max(0, (newReactions[reaction] ?? 1) - 1);
+      if (newReactions[reaction] === 0) delete newReactions[reaction];
+      setLikedByMe(false);
+      setUserReaction(null);
+      setReactions(newReactions);
+      setLikeCount((c: number) => c - 1);
+    } else if (wasLiked && prevReaction && prevReaction !== reaction) {
+      newReactions[prevReaction] = Math.max(0, (newReactions[prevReaction] ?? 1) - 1);
+      if (newReactions[prevReaction] === 0) delete newReactions[prevReaction];
+      newReactions[reaction] = (newReactions[reaction] ?? 0) + 1;
+      setUserReaction(reaction);
+      setReactions(newReactions);
+    } else {
+      newReactions[reaction] = (newReactions[reaction] ?? 0) + 1;
+      setLikedByMe(true);
+      setUserReaction(reaction);
+      setReactions(newReactions);
+      setLikeCount((c: number) => c + 1);
+    }
+
     try {
-      const res = await fetch(`/api/posts/${post.id}/like`, { 
+      const res = await fetch(`/api/posts/${post.id}/like`, {
         method: "POST",
-        body: JSON.stringify({ reaction: "like" })
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reaction }),
       });
       const json = await res.json();
-      setLikedByMe(json.liked);
-      setLikeCount(json.likeCount);
       if (onLikeToggle) onLikeToggle(post.id, json.liked, json.likeCount);
     } finally {
       setToggling(false);
@@ -156,23 +187,14 @@ export default function PostCard({ post, onLikeToggle }: PostCardProps) {
 
       {/* Actions */}
       <div className="flex items-center gap-4 pt-2 border-t border-gray-100 dark:border-gray-700">
-        <div className="flex items-center">
-          <button
-            onClick={handleLike}
-            disabled={toggling}
-            className={`flex items-center gap-1.5 text-sm transition py-1 pr-2 ${
-              likedByMe ? "text-red-500 font-semibold" : "text-gray-500 dark:text-gray-400 hover:text-red-500"
-            }`}
-          >
-            {likedByMe ? "❤️" : "🤍"}
-          </button>
-          <button 
-            onClick={loadLikesList}
-            className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 font-medium"
-          >
-            {likeCount}
-          </button>
-        </div>
+        <ReactionButton
+          liked={likedByMe}
+          userReaction={userReaction}
+          reactions={reactions}
+          totalLikes={likeCount}
+          onReact={handleReact}
+          onShowLikes={loadLikesList}
+        />
         <button
           onClick={handleToggleComments}
           className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition"
@@ -183,34 +205,7 @@ export default function PostCard({ post, onLikeToggle }: PostCardProps) {
 
       {/* Likes Modal */}
       {showLikesModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setShowLikesModal(false)}>
-          <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-sm max-h-[70vh] flex flex-col overflow-hidden shadow-xl" onClick={e => e.stopPropagation()}>
-            <div className="px-4 py-3 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-700/30">
-              <h3 className="font-bold text-gray-900 dark:text-gray-100">Beğenenler</h3>
-              <button onClick={() => setShowLikesModal(false)} className="text-gray-400 hover:text-gray-600">✕</button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-2 space-y-1">
-              {likesLoading ? (
-                <div className="flex justify-center py-8"><div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /></div>
-              ) : likesList.length === 0 ? (
-                <p className="text-center py-8 text-gray-400 text-sm">Henüz kimse beğenmedi.</p>
-              ) : (
-                likesList.map((like, idx) => (
-                  <Link key={idx} href={`/profil/${like.user.id}`} className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-xl transition" onClick={() => setShowLikesModal(false)}>
-                    <div className="w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-900/20 overflow-hidden flex items-center justify-center border border-emerald-100 dark:border-emerald-800">
-                      {like.user.avatarUrl ? <img src={like.user.avatarUrl} className="w-full h-full object-cover" /> : (like.user.name?.[0] ?? "?")}
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-bold text-gray-800 dark:text-gray-100">{like.user.name}</p>
-                      {like.user.city && <p className="text-[10px] text-gray-400">{like.user.city.name}</p>}
-                    </div>
-                    <span className="text-lg">{like.reaction === "like" ? "❤️" : "🔥"}</span>
-                  </Link>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
+        <LikesModal likes={likesList} loading={likesLoading} onClose={() => setShowLikesModal(false)} />
       )}
 
       {/* Comments */}
@@ -218,10 +213,11 @@ export default function PostCard({ post, onLikeToggle }: PostCardProps) {
         <div className="mt-3 space-y-3">
           <div className="max-h-[400px] overflow-y-auto space-y-3 pr-1">
             {comments.map((c) => (
-              <RenderComment 
-                key={c.id} 
-                comment={c} 
-                onLike={handleCommentLike} 
+              <CommentThread
+                key={c.id}
+                comment={c}
+                postId={post.id}
+                onLike={handleCommentLike}
                 onReply={(p) => {
                   setReplyingTo(p);
                   const el = document.getElementById(`reply-input-${post.id}`);
@@ -259,58 +255,6 @@ export default function PostCard({ post, onLikeToggle }: PostCardProps) {
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-function RenderComment({ comment, onLike, onReply, isReply = false }: { comment: any, onLike: (id: string) => void, onReply: (p: any) => void, isReply?: boolean }) {
-  return (
-    <div className={`flex gap-2 ${isReply ? "ml-8 mt-2" : ""}`}>
-      <Link href={`/profil/${comment.user?.id}`} className="flex-shrink-0">
-        <div className={`${isReply ? "w-6 h-6 text-[10px]" : "w-8 h-8 text-xs"} rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden flex items-center justify-center font-bold`}>
-            {comment.user?.avatarUrl ? (
-              <img src={comment.user.avatarUrl} alt="" className="w-full h-full object-cover" />
-            ) : (
-              comment.user?.name?.charAt(0) || "?"
-            )}
-        </div>
-      </Link>
-      <div className="flex-1 min-w-0">
-        <div className="bg-gray-50 dark:bg-gray-700/50 p-2 rounded-xl rounded-tl-none relative group">
-          <div className="flex justify-between items-start gap-2">
-            <Link href={`/profil/${comment.user?.id}`} className="font-semibold text-gray-700 dark:text-gray-200 text-xs hover:text-emerald-500 transition truncate">
-              {comment.user?.name}
-            </Link>
-            <button 
-              onClick={() => onLike(comment.id)}
-              className={`text-[10px] flex items-center gap-0.5 ${comment.likedByMe ? "text-red-500" : "text-gray-400 hover:text-red-500"}`}
-            >
-              {comment.likedByMe ? "❤️" : "🤍"} <span className="font-medium">{comment._count?.likes || 0}</span>
-            </button>
-          </div>
-          <p className="text-gray-600 dark:text-gray-400 text-xs mt-0.5 leading-relaxed">{comment.content}</p>
-        </div>
-        <div className="flex items-center gap-3 mt-1 ml-1">
-          <p className="text-[9px] text-gray-400">
-            {format(new Date(comment.createdAt), "d MMM, HH:mm", { locale: tr })}
-          </p>
-          <button 
-            onClick={() => onReply({ id: comment.id, name: comment.user?.name })}
-            className="text-[9px] font-bold text-gray-500 hover:text-emerald-600 dark:hover:text-emerald-400 uppercase tracking-tighter"
-          >
-            Yanıtla
-          </button>
-        </div>
-
-        {/* REPLIES TREE */}
-        {comment.replies?.length > 0 && (
-          <div className="space-y-1">
-            {comment.replies.map((reply: any) => (
-              <RenderComment key={reply.id} comment={reply} onLike={onLike} onReply={onReply} isReply={true} />
-            ))}
-          </div>
-        )}
-      </div>
     </div>
   );
 }

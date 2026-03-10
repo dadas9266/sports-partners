@@ -9,6 +9,9 @@ import { tr } from "date-fns/locale";
 import toast from "react-hot-toast";
 import StoryBubbles from "@/components/StoryBubbles";
 import StoryAddModal from "@/components/StoryAddModal";
+import ReactionButton from "@/components/social/ReactionButton";
+import LikesModal from "@/components/social/LikesModal";
+import CommentThread from "@/components/social/CommentThread";
 import { UserStoryGroup, Story } from "@/types";
 
 interface PostUser {
@@ -545,33 +548,7 @@ function PostCard({
     <article className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
       {/* Likes Modal */}
       {showLikesModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setShowLikesModal(false)}>
-          <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-sm max-h-[70vh] flex flex-col overflow-hidden shadow-xl" onClick={e => e.stopPropagation()}>
-            <div className="px-4 py-3 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-700/30">
-              <h3 className="font-bold text-gray-900 dark:text-gray-100">Beğenenler</h3>
-              <button onClick={() => setShowLikesModal(false)} className="text-gray-400 hover:text-gray-600 font-bold p-1">✕</button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-2 space-y-1">
-              {likesLoading ? (
-                <div className="flex justify-center py-8"><div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /></div>
-              ) : likesList.length === 0 ? (
-                <p className="text-center py-8 text-gray-400 text-sm">Henüz kimse beğenmedi.</p>
-              ) : (
-                likesList.map((like, idx) => (
-                  <Link key={idx} href={`/profil/${like.user.id}`} className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-xl transition" onClick={() => setShowLikesModal(false)}>
-                    <div className="w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-900/20 overflow-hidden flex items-center justify-center border border-emerald-100 dark:border-emerald-800">
-                      {like.user.avatarUrl ? <img src={like.user.avatarUrl} className="w-full h-full object-cover" /> : (like.user.name?.[0] ?? "?")}
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-bold text-gray-800 dark:text-gray-100">{like.user.name}</p>
-                    </div>
-                    <span className="text-lg">{REACTION_EMOJIS[like.reaction] || "❤️"}</span>
-                  </Link>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
+        <LikesModal likes={likesList} loading={likesLoading} onClose={() => setShowLikesModal(false)} />
       )}
 
       {/* Gönderi başlık */}
@@ -672,7 +649,7 @@ function PostCard({
                     </button>
                   )}
                   {visible.map((c: any) => (
-                    <FacebookComment
+                    <CommentThread
                       key={c.id}
                       comment={c}
                       postId={post.id}
@@ -730,217 +707,3 @@ function PostCard({
   );
 }
 
-function FacebookComment({
-  comment,
-  postId,
-  onLike,
-  onReply,
-  isReply = false,
-}: {
-  comment: any;
-  postId: string;
-  onLike: (commentId: string) => void;
-  onReply: (p: any) => void;
-  isReply?: boolean;
-}) {
-  const [showReplies, setShowReplies] = useState(false);
-  const replyCount = comment.replies?.length ?? comment._count?.replies ?? 0;
-
-  return (
-    <div className={isReply ? "ml-8 mt-1.5" : "mt-2"}>
-      <div className="flex gap-2">
-        {/* Avatar */}
-        <Link href={`/profil/${comment.user?.id}`} className="shrink-0 mt-0.5">
-          <div className={`${
-            isReply ? "w-6 h-6 text-[10px]" : "w-8 h-8 text-xs"
-          } rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center font-bold text-gray-600 dark:text-gray-400 overflow-hidden`}>
-            {comment.user?.avatarUrl ? (
-              <img src={comment.user.avatarUrl} alt="" className="w-full h-full object-cover" />
-            ) : (
-              comment.user?.name?.charAt(0)?.toUpperCase()
-            )}
-          </div>
-        </Link>
-
-        <div className="flex-1 min-w-0">
-          {/* Bubble */}
-          <div className="inline-block max-w-full bg-gray-100 dark:bg-gray-700/60 rounded-2xl rounded-tl-sm px-3 py-2">
-            <Link href={`/profil/${comment.user?.id}`} className="text-xs font-bold text-gray-800 dark:text-gray-100 hover:text-emerald-600 transition block">
-              {comment.user?.name}
-            </Link>
-            <p className="text-sm text-gray-700 dark:text-gray-200 leading-relaxed mt-0.5 whitespace-pre-wrap break-words">{comment.content}</p>
-          </div>
-
-          {/* Actions row */}
-          <div className="flex items-center gap-3 mt-1 ml-1">
-            <span className="text-[10px] text-gray-400 dark:text-gray-500">
-              {format(new Date(comment.createdAt), "d MMM, HH:mm", { locale: tr })}
-            </span>
-            <button
-              onClick={() => onLike(comment.id)}
-              className={`text-[11px] font-bold transition ${
-                comment.likedByMe ? "text-red-500" : "text-gray-500 dark:text-gray-400 hover:text-red-500"
-              }`}
-            >
-              {comment.likedByMe ? "Beğenildi" : "Beğen"}
-              {comment._count?.likes > 0 && (
-                <span className="ml-1 text-[10px] font-normal">{comment._count.likes} ❤️</span>
-              )}
-            </button>
-            {!isReply && (
-              <button
-                onClick={() => onReply({ id: comment.id, name: comment.user?.name })}
-                className="text-[11px] font-bold text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition"
-              >
-                Yanıtla
-              </button>
-            )}
-          </div>
-
-          {/* Replies section */}
-          {replyCount > 0 && !isReply && (
-            <div className="mt-1.5">
-              <button
-                onClick={() => setShowReplies(v => !v)}
-                className="flex items-center gap-1 text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline ml-1"
-              >
-                <svg className={`w-3 h-3 transition-transform ${showReplies ? "rotate-90" : ""}`} fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 111.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" /></svg>
-                {showReplies ? "Yanıtları gizle" : `${replyCount} yanıt gör`}
-              </button>
-              {showReplies && (
-                <div className="mt-1 space-y-1">
-                  {(comment.replies ?? []).map((reply: any) => (
-                    <FacebookComment
-                      key={reply.id}
-                      comment={reply}
-                      postId={postId}
-                      onLike={onLike}
-                      onReply={onReply}
-                      isReply={true}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Reaction Emojileri ──────────────────────────────────────────────────────
-const REACTION_EMOJIS: Record<string, string> = {
-  like: "❤️",
-  fire: "🔥",
-  muscle: "💪",
-  clap: "👏",
-  goal: "⚽",
-};
-
-function ReactionButton({
-  liked,
-  userReaction,
-  reactions,
-  totalLikes,
-  onReact,
-  onShowLikes,
-}: {
-  liked: boolean;
-  userReaction: string | null;
-  reactions: Record<string, number>;
-  totalLikes: number;
-  onReact: (reaction: string) => void;
-  onShowLikes: () => void;
-}) {
-  const [showPicker, setShowPicker] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // Dış tıklamada kapat
-  useEffect(() => {
-    if (!showPicker) return;
-    const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setShowPicker(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [showPicker]);
-
-  const handlePointerDown = () => {
-    timerRef.current = setTimeout(() => setShowPicker(true), 400);
-  };
-  const handlePointerUp = () => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-  };
-  const handleClick = () => {
-    if (showPicker) return;
-    onReact(userReaction ?? "like");
-  };
-  const handlePickReaction = (reaction: string) => {
-    setShowPicker(false);
-    onReact(reaction);
-  };
-
-  // Hangi emoji gösterilecek
-  const displayEmoji = liked && userReaction ? REACTION_EMOJIS[userReaction] ?? "❤️" : "🤍";
-
-  // Top 3 reaction göster
-  const topReactions = Object.entries(reactions)
-    .filter(([, count]) => count > 0)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 3);
-
-  return (
-    <div ref={containerRef} className="relative flex items-center gap-1.5">
-      <button
-        onPointerDown={handlePointerDown}
-        onPointerUp={handlePointerUp}
-        onPointerLeave={handlePointerUp}
-        onClick={handleClick}
-        className={`flex items-center gap-1 text-sm font-medium transition select-none ${
-          liked
-            ? "text-rose-500 dark:text-rose-400"
-            : "text-gray-400 dark:text-gray-500 hover:text-rose-400"
-        }`}
-      >
-        {displayEmoji}
-      </button>
-      {/* Mini reaction sayaçları */}
-      <div className="flex items-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-full px-1.5 py-0.5 transition" onClick={onShowLikes}>
-        {topReactions.length > 0 && (
-          <div className="flex items-center -space-x-0.5">
-            {topReactions.map(([r]) => (
-              <span key={r} className="text-xs" title={r}>
-                {REACTION_EMOJIS[r]}
-              </span>
-            ))}
-            <span className="text-xs text-gray-500 dark:text-gray-400 ml-1.5 font-medium">{totalLikes}</span>
-          </div>
-        )}
-        {topReactions.length === 0 && totalLikes > 0 && (
-          <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">{totalLikes}</span>
-        )}
-      </div>
-      {/* Reaction Picker */}
-      {showPicker && (
-        <div className="absolute bottom-full left-0 mb-2 flex items-center gap-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-full shadow-lg px-2 py-1.5 z-50 animate-fade-in">
-          {Object.entries(REACTION_EMOJIS).map(([key, emoji]) => (
-            <button
-              key={key}
-              onClick={() => handlePickReaction(key)}
-              className={`text-xl hover:scale-125 transition-transform p-0.5 rounded-full ${
-                userReaction === key ? "bg-gray-100 dark:bg-gray-700 ring-2 ring-emerald-400" : ""
-              }`}
-              title={key}
-            >
-              {emoji}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}

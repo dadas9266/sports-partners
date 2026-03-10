@@ -1,6 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { withErrorHandler } from "@/lib/api-utils";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("api:turnuvalar");
 
 const TOURNAMENT_SELECT = {
   id: true,
@@ -92,7 +96,7 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json(tournament, { status: 201 });
   } catch (error) {
-    console.error("Turnuva oluşturma hatası:", error);
+    log.error("Turnuva oluşturma hatası", error);
     return NextResponse.json({ error: "Turnuva oluşturulamadı" }, { status: 500 });
   }
 }

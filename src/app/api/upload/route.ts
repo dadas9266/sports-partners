@@ -18,7 +18,7 @@ import {
 import { createLogger } from "@/lib/logger";
 import { cacheDel, cacheKey } from "@/lib/cache";
 import { prisma } from "@/lib/prisma";
-import { validateImageBuffer } from "@/lib/image-safety";
+import { validateImageBuffer, checkNSFW } from "@/lib/image-safety";
 
 const log = createLogger("api:upload");
 
@@ -124,6 +124,15 @@ export async function POST(req: NextRequest) {
     // Magic-byte doğrulaması (uzantı sahteciğini engeller)
     if (type !== "certificate" && !validateImageBuffer(buffer, file.type)) {
       return NextResponse.json({ error: "Dosya içeriği geçersiz veya bozuk." }, { status: 400 });
+    }
+
+    // NSFW içerik kontrolü (görsel yüklemelerinde)
+    if (type !== "certificate") {
+      const nsfwResult = await checkNSFW(buffer, file.type);
+      if (!nsfwResult.safe) {
+        log.warn("NSFW içerik tespit edildi", { userId, type, reason: nsfwResult.reason, score: nsfwResult.score });
+        return NextResponse.json({ error: "Uygunsuz içerik yüklenemez." }, { status: 400 });
+      }
     }
 
     const { url, error } = await uploadFile(bucket, path, buffer, file.type);

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserId } from "@/lib/api-utils";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("api:stories:view");
 
 type Params = { params: Promise<{ storyId: string }> };
 
@@ -26,7 +29,7 @@ export async function POST(_req: NextRequest, { params }: Params) {
     if (code === "P2003" || code === "P2025") {
       return NextResponse.json({ success: false, error: "Hikaye bulunamadı" }, { status: 404 });
     }
-    console.error("POST /api/stories/[storyId]/view error", err);
+    log.error("POST /api/stories/[storyId]/view error", err);
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
   }
 }

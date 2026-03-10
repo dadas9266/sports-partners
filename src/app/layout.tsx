@@ -65,8 +65,11 @@ export default async function RootLayout({
       >
         <NextIntlClientProvider locale={locale} messages={messages}>
           <Providers>
+            <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:z-[100] focus:top-2 focus:left-2 focus:bg-emerald-600 focus:text-white focus:px-4 focus:py-2 focus:rounded-lg focus:text-sm focus:font-semibold">
+              İçeriğe atla
+            </a>
             <Navbar />
-            <main className="max-w-6xl mx-auto px-4 py-6 pb-24 md:pb-6">{children}</main>
+            <main id="main-content" className="max-w-6xl mx-auto px-4 py-6 pb-24 md:pb-6">{children}</main>
             <BottomNav />
             <PWAInstallBanner />
           </Providers>

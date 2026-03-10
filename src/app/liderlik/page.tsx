@@ -4,18 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { getLeaderboard, getSports } from "@/services/api";
-import type { LeaderboardEntry, Sport, Badge } from "@/types";
+import type { LeaderboardEntry, Sport } from "@/types";
 
-function BadgeChip({ badge }: { badge: Badge }) {
-  return (
-    <span
-      className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${badge.color}`}
-      title={badge.description}
-    >
-      {badge.icon} {badge.label}
-    </span>
-  );
-}
+import BadgeChip from "@/components/social/BadgeChip";
 
 function StarDisplay({ value, count }: { value: number; count: number }) {
   return (

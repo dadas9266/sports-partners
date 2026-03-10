@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserId } from "@/lib/api-utils";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("api:stories");
 
 // GET /api/stories?userId=xxx  → belirli kullanıcının aktif hikayeleri
 // GET /api/stories?feed=true   → takip ettiklerinin + kendi hikayelerini getir
@@ -118,7 +121,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ error: "userId veya feed parametresi gerekli" }, { status: 400 });
   } catch (err) {
-    console.error("GET /api/stories error", err);
+    log.error("GET /api/stories error", err);
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
   }
 }
@@ -170,7 +173,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, story }, { status: 201 });
   } catch (err) {
-    console.error("POST /api/stories error", err);
+    log.error("POST /api/stories error", err);
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
   }
 }

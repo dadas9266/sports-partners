@@ -81,6 +81,7 @@ export default function BottomNav() {
 
   return (
     <nav
+      aria-label="Alt menü"
       className="md:hidden fixed bottom-0 inset-x-0 z-[65] bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-t border-gray-200/80 dark:border-gray-700/80"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >

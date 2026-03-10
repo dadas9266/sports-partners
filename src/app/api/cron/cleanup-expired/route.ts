@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSupabaseAdminClient } from "@/lib/storage";
+import { updateTrustScore } from "@/lib/trust-score";
 
 /**
  * GET /api/cron/cleanup-expired
@@ -164,6 +165,27 @@ export async function GET(req: NextRequest) {
     where: { expiresAt: { lt: now } },
   });
 
+  // ── 7. Trust Score toplu güncelleme — son 7 günde aktif kullanıcılar ────────
+  let trustScoreUpdated = 0;
+  try {
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const activeUsers = await prisma.user.findMany({
+      where: { lastSeenAt: { gte: sevenDaysAgo }, isBot: false },
+      select: { id: true },
+      take: 200, // Batch limiti
+    });
+    for (const u of activeUsers) {
+      try {
+        await updateTrustScore(u.id);
+        trustScoreUpdated++;
+      } catch {
+        // Bireysel kullanıcı hatası diğerlerini etkilemesin
+      }
+    }
+  } catch {
+    // Trust score batch hatası kritik değil
+  }
+
   return NextResponse.json({
     ok: true,
     summary: {
@@ -178,6 +200,7 @@ export async function GET(req: NextRequest) {
       deletedNotifications: deletedNotifs.count,
       deletedPasswordTokens: deletedTokens.count,
       deletedStories: { db: deletedStories.count, storage: deletedStorageFiles },
+      trustScoreUpdated,
     },
     timestamp: now.toISOString(),
   });

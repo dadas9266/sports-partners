@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserId } from "@/lib/api-utils";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("api:comment-like");
 
 export async function POST(
   req: NextRequest,
@@ -61,7 +64,7 @@ export async function POST(
       return NextResponse.json({ liked: true, likeCount: count });
     }
   } catch (error) {
-    console.error("Comment like error:", error);
+    log.error("Comment like error", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

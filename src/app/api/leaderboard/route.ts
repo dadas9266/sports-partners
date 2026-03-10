@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createLogger } from "@/lib/logger";
 import { computeBadges } from "@/lib/badges";
+import { withCache, cacheKey, CACHE_TTL } from "@/lib/cache";
 
 const log = createLogger("leaderboard");
 
@@ -23,6 +24,9 @@ export async function GET(req: NextRequest) {
       dateFilter.setMonth(dateFilter.getMonth() - 1);
     }
 
+    const cacheKeyStr = cacheKey.leaderboard(sportId ?? undefined);
+
+    const ranked = await withCache(cacheKeyStr, CACHE_TTL.LEADERBOARD, async () => {
     // En yüksek puan ortalaması olan kullanıcılar (min 3 değerlendirme)
     const users = await prisma.user.findMany({
       where: {
@@ -97,6 +101,9 @@ export async function GET(req: NextRequest) {
       .filter((u: RankedEntry) => u.avgRating > 0)
       .sort((a: RankedEntry, b: RankedEntry) => b.avgRating - a.avgRating || b.ratingCount - a.ratingCount)
       .slice(0, limit);
+
+    return ranked;
+    }); // end withCache
 
     return NextResponse.json({ success: true, data: ranked });
   } catch (error) {

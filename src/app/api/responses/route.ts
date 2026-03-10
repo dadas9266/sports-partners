@@ -40,6 +40,25 @@ export async function POST(request: Request) {
       );
     }
 
+    // Profil tamamlama kontrolü
+    const profileUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { name: true, birthDate: true, userType: true, sports: { select: { id: true } } },
+    });
+    const { getRequiredProfileFields } = await import("@/lib/profile-utils");
+    const missingFields = getRequiredProfileFields({
+      name: profileUser?.name,
+      birthDate: profileUser?.birthDate,
+      userType: profileUser?.userType,
+      sports: profileUser?.sports,
+    });
+    if (missingFields.length > 0) {
+      return NextResponse.json(
+        { success: false, error: `Başvuru yapmak için profilinizi tamamlayın. Eksik: ${missingFields.join(", ")}`, code: "PROFILE_INCOMPLETE" },
+        { status: 400 }
+      );
+    }
+
     // İlan kontrolü
     const listing = await prisma.listing.findUnique({
       where: { id: listingId },

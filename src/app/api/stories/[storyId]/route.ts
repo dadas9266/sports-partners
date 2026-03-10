@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserId } from "@/lib/api-utils";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("api:stories");
 
 type Params = { params: Promise<{ storyId: string }> };
 
@@ -23,7 +26,7 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
     await prisma.story.delete({ where: { id: storyId } });
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error("DELETE /api/stories/[storyId] error", err);
+    log.error("DELETE /api/stories/[storyId] error", err);
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
   }
 }

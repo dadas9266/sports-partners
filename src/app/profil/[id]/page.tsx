@@ -34,13 +34,7 @@ function StarRating({ value, onChange }: { value: number; onChange?: (v: number)
   );
 }
 
-function BadgeChip({ badge }: { badge: Badge }) {
-  return (
-    <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${badge.color}`} title={badge.description}>
-      {badge.icon} {badge.label}
-    </span>
-  );
-}
+import BadgeChip from "@/components/social/BadgeChip";
 
 export default function PublicProfilePage({
   params,

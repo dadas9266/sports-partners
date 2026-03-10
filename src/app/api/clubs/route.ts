@@ -1,3 +1,6 @@
+/**
+ * @deprecated Prefer /api/communities with type=CLUB. This endpoint will be removed in a future version.
+ */
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserId } from "@/lib/api-utils";

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUserId, sanitizeText } from "@/lib/api-utils";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { createLogger } from "@/lib/logger";
+import { updateTrustScore } from "@/lib/trust-score";
 import { z } from "zod";
 
 const log = createLogger("ratings");
@@ -108,6 +109,9 @@ export async function POST(request: Request) {
         link: `/profil`,
       },
     });
+
+    // Trust Score güncelle (arka planda, hata durumunda devam et)
+    void updateTrustScore(ratedUserId).catch(() => {});
 
     log.info("Yeni puan verildi", { matchId, ratedById: userId, ratedUserId, score });
 

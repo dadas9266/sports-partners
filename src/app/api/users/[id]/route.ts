@@ -168,12 +168,12 @@ export async function GET(
         id: user.id,
         name: user.name,
         avatarUrl: user.avatarUrl,
-        // Gizli profillerde içerikleri maskele, temel bilgileri göster
+        // Gizli profillerde kişisel bilgileri maskele
         bio: isRestricted ? null : user.bio,
         createdAt: user.createdAt,
-        birthDate: user.birthDate,
-        gender: user.gender,
-        city: user.city,
+        birthDate: isRestricted ? null : user.birthDate,
+        gender: isRestricted ? null : user.gender,
+        city: isRestricted ? null : user.city,
         sports: isRestricted ? [] : user.sports,
         avgRating: isRestricted ? null : (avgRating ? Math.round(avgRating * 10) / 10 : null),
         ratingCount: isRestricted ? 0 : (count.ratingsReceived || 0),
