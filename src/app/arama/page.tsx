@@ -157,25 +157,27 @@ export default function AramaPage() {
         <div className="text-center py-10 space-y-6">
           <p className="text-5xl mb-2">🔍</p>
           <p className="text-gray-500 dark:text-gray-400 text-lg">İlan, kullanıcı, kulüp veya spor dalı aramaya başlayın</p>
-          {/* Hızlı Erişim */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-lg mx-auto pt-4">
-            <Link href="/liderlik" className="flex flex-col items-center gap-2 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 hover:shadow-md transition">
-              <span className="text-2xl">🏆</span>
-              <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">Liderlik</span>
-            </Link>
-            <Link href="/topluluklar" className="flex flex-col items-center gap-2 p-4 rounded-xl bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 hover:shadow-md transition">
-              <span className="text-2xl">👥</span>
-              <span className="text-xs font-semibold text-purple-700 dark:text-purple-300">Topluluklar</span>
-            </Link>
-            <Link href="/harita" className="flex flex-col items-center gap-2 p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 hover:shadow-md transition">
-              <span className="text-2xl">🗺️</span>
-              <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">Harita</span>
-            </Link>
-            <Link href="/kulupler" className="flex flex-col items-center gap-2 p-4 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 hover:shadow-md transition">
-              <span className="text-2xl">🏟️</span>
-              <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">Kulüpler</span>
-            </Link>
-          </div>
+        </div>
+      )}
+      {/* Hızlı Erişim — her zaman, sorgu yokken göster */}
+      {!query && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-lg mx-auto py-4">
+          <Link href="/liderlik" className="flex flex-col items-center gap-2 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 hover:shadow-md transition">
+            <span className="text-2xl">🏆</span>
+            <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">Liderlik</span>
+          </Link>
+          <Link href="/topluluklar" className="flex flex-col items-center gap-2 p-4 rounded-xl bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 hover:shadow-md transition">
+            <span className="text-2xl">👥</span>
+            <span className="text-xs font-semibold text-purple-700 dark:text-purple-300">Topluluklar</span>
+          </Link>
+          <Link href="/harita" className="flex flex-col items-center gap-2 p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 hover:shadow-md transition">
+            <span className="text-2xl">🗺️</span>
+            <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">Harita</span>
+          </Link>
+          <Link href="/kulupler" className="flex flex-col items-center gap-2 p-4 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 hover:shadow-md transition">
+            <span className="text-2xl">🏟️</span>
+            <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">Kulüpler</span>
+          </Link>
         </div>
       )}
 

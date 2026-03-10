@@ -7,7 +7,7 @@ import Link from "next/link";
 
 const MENU = [
   {
-    href: "/ayarlar/profil",
+    href: "/profil",
     icon: "👤",
     label: "Profili Düzenle",
     desc: "Ad, biyografi, konum, fotoğraf",

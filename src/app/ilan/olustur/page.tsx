@@ -9,7 +9,7 @@ import { useLocations, useSports, useVenues } from "@/hooks/useLocations";
 import { createListing } from "@/services/api";
 import type { CreateListingForm, ListingType } from "@/types";
 import Button from "@/components/ui/Button";
-import type { MapVenue } from "@/components/VenueMapPicker";
+import type { } from "@/components/VenueMapPicker";
 import LocationSelector from "@/components/LocationSelector";
 
 // Leaflet SSR sorunu — sadece client-side yükle
@@ -70,9 +70,9 @@ export default function CreateListingPage() {
   const [equipImages, setEquipImages] = useState<File[]>([]);
   const [equipPreviews, setEquipPreviews] = useState<string[]>([]);
   const [uploadingEquip, setUploadingEquip] = useState(false);
-  // Harita modal ve seçilen mekan
-  const [showMapPicker, setShowMapPicker] = useState(false);
-  const [selectedMapVenue, setSelectedMapVenue] = useState<MapVenue | null>(null);
+  // Harita modal ve seçilen mekan - KALDIRILDI
+  const [showMapPicker] = useState(false);
+  const [selectedMapVenue, setSelectedMapVenue] = useState<null>(null);
   // Eski dropdown için (fallback)
   const [smartVenues, setSmartVenues] = useState<any[]>([]);
   const [smartVenuesLoading, setSmartVenuesLoading] = useState(false);
@@ -84,7 +84,7 @@ export default function CreateListingPage() {
   const selectedSport = sports.find((s) => s.id === form.sportId);
   const selectedDistrict = districts.find((d) => d.id === form.districtId);
 
-  // Spor dalı veya ilçe değişince harita seçimini sıfırla
+  // Spor dalı veya ilçe değişince sıfırla
   useEffect(() => {
     setSelectedMapVenue(null);
     setSmartVenues([]);
@@ -310,69 +310,19 @@ export default function CreateListingPage() {
           )}
         </div>
 
-        {/* Mekan */}
+        {/* Mekan (serbest metin) */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Mekan <span className="text-gray-400 font-normal">(opsiyonel)</span>
           </label>
-
-          {selectedMapVenue ? (
-            /* Seçili mekan kartı */
-            <div className="flex items-center gap-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 rounded-xl px-4 py-3">
-              <span className="text-emerald-500 text-xl flex-shrink-0">✓</span>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm text-emerald-800 dark:text-emerald-300 truncate">{selectedMapVenue.name}</p>
-                {selectedMapVenue.vicinity && (
-                  <p className="text-xs text-emerald-600 dark:text-emerald-400 truncate">{selectedMapVenue.vicinity}</p>
-                )}
-                {selectedMapVenue.isCustom && (
-                  <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">📌 Haritadan işaretlendi</p>
-                )}
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedMapVenue(null);
-                  setForm({ ...form, venueId: "", latitude: null, longitude: null });
-                }}
-                className="text-gray-400 hover:text-red-500 text-lg flex-shrink-0"
-                aria-label="Mekan seçimini kaldır"
-              >
-                ×
-              </button>
-            </div>
-          ) : (
-            /* Haritadan seç butonu */
-            <button
-              type="button"
-              disabled={!form.cityId || !form.sportId}
-              onClick={() => setShowMapPicker(true)}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed
-                border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400
-                hover:border-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-400
-                disabled:opacity-40 disabled:cursor-not-allowed
-                transition-colors text-sm font-medium"
-            >
-              🗺️ {!form.cityId || !form.sportId ? "Spor dalı ve şehir seçince mekan belirtebilirsiniz" : "Haritadan Mekan Seç"}
-            </button>
-          )}
-        </div>
-
-        {/* Harita Modal */}
-        {showMapPicker && selectedSport && (
-          <VenueMapPicker
-            sportName={selectedSport.name}
-            districtName={selectedDistrict?.name ?? cities.find(c => c.id === form.cityId)?.name ?? ""}
-            districtId={form.districtId || form.cityId}
-            initialVenue={selectedMapVenue}
-            onSelect={(venue) => {
-              setSelectedMapVenue(venue);
-              setForm({ ...form, venueId: venue.place_id, latitude: venue.lat, longitude: venue.lng });
-              setShowMapPicker(false);
-            }}
-            onClose={() => setShowMapPicker(false)}
+          <input
+            type="text"
+            placeholder="Örn: Atatürk Spor Salonu, Merkez Parkı..."
+            value={(form as any).venueText ?? ""}
+            onChange={(e) => setForm({ ...form, ...(form as any), venueText: e.target.value })}
+            className={selectClass}
           />
-        )}
+        </div>
 
         {/* Tarih/Saat (EQUIPMENT için gösterilmez) */}
         {form.type !== "EQUIPMENT" && (

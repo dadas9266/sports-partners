@@ -11,11 +11,14 @@ import CommentThread from "@/components/social/CommentThread";
 
 interface PostCardProps {
   post: any;
+  sessionUserId?: string | null;
   onLikeToggle?: (id: string, liked: boolean, count: number) => void;
+  onDeletePost?: (id: string) => void;
 }
 
-export default function PostCard({ post, onLikeToggle }: PostCardProps) {
+export default function PostCard({ post, sessionUserId, onLikeToggle, onDeletePost }: PostCardProps) {
   const [toggling, setToggling] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [showLikesModal, setShowLikesModal] = useState(false);
   const [likesList, setLikesList] = useState<any[]>([]);
@@ -146,6 +149,19 @@ export default function PostCard({ post, onLikeToggle }: PostCardProps) {
     }
   };
 
+  const handleDelete = async () => {
+    if (!confirm("Bu gönderiyi silmek istiyor musun?")) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/posts/${post.id}`, { method: "DELETE" });
+      if (res.ok) {
+        if (onDeletePost) onDeletePost(post.id);
+      }
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4">
       {/* Header */}
@@ -167,6 +183,22 @@ export default function PostCard({ post, onLikeToggle }: PostCardProps) {
             {format(new Date(post.createdAt), "d MMM yyyy, HH:mm", { locale: tr })}
           </Link>
         </div>
+        
+        {/* Delete Button */}
+        {sessionUserId === post.user?.id && (
+          <div className="ml-auto">
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+              title="Sil"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Content */}

@@ -7,9 +7,6 @@ import { useSession } from "next-auth/react";
 const navItems = [
   { href: "/", icon: HomeIcon, label: "Ana Sayfa" },
   { href: "/arama", icon: SearchIcon, label: "Keşfet" },
-];
-
-const rightItems = [
   { href: "/sosyal", icon: SocialIcon, label: "Sosyal" },
 ];
 
@@ -27,15 +24,6 @@ function SearchIcon({ active }: { active: boolean }) {
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? "2.2" : "1.8"} strokeLinecap="round" strokeLinejoin="round">
       <circle cx="11" cy="11" r="8" />
       <line x1="21" y1="21" x2="16.65" y2="16.65" />
-    </svg>
-  );
-}
-
-function PlusIcon() {
-  return (
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="12" y1="5" x2="12" y2="19" />
-      <line x1="5" y1="12" x2="19" y2="12" />
     </svg>
   );
 }
@@ -88,45 +76,8 @@ export default function BottomNav() {
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <div className="flex items-stretch h-16">
-        {/* Sol taraf: Ana Sayfa, Keşfet */}
+        {/* Sol taraf: Ana Sayfa, Keşfet, Sosyal */}
         {navItems.map(({ href, icon: Icon, label }) => {
-          const active = isActive(href);
-          return (
-            <Link
-              key={href}
-              href={href}
-              className={`flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors ${
-                active
-                  ? "text-emerald-600 dark:text-emerald-400"
-                  : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
-              }`}
-            >
-              <Icon active={active} />
-              <span>{label}</span>
-            </Link>
-          );
-        })}
-
-        {/* Ortadaki İlan Ver butonu */}
-        <div className="flex-1 flex items-center justify-center">
-          <button
-            type="button"
-            onClick={() => {
-              if (!session) {
-                router.push("/auth/giris");
-              } else {
-                router.push("/ilan/olustur");
-              }
-            }}
-            className="w-12 h-12 -mt-4 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/30 flex items-center justify-center transition-transform active:scale-95"
-            aria-label="İlan Oluştur"
-          >
-            <PlusIcon />
-          </button>
-        </div>
-
-        {/* Sağ taraf: Sosyal */}
-        {rightItems.map(({ href, icon: Icon, label }) => {
           const active = isActive(href);
           return (
             <Link

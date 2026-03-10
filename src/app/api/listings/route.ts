@@ -447,28 +447,6 @@ export async function POST(request: Request) {
         maxAge: parsed.data.maxAge ?? null,
         groupId: parsed.data.groupId ?? null,
         // Eğitmen profili verisi
-        ...(parsed.data.type === "TRAINER" && parsed.data.trainerProfile
-          ? {
-              trainerProfile: {
-                create: {
-                  userId,
-                  hourlyRate: parsed.data.trainerProfile.hourlyRate ?? null,
-                  gymName: parsed.data.trainerProfile.gymName || null,
-                  gymAddress: parsed.data.trainerProfile.gymAddress || null,
-                  ...(parsed.data.trainerProfile.specialization || parsed.data.trainerProfile.experience !== undefined
-                    ? {
-                        specializations: {
-                          create: {
-                            sportName: parsed.data.trainerProfile.specialization || "Genel",
-                            years: parsed.data.trainerProfile.experience ?? 0,
-                          },
-                        },
-                      }
-                    : {}),
-                },
-              },
-            }
-          : {}),
         // Ekipman detayı
         ...(parsed.data.type === "EQUIPMENT" && parsed.data.equipmentDetail
           ? {
@@ -492,6 +470,27 @@ export async function POST(request: Request) {
         equipmentDetail: true,
       },
     });
+
+    // TRAINER ilanı: mevcut TrainerProfile kaydını bu ilana bağla (userId @unique olduğu için create değil upsert)
+    if (parsed.data.type === "TRAINER") {
+      const tp = parsed.data.trainerProfile;
+      await prisma.trainerProfile.upsert({
+        where: { userId },
+        update: {
+          listingId: listing.id,
+          ...(tp?.hourlyRate !== undefined ? { hourlyRate: tp.hourlyRate ?? null } : {}),
+          ...(tp?.gymName !== undefined ? { gymName: tp.gymName || null } : {}),
+          ...(tp?.gymAddress !== undefined ? { gymAddress: tp.gymAddress || null } : {}),
+        },
+        create: {
+          userId,
+          listingId: listing.id,
+          hourlyRate: tp?.hourlyRate ?? null,
+          gymName: tp?.gymName || null,
+          gymAddress: tp?.gymAddress || null,
+        },
+      });
+    }
 
     log.info("İlan oluşturuldu", { listingId: listing.id, userId, isQuick: listing.isQuick, isUrgent: listing.isUrgent, isAnonymous: listing.isAnonymous });
 

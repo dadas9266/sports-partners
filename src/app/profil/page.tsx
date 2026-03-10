@@ -960,9 +960,17 @@ export default function ProfilePage() {
             </div>
           ) : (
             posts.map((post) => (
-              <PostCard key={post.id} post={post} onLikeToggle={(id, liked, count) => {
-                setPosts((prev) => prev.map((p) => p.id === id ? { ...p, _count: { ...p._count, likes: count }, likedByMe: liked } : p));
-              }} />
+              <PostCard 
+                key={post.id} 
+                post={post} 
+                sessionUserId={session?.user?.id}
+                onLikeToggle={(id, liked, count) => {
+                  setPosts((prev) => prev.map((p) => p.id === id ? { ...p, _count: { ...p._count, likes: count }, likedByMe: liked } : p));
+                }}
+                onDeletePost={(id) => {
+                  setPosts((prev) => prev.filter((p) => p.id !== id));
+                }}
+              />
             ))
           )}
         </div>
