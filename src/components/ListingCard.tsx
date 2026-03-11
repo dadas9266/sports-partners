@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { format, formatDistanceToNow, differenceInYears } from "date-fns";
 import { tr } from "date-fns/locale";
 import { useTranslations } from "next-intl";
+import { ListingSummary } from "@/types";
 
 // Acil ilan geri sayım
 function UrgentCountdown({ expiresAt }: { expiresAt: string }) {
