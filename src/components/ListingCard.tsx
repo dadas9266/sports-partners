@@ -4,8 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { format, formatDistanceToNow, differenceInYears } from "date-fns";
 import { tr } from "date-fns/locale";
-import type { ListingSummary } from "@/types";
-import { LEVEL_LABELS, LEVEL_COLORS, GENDER_LABELS, STATUS_LABELS } from "@/types";
+import { useTranslations } from "next-intl";
 
 // Acil ilan geri sayım
 function UrgentCountdown({ expiresAt }: { expiresAt: string }) {
@@ -70,6 +69,8 @@ type ListingCardProps = {
 export default function ListingCard({ listing }: ListingCardProps) {
   const router = useRouter();
 
+  const t = useTranslations("listings");
+
   const dateStr = format(new Date(listing.dateTime), "d MMM yyyy, HH:mm", {
     locale: tr,
   });
@@ -83,7 +84,13 @@ export default function ListingCard({ listing }: ListingCardProps) {
     router.push(`/profil/${listing.user.id}`);
   };
 
-  const typeConfig = LISTING_TYPE_CONFIG[listing.type] ?? LISTING_TYPE_CONFIG.PARTNER;
+  const typeConfig = {
+    ...LISTING_TYPE_CONFIG[listing.type],
+    label: t(`types.${listing.type}`)
+  } ?? {
+    ...LISTING_TYPE_CONFIG.PARTNER,
+    label: t("types.PARTNER")
+  };
 
   const isUrgent = !!(listing as any).isUrgent;
 
@@ -98,7 +105,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
       }`}
       role="button"
       tabIndex={0}
-      aria-label={`${listing.sport.name} ilanı detayı`}
+      aria-label={`${listing.sport.name} ${t("title")} ${t("detail")}`}
     >
       <div className="p-4">
       {/* Üst etiketler */}
@@ -113,17 +120,17 @@ export default function ListingCard({ listing }: ListingCardProps) {
         </span>
         {(listing as any).isUrgent && (
           <span className="text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 px-2 py-0.5 rounded-full font-bold animate-pulse">
-            ⚡ ACİL
+            ⚡ {t("urgent") || "ACİL"}
           </span>
         )}
         {(listing as any).isAnonymous && (
           <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">
-            🕵️ Anonim
+            🕵️ {t("anonymous") || "Anonim"}
           </span>
         )}
         {listing.isQuick && timeLeft && (
           <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">
-            ⚡ {timeLeft} kaldı
+            ⚡ {timeLeft} {t("left") || "kaldı"}
           </span>
         )}
         {(listing as any).isUrgent && (listing as any).expiresAt && (
@@ -131,12 +138,12 @@ export default function ListingCard({ listing }: ListingCardProps) {
         )}
         {listing.allowedGender === "FEMALE_ONLY" && (
           <span className="text-xs bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300 px-2 py-0.5 rounded-full font-semibold">
-            👩 Yalnızca Kadınlar
+            👩 {t("femaleOnly") || "Yalnızca Kadınlar"}
           </span>
         )}
         {listing.allowedGender === "MALE_ONLY" && (
           <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full font-semibold">
-            👨 Yalnızca Erkekler
+            👨 {t("maleOnly") || "Yalnızca Erkekler"}
           </span>
         )}
         {typeof listing.compatibilityScore === "number" && listing.compatibilityScore > 0 && (
@@ -149,13 +156,13 @@ export default function ListingCard({ listing }: ListingCardProps) {
                 : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400"
             }`}
           >
-            🎯 %{listing.compatibilityScore} uyumlu
+            🎯 %{listing.compatibilityScore} {t("compatible") || "uyumlu"}
           </span>
         )}
         {listing.status && STATUS_LABELS[listing.status] && listing.status !== "OPEN" && (
           <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${STATUS_LABELS[listing.status].className}`}>
             {listing.status === "MATCHED" ? "✅ " : ""}
-            {STATUS_LABELS[listing.status].label}
+            {t(`status.${listing.status}`) || STATUS_LABELS[listing.status].label}
           </span>
         )}
       </div>
@@ -178,7 +185,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
         <span
           className={`text-xs font-medium px-2 py-1 rounded-full ${LEVEL_COLORS[listing.level]}`}
         >
-          {LEVEL_LABELS[listing.level]}
+          {t(`levels.${listing.level}`)}
         </span>
       </div>
 

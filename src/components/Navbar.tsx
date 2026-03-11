@@ -109,12 +109,12 @@ export default function Navbar() {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
-              ), label: "Sosyal" },
+              ), label: t("social") },
               { href: "/arama", icon: (
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" />
                 </svg>
-              ), label: "Ara" },
+              ), label: t("search") },
             ] as { href: string; icon: ReactNode; label: string }[]).map(item => (
               <Link
                 key={item.href}
@@ -157,7 +157,7 @@ export default function Navbar() {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
-                <span>Keşfet</span>
+                <span>{t("discover") || "Keşfet"}</span>
                 <svg className={`w-3 h-3 transition-transform ${discoverOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
@@ -167,10 +167,10 @@ export default function Navbar() {
                   <div className="fixed inset-0 z-[88]" onClick={() => setDiscoverOpen(false)} />
                   <div className="absolute left-0 top-full mt-1.5 w-52 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-xl z-[89] overflow-hidden py-1.5">
                     {[
-                      { href: "/topluluklar", icon: "🏛️", label: "Topluluklar", desc: "Gruplar, kulüpler, takımlar" },
-                      { href: "/mekanlar", icon: "🏟️", label: "Mekanlar", desc: "Spor tesisleri & sahalar" },
-                      { href: "/turnuvalar", icon: "🏆", label: "Turnuvalar", desc: "Aktif turnuvalar" },
-                      { href: "/liderlik", icon: "🥇", label: "Liderlik", desc: "Sıralamalar & Puanlar" },
+                      { href: "/topluluklar", icon: "🏛️", label: t("communities"), desc: t("communitiesDesc") },
+                      { href: "/mekanlar", icon: "🏟️", label: t("venues"), desc: t("venuesDesc") },
+                      { href: "/turnuvalar", icon: "🏆", label: t("tournaments"), desc: t("tournamentsDesc") },
+                      { href: "/liderlik", icon: "🥇", label: t("leaderboard"), desc: t("leaderboardDesc") },
                     ].map(item => (
                       <Link
                         key={item.href}

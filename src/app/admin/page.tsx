@@ -96,7 +96,7 @@ export default function AdminPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"users" | "venues" | "trainers" | "reports" | "content" | "bots">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "venues" | "trainers" | "reports" | "content" | "bots" | "listings">("users");
   const [venueProfiles, setVenueProfiles] = useState<VenueProfileAdmin[]>([]);
   const [venueLoading, setVenueLoading] = useState(false);
   const [trainerProfiles, setTrainerProfiles] = useState<TrainerProfileAdmin[]>([]);
@@ -104,6 +104,12 @@ export default function AdminPage() {
   const [reports, setReports] = useState<AdminReport[]>([]);
   const [reportsLoading, setReportsLoading] = useState(false);
   const [reportFilter, setReportFilter] = useState<"PENDING" | "ALL">("PENDING");
+
+  // İlan yönetimi
+  const [listingItems, setListingItems] = useState<any[]>([]);
+  const [listingLoading, setListingLoading] = useState(false);
+  const [listingType, setListingType] = useState<"all" | "bots" | "users">("all");
+  const [selectedListings, setSelectedListings] = useState<string[]>([]);
 
   // İçerik moderasyonu
   const [contentItems, setContentItems] = useState<any[]>([]);
@@ -165,6 +171,47 @@ export default function AdminPage() {
       setTrainerLoading(false);
     }
   }, []);
+
+  const fetchListings = useCallback(async (type: "all" | "bots" | "users" = "all", p = 1) => {
+    setListingLoading(true);
+    try {
+      let url = `/api/admin/listings?page=${p}`;
+      if (type === "bots") url += "&isBot=true";
+      else if (type === "users") url += "&isBot=false";
+      
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.success) {
+        setListingItems(data.data);
+      }
+    } catch {
+      toast.error("İlanlar yüklenemedi");
+    } finally {
+      setListingLoading(false);
+    }
+  }, []);
+
+  const deleteListings = async (params: { ids?: string[]; allBots?: boolean; allListings?: boolean }) => {
+    if (!confirm("Bu işlem geri alınamaz. Devam etmek istediğinize emin misiniz?")) return;
+    
+    try {
+      const res = await fetch("/api/admin/listings", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(params),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(`${data.count} ilan silindi`);
+        setSelectedListings([]);
+        fetchListings(listingType);
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Silme işlemi başarısız");
+    }
+  };
 
   const handleVenueAction = async (profileId: string, action: "approve" | "reject") => {
     setActionLoading(`venue-${profileId}`);
@@ -412,8 +459,8 @@ export default function AdminPage() {
       </div>
 
       {/* Sekme Butonları */}
-      <div className="flex gap-2 mb-6 border-b border-gray-200 dark:border-gray-700">
-        {([[ "users", "👥 Kullanıcılar"], ["venues", "🏙️ Mekan Onayları"], ["trainers", "🎓 Antrenör Onayları"], ["reports", "🚨 Şikayetler"], ["content", "📝 İçerik"], ["bots", "🤖 Botlar"]] as const).map(([tab, label]) => (
+      <div className="flex gap-2 mb-6 border-b border-gray-200 dark:border-gray-700 overflow-x-auto pb-1">
+        {([[ "users", "👥 Kullanıcılar"], ["venues", "🏙️ Mekan Onayları"], ["trainers", "🎓 Antrenör Onayları"], ["reports", "🚨 Şikayetler"], ["content", "📝 İçerik"], ["listings", "📋 İlanlar"], ["bots", "🤖 Botlar"]] as const).map(([tab, label]) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -442,6 +489,129 @@ export default function AdminPage() {
           </button>
         ))}
       </div>
+
+      {/* ── İlan Yönetimi Sekmesi ────────────────────────────────────────── */}
+      {activeTab === "listings" && (
+        <div>
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+            <div className="flex gap-2">
+              {(["all", "bots", "users"] as const).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setListingType(t)}
+                  className={`text-xs px-4 py-2 rounded-full border transition font-semibold ${
+                    listingType === t
+                      ? "bg-emerald-600 text-white border-emerald-600 shadow-md"
+                      : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
+                  }`}
+                >
+                  {t === "all" ? "📋 Tümü" : t === "bots" ? "🤖 Bot İlanları" : "👤 Kullanıcı İlanları"}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex gap-2">
+              {selectedListings.length > 0 && (
+                <button
+                  onClick={() => deleteListings({ ids: selectedListings })}
+                  className="text-xs px-4 py-2 rounded-lg bg-red-600 text-white font-bold hover:bg-red-700 transition shadow-sm"
+                >
+                  🗑️ Seçilenleri Sil ({selectedListings.length})
+                </button>
+              )}
+              <button
+                onClick={() => deleteListings({ allBots: true })}
+                className="text-xs px-4 py-2 rounded-lg bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 font-bold hover:bg-orange-200 transition"
+              >
+                🤖 Tüm Bot İlanlarını Temizle
+              </button>
+              <button
+                onClick={() => deleteListings({ allListings: true })}
+                className="text-xs px-4 py-2 rounded-lg bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400 font-bold hover:bg-red-200 transition border border-red-200 dark:border-red-800"
+              >
+                💀 TÜM İLANLARI SİL
+              </button>
+            </div>
+          </div>
+
+          {listingLoading ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-600" />
+            </div>
+          ) : listingItems.length === 0 ? (
+            <div className="text-center py-20 bg-gray-50 dark:bg-gray-900/40 rounded-3xl border-2 border-dashed border-gray-200 dark:border-gray-800">
+              <p className="text-gray-400 font-medium">Bu kategoride ilan bulunamadı</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {listingItems.map((item) => (
+                <div
+                  key={item.id}
+                  className={`relative p-4 rounded-2xl border transition-all ${
+                    selectedListings.includes(item.id)
+                      ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-500 shadow-md ring-2 ring-emerald-500/20"
+                      : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                  }`}
+                >
+                  <label className="absolute top-3 right-3 cursor-pointer p-1">
+                    <input
+                      type="checkbox"
+                      className="w-5 h-5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                      checked={selectedListings.includes(item.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) setSelectedListings([...selectedListings, item.id]);
+                        else setSelectedListings(selectedListings.filter(id => id !== item.id));
+                      }}
+                    />
+                  </label>
+
+                  <div className="flex items-center gap-3 mb-3">
+                    <img
+                      src={item.user?.avatarUrl || "/default-avatar.png"}
+                      className="w-10 h-10 rounded-full border dark:border-gray-600"
+                      alt=""
+                    />
+                    <div className="min-w-0">
+                      <p className="font-bold text-sm text-gray-800 dark:text-gray-100 truncate flex items-center gap-1">
+                        {item.user?.name}
+                        {item.user?.isBot && <span className="text-[10px] bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400 px-1.5 py-0.5 rounded-full">BOT</span>}
+                      </p>
+                      <p className="text-[10px] text-gray-400">
+                        {format(new Date(item.createdAt), "dd MMM HH:mm", { locale: tr })} • {item.city?.name}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-lg">{item.sport?.icon}</span>
+                    <span className="text-xs font-bold bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-1 rounded-md">
+                      {item.sport?.name}
+                    </span>
+                    <span className="text-[10px] text-gray-400 ml-auto">
+                      💬 {item._count.responses} başvuru
+                    </span>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => window.open(`/ilan/${item.id}`, "_blank")}
+                      className="flex-1 py-1.5 text-[10px] font-bold bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-100 transition"
+                    >
+                      👁️ Görüntüle
+                    </button>
+                    <button
+                      onClick={() => deleteListings({ ids: [item.id] })}
+                      className="flex-1 py-1.5 text-[10px] font-bold bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-100 transition"
+                    >
+                      🗑️ Sil
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── İçerik Moderasyonu Sekmesi ──────────────────────────────────────── */}
       {activeTab === "content" && (
