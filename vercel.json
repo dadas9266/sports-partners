@@ -13,7 +13,7 @@
     },
     {
       "path": "/api/cron/bot-tasks",
-      "schedule": "0 8,16 * * *"
+      "schedule": "0 12 * * *"
     }
   ],
   "headers": [
