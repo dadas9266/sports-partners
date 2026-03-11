@@ -63,6 +63,33 @@ const GENDER_ICONS: Record<string, string> = {
   PREFER_NOT_TO_SAY: "👤",
 };
 
+const STATUS_LABELS: Record<string, { label: string; className: string }> = {
+  MATCHED: {
+    label: "Eşleşti",
+    className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
+  },
+  CLOSED: {
+    label: "Kapandı",
+    className: "bg-gray-100 text-gray-600 dark:bg-gray-700/50 dark:text-gray-400",
+  },
+  EXPIRED: {
+    label: "Süresi Doldu",
+    className: "bg-orange-100 text-orange-700 dark:bg-orange-950/30 dark:text-orange-400",
+  },
+};
+
+const LEVEL_COLORS: Record<string, string> = {
+  BEGINNER: "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400",
+  INTERMEDIATE: "bg-yellow-50 text-yellow-600 dark:bg-yellow-900/20 dark:text-yellow-400",
+  ADVANCED: "bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400",
+};
+
+const GENDER_LABELS: Record<string, string> = {
+  MALE: "Erkek",
+  FEMALE: "Kadın",
+  PREFER_NOT_TO_SAY: "Belirtilmemiş",
+};
+
 type ListingCardProps = {
   listing: ListingSummary;
 };
@@ -88,9 +115,6 @@ export default function ListingCard({ listing }: ListingCardProps) {
   const typeConfig = {
     ...LISTING_TYPE_CONFIG[listing.type],
     label: t(`types.${listing.type}`)
-  } ?? {
-    ...LISTING_TYPE_CONFIG.PARTNER,
-    label: t("types.PARTNER")
   };
 
   const isUrgent = !!(listing as any).isUrgent;
