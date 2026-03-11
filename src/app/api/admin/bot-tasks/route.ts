@@ -99,6 +99,30 @@ export async function POST(req: Request) {
   }, { status: 201 });
 }
 
+// DELETE /api/admin/bot-tasks — Görev(leri) sil
+export async function DELETE(req: Request) {
+  const userId = await getCurrentUserId();
+  if (!(await requireAdmin(userId))) {
+    return NextResponse.json({ error: "Yetkisiz" }, { status: 403 });
+  }
+
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get("id");
+  const all = searchParams.get("all") === "true";
+
+  if (all) {
+    await prisma.botTask.deleteMany({});
+    return NextResponse.json({ success: true, message: "Tüm görev geçmişi silindi" });
+  }
+
+  if (!id) {
+    return NextResponse.json({ error: "ID veya all=true parametresi gerekli" }, { status: 400 });
+  }
+
+  await prisma.botTask.delete({ where: { id } });
+  return NextResponse.json({ success: true, message: "Görev silindi" });
+}
+
 // Görev yürütücü — her task için ilan aç, başvur, eşleş
 async function executeTasks(taskIds: string[]) {
   for (const taskId of taskIds) {
