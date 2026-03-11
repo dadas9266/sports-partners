@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useCallback, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Story, UserStoryGroup } from "@/types";
+import toast from "react-hot-toast";
 
 interface StoryViewerProps {
   groups: UserStoryGroup[];
   initialGroupIndex?: number;
   onClose: () => void;
+  sessionUserId?: string;
 }
 
 const STORY_DURATION_MS = 5000;
@@ -21,11 +24,15 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(hrs / 24)} gün önce`;
 }
 
-export default function StoryViewer({ groups, initialGroupIndex = 0, onClose }: StoryViewerProps) {
+export default function StoryViewer({ groups, initialGroupIndex = 0, onClose, sessionUserId }: StoryViewerProps) {
+  const router = useRouter();
   const [groupIdx, setGroupIdx] = useState(initialGroupIndex);
   const [storyIdx, setStoryIdx] = useState(0);
   const [progress, setProgress] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [viewerPanel, setViewerPanel] = useState(false);
+  const [viewers, setViewers] = useState<{ id: string; name: string; avatarUrl: string | null; viewedAt: string }[]>([]);
+  const [loadingViewers, setLoadingViewers] = useState(false);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef<number>(Date.now());
@@ -104,6 +111,41 @@ export default function StoryViewer({ groups, initialGroupIndex = 0, onClose }: 
   }, [goNext, goPrev, onClose]);
 
   if (!currentGroup || !currentStory) return null;
+
+  const isOwnStory = sessionUserId === currentGroup.userId;
+
+  const openViewerPanel = async () => {
+    if (!isOwnStory) return;
+    setPaused(true);
+    setViewerPanel(true);
+    setLoadingViewers(true);
+    try {
+      const res = await fetch(`/api/stories/${currentStory.id}/view`);
+      const json = await res.json();
+      if (json.success) setViewers(json.viewers);
+    } catch { /* ignore */ }
+    setLoadingViewers(false);
+  };
+
+  const handleReply = async () => {
+    if (!currentGroup.userId) return;
+    try {
+      const res = await fetch("/api/conversations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetUserId: currentGroup.userId }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        onClose();
+        router.push(`/mesajlar/${json.data.id}`);
+      } else {
+        toast.error(json.error || "Mesaj gönderilemedi");
+      }
+    } catch {
+      toast.error("Bir hata oluştu");
+    }
+  };
 
   const storyBg = (): string => {
     if (currentStory.mediaUrl && currentStory.mediaType === "image") return "bg-black";
@@ -219,12 +261,59 @@ export default function StoryViewer({ groups, initialGroupIndex = 0, onClose }: 
           </div>
         )}
 
-        {/* Görüntülenme sayısı (sadece kendi hikayende) */}
-        <div className="absolute bottom-4 left-0 right-0 flex justify-center z-20">
-          {currentStory._count && (
-            <span className="text-white/50 text-xs">👁 {currentStory._count.views}</span>
+        {/* Alt kısım: Görüntüleyenler (kendi) veya Yanıtla (başkası) */}
+        <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-3 z-20">
+          {isOwnStory ? (
+            <button
+              onClick={openViewerPanel}
+              className="text-white/60 hover:text-white text-xs flex items-center gap-1 transition"
+            >
+              👁 {currentStory._count?.views ?? 0} görüntülenme
+            </button>
+          ) : (
+            sessionUserId && (
+              <button
+                onClick={handleReply}
+                className="text-white/80 hover:text-white text-xs bg-white/10 hover:bg-white/20 rounded-full px-4 py-1.5 flex items-center gap-1 transition backdrop-blur-sm"
+              >
+                💬 Yanıtla
+              </button>
+            )
           )}
         </div>
+
+        {/* Görüntüleyenler paneli */}
+        {viewerPanel && (
+          <div className="absolute inset-0 z-30 bg-black/80 backdrop-blur-sm flex flex-col">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+              <span className="text-white font-semibold text-sm">👁 Görüntüleyenler</span>
+              <button onClick={() => { setViewerPanel(false); setPaused(false); }} className="text-white/60 hover:text-white text-lg">✕</button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-4 py-2">
+              {loadingViewers ? (
+                <p className="text-white/50 text-sm text-center py-8">Yükleniyor...</p>
+              ) : viewers.length === 0 ? (
+                <p className="text-white/50 text-sm text-center py-8">Henüz görüntülenme yok</p>
+              ) : (
+                viewers.map((v) => (
+                  <div key={v.id} className="flex items-center gap-3 py-2">
+                    <div className="w-8 h-8 rounded-full bg-gray-700 overflow-hidden flex-shrink-0">
+                      {v.avatarUrl ? (
+                        <img src={v.avatarUrl} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-xs font-bold text-white">{v.name?.[0]?.toUpperCase() ?? "?"}</div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white text-sm font-medium truncate">{v.name}</p>
+                      <p className="text-white/40 text-xs">{timeAgo(v.viewedAt)}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Dokunma / Tıklama alanları */}
         <button

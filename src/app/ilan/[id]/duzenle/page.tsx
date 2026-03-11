@@ -33,6 +33,7 @@ export default function EditListingPage({
     venueId: "",
     dateTime: "",
     level: "",
+    allowedGender: "ANY" as string,
     description: "",
   });
 
@@ -60,6 +61,7 @@ export default function EditListingPage({
           venueId: l.venue?.id ?? "",
           dateTime: localDT,
           level: l.level,
+          allowedGender: l.allowedGender ?? "ANY",
           description: l.description ?? "",
         });
       } else {
@@ -94,6 +96,7 @@ export default function EditListingPage({
         venueId: form.venueId || null,
         dateTime: form.dateTime,
         level: form.level,
+        allowedGender: form.allowedGender,
         description: form.description || undefined,
       });
       toast.success("İlan güncellendi!");
@@ -232,6 +235,16 @@ export default function EditListingPage({
             <option value="BEGINNER">🌱 Başlangıç</option>
             <option value="INTERMEDIATE">🔥 Orta</option>
             <option value="ADVANCED">⚡ İleri</option>
+          </select>
+        </div>
+
+        {/* Cinsiyet Kısıtı */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cinsiyet Kısıtı</label>
+          <select value={form.allowedGender} onChange={(e) => setForm({ ...form, allowedGender: e.target.value })} className={selectClass}>
+            <option value="ANY">Farketmez</option>
+            <option value="MALE_ONLY">Sadece Erkek</option>
+            <option value="FEMALE_ONLY">Sadece Kadın</option>
           </select>
         </div>
 

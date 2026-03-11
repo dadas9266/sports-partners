@@ -31,6 +31,7 @@ export async function POST(request: Request) {
     }
 
     const { name, email, password, phone, gender, birthDate, cityId, districtId } = parsed.data;
+    const referralCode = body.referralCode as string | undefined;
 
     // E-posta kontrolü
     const existing = await prisma.user.findUnique({ where: { email } });
@@ -57,6 +58,28 @@ export async function POST(request: Request) {
     });
 
     log.info("Yeni kullanıcı kaydedildi", { userId: user.id, email });
+
+    // Referral kodu varsa uygula
+    if (referralCode) {
+      try {
+        const referrer = await prisma.user.findUnique({
+          where: { referralCode: referralCode.toUpperCase() },
+          select: { id: true },
+        });
+        if (referrer && referrer.id !== user.id) {
+          await prisma.$transaction([
+            prisma.user.update({
+              where: { id: user.id },
+              data: { referredById: referrer.id, totalPoints: { increment: 50 } },
+            }),
+            prisma.user.update({
+              where: { id: referrer.id },
+              data: { totalPoints: { increment: 50 } },
+            }),
+          ]);
+        }
+      } catch { /* referral hatası kayıt işlemini bozmasın */ }
+    }
 
     return NextResponse.json(
       {

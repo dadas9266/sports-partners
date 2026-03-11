@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { signIn, useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { registerUser } from "@/services/api";
@@ -37,6 +37,8 @@ function StepBar({ current, total }: { current: number; total: number }) {
 
 export default function KayitPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const refCode = searchParams.get("ref") || "";
   const { status } = useSession();
   const { locations, loading: locLoading } = useLocations();
 
@@ -110,7 +112,7 @@ export default function KayitPage() {
         countryId: form.countryId,
         cityId: form.cityId,
         districtId: form.districtId,
-        // userType gönderilmiyor — backend INDIVIDUAL olarak kaydedecek
+        referralCode: refCode || undefined,
       });
 
       if (!res.success) {

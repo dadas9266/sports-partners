@@ -186,7 +186,9 @@ export default function ListingCard({ listing }: ListingCardProps) {
         <div className="flex items-center gap-1">
           <span role="img" aria-label="konum">📍</span>
           <span>
-            {listing.district?.city?.name}, {listing.district?.name}
+            {listing.district
+              ? `${listing.district.city?.name ?? listing.city?.name ?? ""}, ${listing.district.name}`
+              : listing.city?.name ?? ""}
           </span>
         </div>
         {listing.venue && (

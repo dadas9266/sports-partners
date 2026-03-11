@@ -42,6 +42,12 @@ const MENU = [
     label: "Bildirimler",
     desc: "Push bildirim tercihleri",
   },
+  {
+    href: "/ayarlar/davet",
+    icon: "🎁",
+    label: "Arkadaşını Davet Et",
+    desc: "Davet kodu ile arkadaşını getir",
+  },
 ];
 
 export default function AyarlarLayout({ children }: { children: React.ReactNode }) {

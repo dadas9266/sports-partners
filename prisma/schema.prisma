@@ -132,6 +132,10 @@ model User {
   commentLikes         CommentLike[]
   botTasksAsLister     BotTask[]           @relation("BotTaskLister")
   botTasksAsResponder  BotTask[]           @relation("BotTaskResponder")
+  referralCode         String?             @unique   // Benzersiz davet kodu
+  referredById         String?                       // Bizi kim davet etti
+  referredBy           User?               @relation("Referrals", fields: [referredById], references: [id])
+  referrals            User[]              @relation("Referrals") // Davet ettiğimiz kişiler
 }
 
 // ========== SPOR ==========

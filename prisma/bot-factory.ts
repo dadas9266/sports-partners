@@ -46,6 +46,7 @@ async function createBot(cityId: string, districtId: string | null) {
       // @ts-ignore
       districtId: districtId || null,
       onboardingDone: true,
+      isBot: true,
       gender: Math.random() > 0.5 ? "MALE" : "FEMALE",
       birthDate: new Date(Date.now() - (Math.floor(Math.random() * 20 + 18) * 365 * 24 * 60 * 60 * 1000)), // 18-38 yaş arası
       bio: "Ben bir spor tutkunuyum, yeni insanlarla tanışmayı seviyorum.",

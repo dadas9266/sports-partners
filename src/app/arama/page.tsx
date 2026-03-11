@@ -208,7 +208,7 @@ export default function AramaPage() {
                   >
                     <span className="text-2xl">{l.sport.icon}</span>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 dark:text-white truncate">{l.sport.name} — {l.district.city.name}, {l.district.name}</p>
+                      <p className="font-medium text-gray-900 dark:text-white truncate">{l.sport.name} — {l.district ? `${l.district.city.name}, ${l.district.name}` : l.city?.name ?? ""}</p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">{l.user.name} · {l.level}</p>
                     </div>
                     <span className="text-xs text-gray-400 dark:text-gray-500">{new Date(l.dateTime).toLocaleDateString("tr-TR")}</span>

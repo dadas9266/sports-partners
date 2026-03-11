@@ -162,6 +162,7 @@ export async function PUT(
     if (parsed.data.dateTime !== undefined) updateData.dateTime = new Date(parsed.data.dateTime);
     if (parsed.data.level !== undefined) updateData.level = parsed.data.level;
     if (parsed.data.description !== undefined) updateData.description = parsed.data.description || null;
+    if (parsed.data.allowedGender !== undefined) updateData.allowedGender = parsed.data.allowedGender;
 
     const updated = await prisma.listing.update({
       where: { id },

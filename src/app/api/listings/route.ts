@@ -234,6 +234,7 @@ export async function GET(request: Request) {
             where,
             include: {
               sport: true,
+              city: true,
               district: { include: { city: { include: { country: true } } } },
               venue: true,
               // @ts-ignore
@@ -464,6 +465,7 @@ export async function POST(request: Request) {
       },
       include: {
         sport: true,
+        city: true,
         district: { include: { city: true } },
         venue: true,
         trainerProfile: { include: { specializations: true } },

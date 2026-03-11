@@ -9,9 +9,10 @@ interface StoryBubblesProps {
   /** Kendi hikayeni eklemek için "+" butonu göster */
   showAddButton?: boolean;
   onAddStory?: () => void;
+  sessionUserId?: string;
 }
 
-export default function StoryBubbles({ groups, showAddButton, onAddStory }: StoryBubblesProps) {
+export default function StoryBubbles({ groups, showAddButton, onAddStory, sessionUserId }: StoryBubblesProps) {
   const [viewerOpen, setViewerOpen] = useState(false);
   const [activeGroupIdx, setActiveGroupIdx] = useState(0);
 
@@ -85,6 +86,7 @@ export default function StoryBubbles({ groups, showAddButton, onAddStory }: Stor
           groups={groups}
           initialGroupIndex={activeGroupIdx}
           onClose={() => setViewerOpen(false)}
+          sessionUserId={sessionUserId}
         />
       )}
     </>

@@ -114,7 +114,7 @@ export const createListingSchema = z
 });
 
 export const updateListingSchema = z.object({
-  type: z.enum(["RIVAL", "PARTNER"], { message: "İlan tipi seçiniz" }).optional(),
+  type: z.enum(["RIVAL", "PARTNER", "TRAINER", "EQUIPMENT"], { message: "İlan tipi seçiniz" }).optional(),
   sportId: z.string().min(1).optional(),
   districtId: z.string().min(1).optional(),
   venueId: z.string().optional().nullable(),
@@ -129,6 +129,7 @@ export const updateListingSchema = z.object({
     )
     .optional(),
   level: z.enum(["BEGINNER", "INTERMEDIATE", "ADVANCED"]).optional(),
+  allowedGender: z.enum(["ANY", "MALE_ONLY", "FEMALE_ONLY"]).optional(),
   description: z.string().max(1000).optional(),
 });
 

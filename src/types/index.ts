@@ -105,7 +105,8 @@ export interface ListingSummary {
   id: string;
   type: ListingType;
   sport: Sport;
-  district: District & { city: City };
+  city?: City | null;
+  district?: (District & { city: City }) | null;
   venue?: Venue | null;
   user: UserPublic;
   dateTime: string;
@@ -134,7 +135,8 @@ export interface ListingDetail {
   id: string;
   type: ListingType;
   sport: Sport;
-  district: District & { city: City & { country: Country } };
+  city?: City | null;
+  district?: (District & { city: City & { country: Country } }) | null;
   venue?: Venue | null;
   userId: string;
   user: UserPublic;

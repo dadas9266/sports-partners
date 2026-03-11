@@ -10,6 +10,10 @@
     {
       "path": "/api/cron/match-rating-reminder",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/bot-tasks",
+      "schedule": "0 8,16 * * *"
     }
   ],
   "headers": [

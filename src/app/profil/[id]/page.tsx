@@ -986,6 +986,7 @@ export default function PublicProfilePage({
           groups={storyGroups}
           initialGroupIndex={0}
           onClose={() => setStoryViewerOpen(false)}
+          sessionUserId={session?.user?.id}
         />
       )}
 

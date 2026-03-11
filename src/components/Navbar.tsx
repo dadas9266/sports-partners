@@ -9,7 +9,6 @@ import { useState, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useNotifications } from "@/hooks/useNotifications";
 import Dropdown from "@/components/ui/Dropdown";
-import Button from "@/components/ui/Button";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useTranslations } from "next-intl";
 import toast from "react-hot-toast";
@@ -147,7 +146,7 @@ export default function Navbar() {
                     : "text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
                 }`}
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
                 <span>Keşfet</span>
@@ -182,16 +181,6 @@ export default function Navbar() {
                 </>
               )}
             </div>
-          </div>
-
-          <div className="flex-1 flex justify-center">
-            {session && (
-              <Link href="/ilan/olustur" className="group">
-                <Button variant="primary" size="sm" className="shadow-md px-3 py-1 text-xs sm:px-5 sm:py-1.5 sm:text-sm font-bold tracking-wide relative overflow-hidden transition-all group-hover:scale-105 bg-gradient-to-r from-emerald-500 to-teal-600 border-0 rounded-xl">
-                  <span className="relative z-10">{t("createListing")}</span>
-                </Button>
-              </Link>
-            )}
           </div>
 
           <div className="flex items-center gap-2 md:gap-3">

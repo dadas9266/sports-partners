@@ -179,6 +179,7 @@ export async function registerUser(data: {
   cityId: string;
   districtId: string;
   birthDate?: string;
+  referralCode?: string;
 }): Promise<ApiResponse<{ id: string; name: string; email: string }>> {
   return fetchAPI("/api/auth/register", {
     method: "POST",

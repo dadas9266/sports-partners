@@ -95,6 +95,18 @@ export default function BottomNav() {
           );
         })}
 
+        {/* Merkez: İlan Oluştur */}
+        {session && (
+          <Link
+            href="/ilan/olustur"
+            className="flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium"
+          >
+            <span className="flex items-center justify-center w-10 h-10 -mt-4 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg text-xl font-bold">
+              +
+            </span>
+          </Link>
+        )}
+
         {/* Profil tab */}
         <button
           type="button"

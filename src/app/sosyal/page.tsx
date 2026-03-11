@@ -376,6 +376,7 @@ export default function SosyalPage() {
             groups={storyGroups}
             showAddButton={!!session}
             onAddStory={() => setShowStoryModal(true)}
+            sessionUserId={session?.user?.id}
           />
         </div>
       )}
