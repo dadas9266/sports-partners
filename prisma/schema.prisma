@@ -72,6 +72,10 @@ model User {
   facebook       String?                              // Facebook URL
   twitterX       String?                              // X (Twitter) kullanıcı adı
   vk             String?                              // VK URL
+  telegram       String?                              // Telegram kullanıcı adı
+  whatsapp       String?                              // WhatsApp numarası (uluslararası formatta)
+  // Sosyal Link Gizlilik
+  socialLinksVisibility PrivacyLevel @default(EVERYONE) // Sosyal linkleri kimler görebilir
   // Gizlilik Ayarları
   whoCanMessage   PrivacyLevel  @default(EVERYONE)   // Bana kim mesaj yazabilir
   whoCanChallenge PrivacyLevel  @default(EVERYONE)   // Bana kim teklif gönderebilir

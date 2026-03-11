@@ -1,7 +1,6 @@
 {
   "nav": {
     "listings": "İlanlar",
-    "map": "Harita",
     "leaderboard": "Liderlik Tablosu",
     "social": "Sosyal Akış",
     "communities": "Topluluklar",
@@ -175,9 +174,6 @@
     "comment": "Yorum",
     "addCommentPlaceholder": "Yorum yaz...",
     "send": "Gönder",
-    "noStories": "Henüz hikaye yok",
-    "stories": "Hikayeler",
-    "addStory": "Hikaye Ekle",
     "postSuccess": "Gönderi paylaşıldı!",
     "postError": "Gönderi oluşturulamadı",
     "noPosts": "Henüz gönderi yok",

@@ -1,7 +1,6 @@
 {
   "nav": {
     "listings": "Listings",
-    "map": "Map",
     "leaderboard": "Leaderboard",
     "social": "Social Feed",
     "communities": "Communities",
@@ -175,9 +174,7 @@
     "comment": "Comment",
     "addCommentPlaceholder": "Write a comment...",
     "send": "Send",
-    "noStories": "No stories yet",
-    "stories": "Stories",
-    "addStory": "Add Story",
+
     "postSuccess": "Post shared!",
     "postError": "Could not create post",
     "noPosts": "No posts yet",

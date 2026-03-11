@@ -1,0 +1,272 @@
+{
+  "nav": {
+    "listings": "Объявления",
+    "leaderboard": "Лидерборд",
+    "social": "Лента",
+    "communities": "Сообщества",
+    "tournaments": "Турниры",
+    "search": "Поиск",
+    "messages": "Сообщения",
+    "notifications": "Уведомления",
+    "profile": "Мой профиль",
+    "venue": "Профиль заведения",
+    "myCommunities": "Мои сообщества",
+    "settings": "Настройки",
+    "signOut": "Выход",
+    "signIn": "Войти",
+    "register": "Регистрация",
+    "createListing": "+ Создать объявление",
+    "admin": "🛡️ Админ-панель",
+    "venues": "Заведения",
+    "venueProfile": "Профиль заведения",
+    "mainNav": "Навигация",
+    "homePage": "Главная",
+    "toggleMenu": "Меню",
+    "noNotifications": "Нет уведомлений",
+    "notificationsShowing": "Показано {count} уведомлений",
+    "close": "Закрыть"
+  },
+  "common": {
+    "loading": "Загрузка...",
+    "error": "Произошла ошибка",
+    "notFound": "Не найдено",
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "delete": "Удалить",
+    "edit": "Редактировать",
+    "confirm": "Подтвердить",
+    "reject": "Отклонить",
+    "approve": "Одобрить",
+    "close": "Закрыть",
+    "submit": "Отправить",
+    "search": "Поиск",
+    "all": "Все",
+    "back": "Назад"
+  },
+  "listings": {
+    "title": "Спортивные объявления",
+    "empty": "Объявления не найдены",
+    "create": "Создать объявление",
+    "types": {
+      "RIVAL": "Соперник",
+      "PARTNER": "Партнёр",
+      "TRAINER": "Тренер",
+      "EQUIPMENT": "Экипировка"
+    },
+    "levels": {
+      "BEGINNER": "Начинающий",
+      "INTERMEDIATE": "Средний",
+      "ADVANCED": "Продвинутый"
+    }
+  },
+  "auth": {
+    "signIn": "Войти",
+    "signUp": "Регистрация",
+    "email": "Эл. почта",
+    "password": "Пароль",
+    "forgotPassword": "Забыли пароль?",
+    "noAccount": "Нет аккаунта?",
+    "hasAccount": "Уже есть аккаунт?",
+    "continueWith": "или войти через"
+  },
+  "tournaments": {
+    "title": "Турниры",
+    "subtitle": "Откройте спортивные турниры и зарегистрируйтесь",
+    "create": "Создать турнир",
+    "empty": "Пока нет турниров.",
+    "join": "Участвовать",
+    "leave": "Покинуть",
+    "status": {
+      "DRAFT": "Черновик",
+      "OPEN": "Регистрация открыта",
+      "ONGOING": "Идёт",
+      "COMPLETED": "Завершён",
+      "CANCELLED": "Отменён"
+    },
+    "format": {
+      "SINGLE_ELIMINATION": "Выбывание",
+      "ROUND_ROBIN": "Круговой",
+      "SWISS": "Швейцарская система"
+    }
+  },
+  "settings": {
+    "title": "Настройки",
+    "profile": "Редактировать профиль",
+    "security": "Безопасность аккаунта",
+    "professional": "Профессиональный аккаунт",
+    "privacy": "Конфиденциальность",
+    "notifications": "Уведомления",
+    "pushNotifications": {
+      "title": "Push-уведомления",
+      "enable": "Включить",
+      "disable": "Отключить",
+      "denied": "Доступ к уведомлениям запрещён. Разрешите в настройках браузера.",
+      "unsupported": "Ваш браузер не поддерживает push-уведомления.",
+      "active": "Push-уведомления активны.",
+      "description": "Получайте уведомления о матчах, сообщениях и совпадениях."
+    }
+  },
+  "profile": {
+    "title": "Мой профиль",
+    "editTitle": "Редактировать профиль",
+    "name": "Полное имя",
+    "bio": "О себе",
+    "bioPlaceholder": "Расскажите о себе...",
+    "bioMaxChars": "{count}/300",
+    "location": "Местоположение",
+    "country": "Выберите страну...",
+    "city": "Выберите город...",
+    "district": "Выберите район...",
+    "sports": "Мои виды спорта (макс. 5)",
+    "sportsMax": "Можно выбрать до 5 видов спорта",
+    "phone": "Телефон",
+    "phonePlaceholder": "+7 999 123 4567",
+    "birthDate": "Дата рождения",
+    "gender": "Пол",
+    "genders": {
+      "UNSPECIFIED": "Не указано",
+      "MALE": "Мужской",
+      "FEMALE": "Женский",
+      "PREFER_NOT_TO_SAY": "Не хочу указывать"
+    },
+    "currentPassword": "Текущий пароль (для изменения)",
+    "newPassword": "Новый пароль",
+    "newPasswordHint": "Мин. 8 символов, заглавные/строчные буквы, цифры, спецсимволы",
+    "socialLinks": "Социальные сети",
+    "tabs": {
+      "posts": "📸 Посты",
+      "listings": "Мои объявления",
+      "responses": "Отправленные отклики",
+      "matches": "Матчи",
+      "calendar": "📅 Календарь",
+      "templates": "🔁 Шаблоны"
+    },
+    "completion": {
+      "complete": "Профиль заполнен! 🎉",
+      "missing": "Незаполненные поля:"
+    },
+    "uploadAvatarSuccess": "Фото профиля обновлено",
+    "uploadCoverSuccess": "Обложка обновлена",
+    "changeCover": "📷 Изменить обложку",
+    "level": {
+      "BEGINNER": "Новичок",
+      "AMATEUR": "Любитель",
+      "SEMI_PRO": "Полупро",
+      "PRO": "⚡ Про"
+    },
+    "verifiedBadge": "✓ Verified Pro",
+    "followers": "Подписчики",
+    "following": "Подписки",
+    "streak": { "current": "Текущая серия", "longest": "Лучшая серия", "days": "дн." },
+    "saveSuccess": "Профиль обновлён",
+    "saveError": "Ошибка обновления",
+    "age": "{age} лет",
+    "noListings": "Пока нет объявлений",
+    "noMatches": "Пока нет матчей",
+    "noPosts": "Пока нет постов"
+  },
+  "social": {
+    "title": "Лента",
+    "createPostPlaceholder": "О чём думаете? Поделитесь...",
+    "addPhoto": "🖼️ Добавить фото",
+    "share": "Опубликовать",
+    "like": "Нравится",
+    "comment": "Комментарий",
+    "addCommentPlaceholder": "Написать комментарий...",
+    "send": "Отправить",
+    "postSuccess": "Пост опубликован!",
+    "postError": "Не удалось создать пост",
+    "noPosts": "Пока нет постов",
+    "feedEmpty": "Здесь появятся посты пользователей, на которых вы подписаны"
+  },
+  "match": {
+    "request": "Запрос на матч",
+    "accept": "Принять",
+    "reject": "Отклонить",
+    "cancel": "Отменить",
+    "status": {
+      "PENDING": "Ожидание",
+      "ACCEPTED": "Принято",
+      "REJECTED": "Отклонено",
+      "CANCELLED": "Отменено",
+      "COMPLETED": "Завершено",
+      "NO_SHOW": "Не пришёл"
+    },
+    "noMatches": "Пока нет матчей",
+    "rate": "Оценить",
+    "sendMessage": "Написать"
+  },
+  "notifications": {
+    "title": "Уведомления",
+    "empty": "Нет уведомлений",
+    "showing": "Показано {count} уведомлений"
+  },
+  "leaderboard": {
+    "title": "Лидерборд",
+    "subtitle": "Самые активные спортсмены",
+    "rank": "Место",
+    "player": "Игрок",
+    "points": "Очки",
+    "matches": "Матчи",
+    "sport": "Спорт",
+    "city": "Город",
+    "weekly": "Неделя",
+    "monthly": "Месяц",
+    "allTime": "Всё время"
+  },
+  "search": {
+    "title": "Поиск пользователей",
+    "placeholder": "Поиск по имени или спорту...",
+    "noResults": "Ничего не найдено",
+    "filters": "Фильтры",
+    "sport": "Вид спорта",
+    "location": "Город",
+    "level": "Уровень",
+    "apply": "Применить",
+    "reset": "Сбросить"
+  },
+  "onboarding": {
+    "title": "Добро пожаловать!",
+    "subtitle": "Заполните профиль, чтобы найти спортивного партнёра",
+    "step1Title": "Основная информация",
+    "step2Title": "Спортивные предпочтения",
+    "step3Title": "Местоположение",
+    "step": "Шаг {current} из {total}",
+    "next": "Далее",
+    "previous": "Назад",
+    "finish": "Завершить",
+    "skip": "Пропустить"
+  },
+  "venues": {
+    "title": "Спортивные площадки",
+    "subtitle": "Найдите спортивные объекты рядом",
+    "noVenues": "Пока нет площадок",
+    "openHours": "Часы работы",
+    "contact": "Контакты",
+    "address": "Адрес",
+    "priceRange": "Цены",
+    "rating": "Рейтинг",
+    "reviews": "Отзывы",
+    "bookNow": "Забронировать",
+    "viewDetails": "Подробнее"
+  },
+  "communities": {
+    "title": "Сообщества",
+    "subtitle": "Присоединяйтесь к спортивным сообществам",
+    "create": "Создать сообщество",
+    "join": "Вступить",
+    "leave": "Покинуть",
+    "members": "Участники",
+    "noCommunities": "Пока нет сообществ",
+    "myCommunities": "Мои сообщества",
+    "sport": "Вид спорта",
+    "location": "Город"
+  },
+  "messages": {
+    "title": "Сообщения",
+    "noConversations": "Пока нет сообщений",
+    "typePlaceholder": "Напишите сообщение...",
+    "send": "Отправить",
+    "you": "Вы"
+  }
+}

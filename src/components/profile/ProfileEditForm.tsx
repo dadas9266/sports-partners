@@ -280,6 +280,8 @@ export default function ProfileEditFormPanel({
             { key: "facebook",  label: "FB", bg: "bg-blue-600", placeholder: "Facebook profil adı veya URL" },
             { key: "twitterX",  label: "X",  bg: "bg-black",    placeholder: "X (Twitter) kullanıcı adı" },
             { key: "vk",        label: "VK", bg: "bg-blue-500", placeholder: "VK kullanıcı adı veya URL" },
+            { key: "telegram",  label: "TG", bg: "bg-[#26A5E4]", placeholder: "Telegram kullanıcı adı" },
+            { key: "whatsapp",  label: "WA", bg: "bg-[#25D366]", placeholder: "WhatsApp numara (+905551234567)" },
           ].map(({ key, label, bg, placeholder }) => (
             <div key={key} className="flex items-center gap-2">
               <span

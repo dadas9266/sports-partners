@@ -9,21 +9,6 @@ import Pagination from "@/components/ui/Pagination";
 import { getListings, getFeed, getRecommendations } from "@/services/api";
 import type { ListingSummary, Country, Sport } from "@/types";
 
-interface NearbyListing {
-  id: string;
-  distance: number;
-  type: string;
-  description: string | null;
-  level: string;
-  dateTime: Date;
-  maxParticipants: number;
-  sportName: string;
-  sportIcon: string;
-  userName: string | null;
-  userAvatar: string | null;
-  userId: string;
-}
-
 const TYPE_LABELS: Record<string, string> = {
   RIVAL: "🥊 Rakip",
   PARTNER: "🤝 Partner",
@@ -75,13 +60,6 @@ export default function HomeClient({
   const [feedPage, setFeedPage] = useState(1);
   const [feedHasNext, setFeedHasNext] = useState(false);
   const [recReason, setRecReason] = useState<string>("popular");
-
-  // Yakın ilanlar
-  const [nearbyListings, setNearbyListings] = useState<NearbyListing[]>([]);
-  const [nearbyRadius, setNearbyRadius] = useState(2);
-  const [nearbyLoading, setNearbyLoading] = useState(false);
-  const [gpsGranted, setGpsGranted] = useState(false);
-  const [userCoords, setUserCoords] = useState<{ lat: number; lon: number } | null>(null);
 
   // Client-side fetch function
   const fetchListings = useCallback(
@@ -148,36 +126,6 @@ export default function HomeClient({
       .catch(() => {/* ignore */});
   }, [session]);
 
-  // Nearby listings
-  const fetchNearby = useCallback((lat: number, lon: number, radius: number) => {
-    setNearbyLoading(true);
-    fetch(`/api/listings/nearby?lat=${lat}&lon=${lon}&radius=${radius}&limit=8`)
-      .then(r => r.json())
-      .then(j => setNearbyListings(j.data ?? []))
-      .catch(() => {})
-      .finally(() => setNearbyLoading(false));
-  }, []);
-
-  const requestNearby = () => {
-    if (!navigator.geolocation) return;
-    setNearbyLoading(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const coords = { lat: pos.coords.latitude, lon: pos.coords.longitude };
-        setUserCoords(coords);
-        setGpsGranted(true);
-        fetchNearby(coords.lat, coords.lon, nearbyRadius);
-      },
-      () => setNearbyLoading(false),
-      { timeout: 8000 }
-    );
-  };
-
-  useEffect(() => {
-    if (userCoords) fetchNearby(userCoords.lat, userCoords.lon, nearbyRadius);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nearbyRadius]);
-
   return (
     <div>
       {/* Hero */}
@@ -221,74 +169,6 @@ export default function HomeClient({
           </div>
         </div>
       )}
-
-      {/* Yakınındaki İlanlar */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
-            📍 Yakınındaki İlanlar
-          </h2>
-          {gpsGranted && (
-            <select
-              value={nearbyRadius}
-              onChange={e => setNearbyRadius(Number(e.target.value))}
-              className="text-xs border border-gray-200 dark:border-gray-700 rounded-lg px-2 py-1 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400"
-            >
-              <option value={0.5}>500 m</option>
-              <option value={1}>1 km</option>
-              <option value={2}>2 km</option>
-              <option value={5}>5 km</option>
-              <option value={10}>10 km</option>
-            </select>
-          )}
-        </div>
-
-        {!gpsGranted ? (
-          <div className="flex items-center gap-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-2xl px-5 py-4">
-            <span className="text-2xl">📡</span>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-blue-800 dark:text-blue-300">Etrafındaki ilanları gör</p>
-              <p className="text-xs text-blue-600 dark:text-blue-400 mt-0.5">Konumunu paylaşarak yakınındaki spor arkadaşlarını bul</p>
-            </div>
-            <button
-              onClick={requestNearby}
-              disabled={nearbyLoading}
-              className="flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2 rounded-xl disabled:opacity-50 transition-colors"
-            >
-              {nearbyLoading ? "Yükleniyor..." : "Konumu Paylaş"}
-            </button>
-          </div>
-        ) : nearbyLoading ? (
-          <div className="flex gap-3 overflow-x-auto pb-2">
-            {[1,2,3].map(i => <div key={i} className="min-w-[200px] h-28 rounded-2xl bg-gray-100 dark:bg-gray-800 animate-pulse" />)}
-          </div>
-        ) : nearbyListings.length === 0 ? (
-          <div className="text-center py-6 text-sm text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-900/30 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700">
-            {nearbyRadius} km içinde ilan bulunamadı — yarıçapı artırmayı dene
-          </div>
-        ) : (
-          <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-thin">
-            {nearbyListings.map(item => (
-              <Link
-                key={item.id}
-                href={`/ilan/${item.id}`}
-                className="min-w-[200px] snap-start bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 hover:shadow-md hover:-translate-y-0.5 transition-all"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">{TYPE_LABELS[item.type] ?? item.type}</span>
-                  <span className="text-xs font-bold text-blue-600 dark:text-blue-400">~{item.distance} km</span>
-                </div>
-                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-                  {item.sportIcon} {item.sportName}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate">
-                  {item.userName ?? "Anonim"}
-                </p>
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
 
       {/* Sekmeler */}
       {session && (

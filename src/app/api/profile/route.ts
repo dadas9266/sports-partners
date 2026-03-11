@@ -57,6 +57,9 @@ export async function GET() {
           facebook: true,
           twitterX: true,
           vk: true,
+          telegram: true,
+          whatsapp: true,
+          socialLinksVisibility: true,
           _count: {
             select: {
               followers: true,
@@ -272,6 +275,8 @@ export async function PUT(request: Request) {
     if ("facebook" in parsed.data) updateData.facebook = parsed.data.facebook ?? null;
     if ("twitterX" in parsed.data) updateData.twitterX = parsed.data.twitterX ?? null;
     if ("vk" in parsed.data) updateData.vk = parsed.data.vk ?? null;
+    if ("telegram" in parsed.data) updateData.telegram = parsed.data.telegram ?? null;
+    if ("whatsapp" in parsed.data) updateData.whatsapp = parsed.data.whatsapp ?? null;
 
     // Favori sporlar güncelleme
     const sportIds = "sportIds" in parsed.data ? (parsed.data as { sportIds?: string[] }).sportIds : undefined;
@@ -489,6 +494,8 @@ export async function DELETE(request: Request) {
           facebook: null,
           twitterX: null,
           vk: null,
+          telegram: null,
+          whatsapp: null,
           isBanned: true, // Giriş yapılamasın
           cityId: null,
           districtId: null,

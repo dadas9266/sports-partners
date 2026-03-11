@@ -317,6 +317,8 @@ export interface ProfileEditForm {
   facebook?: string;
   twitterX?: string;
   vk?: string;
+  telegram?: string;
+  whatsapp?: string;
 }
 
 // --- Notification Types ---
@@ -452,6 +454,9 @@ export interface PublicProfile {
   isRestricted?: boolean;
   isPrivateContent?: boolean;
   pendingFollow?: boolean;
+  telegram?: string | null;
+  whatsapp?: string | null;
+  socialLinksVisibility?: "EVERYONE" | "FOLLOWERS" | "NOBODY";
 }
 
 // --- Search Types ---
@@ -524,66 +529,3 @@ export const STATUS_LABELS: Record<string, { label: string; className: string }>
   ACCEPTED: { label: "Kabul Edildi", className: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300" },
   REJECTED: { label: "Reddedildi", className: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300" },
 };
-
-// =============================================
-// Story / Hikaye Tipleri
-// =============================================
-
-export type StoryType = "MEDIA" | "MATCH" | "RESULT" | "ACHIEVEMENT";
-
-export interface Story {
-  id: string;
-  userId: string;
-  type: StoryType;
-  mediaUrl: string | null;
-  mediaType: "image" | "video" | null;
-  caption: string | null;
-  linkedListingId: string | null;
-  linkedMatchId: string | null;
-  linkedMatchResult: string | null;
-  linkedBadgeKey: string | null;
-  expiresAt: string;
-  createdAt: string;
-  // İlişkiler (API'den populate edilir)
-  user?: {
-    id: string;
-    name: string | null;
-    avatarUrl: string | null;
-  };
-  _count?: {
-    views: number;
-  };
-  viewedByMe?: boolean; // mevcut kullanıcı izledi mi?
-}
-
-export interface StoryWithUser extends Story {
-  user: {
-    id: string;
-    name: string | null;
-    avatarUrl: string | null;
-  };
-}
-
-// Kullanıcıya ait hikaye grubu (profil sayfasında dairesel bubbles için)
-export interface UserStoryGroup {
-  userId: string;
-  userName: string | null;
-  userAvatar: string | null;
-  stories: Story[];
-  hasUnread: boolean; // kullanıcının görmediği hikaye var mı?
-}
-
-export interface StoryHighlight {
-  id: string;
-  userId: string;
-  title: string;
-  coverUrl: string | null;
-  order: number;
-  createdAt: string;
-  items?: Array<{
-    id: string;
-    storyId: string;
-    story: Story;
-    addedAt: string;
-  }>;
-}

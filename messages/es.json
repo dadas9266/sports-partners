@@ -1,0 +1,272 @@
+{
+  "nav": {
+    "listings": "Anuncios",
+    "leaderboard": "Clasificación",
+    "social": "Feed",
+    "communities": "Comunidades",
+    "tournaments": "Torneos",
+    "search": "Buscar",
+    "messages": "Mensajes",
+    "notifications": "Notificaciones",
+    "profile": "Mi perfil",
+    "venue": "Perfil del lugar",
+    "myCommunities": "Mis comunidades",
+    "settings": "Configuración",
+    "signOut": "Cerrar sesión",
+    "signIn": "Iniciar sesión",
+    "register": "Registrarse",
+    "createListing": "+ Crear anuncio",
+    "admin": "🛡️ Panel de admin",
+    "venues": "Instalaciones",
+    "venueProfile": "Perfil del lugar",
+    "mainNav": "Navegación",
+    "homePage": "Inicio",
+    "toggleMenu": "Menú",
+    "noNotifications": "Sin notificaciones",
+    "notificationsShowing": "{count} notificaciones mostradas",
+    "close": "Cerrar"
+  },
+  "common": {
+    "loading": "Cargando...",
+    "error": "Ha ocurrido un error",
+    "notFound": "No encontrado",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "confirm": "Confirmar",
+    "reject": "Rechazar",
+    "approve": "Aprobar",
+    "close": "Cerrar",
+    "submit": "Enviar",
+    "search": "Buscar",
+    "all": "Todos",
+    "back": "Volver"
+  },
+  "listings": {
+    "title": "Anuncios deportivos",
+    "empty": "No se encontraron anuncios",
+    "create": "Crear anuncio",
+    "types": {
+      "RIVAL": "Rival",
+      "PARTNER": "Compañero",
+      "TRAINER": "Entrenador",
+      "EQUIPMENT": "Equipamiento"
+    },
+    "levels": {
+      "BEGINNER": "Principiante",
+      "INTERMEDIATE": "Intermedio",
+      "ADVANCED": "Avanzado"
+    }
+  },
+  "auth": {
+    "signIn": "Iniciar sesión",
+    "signUp": "Registrarse",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "noAccount": "¿No tienes cuenta?",
+    "hasAccount": "¿Ya tienes cuenta?",
+    "continueWith": "o continuar con"
+  },
+  "tournaments": {
+    "title": "Torneos",
+    "subtitle": "Descubre torneos deportivos e inscríbete",
+    "create": "Crear torneo",
+    "empty": "Aún no hay torneos.",
+    "join": "Participar",
+    "leave": "Abandonar",
+    "status": {
+      "DRAFT": "Borrador",
+      "OPEN": "Inscripciones abiertas",
+      "ONGOING": "En curso",
+      "COMPLETED": "Completado",
+      "CANCELLED": "Cancelado"
+    },
+    "format": {
+      "SINGLE_ELIMINATION": "Eliminación directa",
+      "ROUND_ROBIN": "Todos contra todos",
+      "SWISS": "Sistema suizo"
+    }
+  },
+  "settings": {
+    "title": "Configuración",
+    "profile": "Editar perfil",
+    "security": "Seguridad de la cuenta",
+    "professional": "Cuenta profesional",
+    "privacy": "Privacidad",
+    "notifications": "Notificaciones",
+    "pushNotifications": {
+      "title": "Notificaciones push",
+      "enable": "Activar",
+      "disable": "Desactivar",
+      "denied": "Acceso a notificaciones denegado. Por favor, actívalo en la configuración del navegador.",
+      "unsupported": "Tu navegador no admite notificaciones push.",
+      "active": "Las notificaciones push están activas.",
+      "description": "Recibe notificaciones sobre partidos, mensajes y conexiones."
+    }
+  },
+  "profile": {
+    "title": "Mi perfil",
+    "editTitle": "Editar perfil",
+    "name": "Nombre completo",
+    "bio": "Sobre mí",
+    "bioPlaceholder": "Cuéntanos sobre ti...",
+    "bioMaxChars": "{count}/300",
+    "location": "Ubicación",
+    "country": "Seleccionar país...",
+    "city": "Seleccionar ciudad...",
+    "district": "Seleccionar distrito...",
+    "sports": "Mis deportes (máx. 5)",
+    "sportsMax": "Puedes elegir hasta 5 deportes",
+    "phone": "Teléfono",
+    "phonePlaceholder": "+34 612 345 678",
+    "birthDate": "Fecha de nacimiento",
+    "gender": "Género",
+    "genders": {
+      "UNSPECIFIED": "No especificado",
+      "MALE": "Masculino",
+      "FEMALE": "Femenino",
+      "PREFER_NOT_TO_SAY": "Prefiero no decirlo"
+    },
+    "currentPassword": "Contraseña actual (para cambiar)",
+    "newPassword": "Nueva contraseña",
+    "newPasswordHint": "Mín. 8 caracteres, mayúsculas/minúsculas, números, caracteres especiales",
+    "socialLinks": "Redes sociales",
+    "tabs": {
+      "posts": "📸 Publicaciones",
+      "listings": "Mis anuncios",
+      "responses": "Solicitudes enviadas",
+      "matches": "Partidos",
+      "calendar": "📅 Calendario",
+      "templates": "🔁 Plantillas"
+    },
+    "completion": {
+      "complete": "¡Perfil completo! 🎉",
+      "missing": "Campos pendientes:"
+    },
+    "uploadAvatarSuccess": "Foto de perfil actualizada",
+    "uploadCoverSuccess": "Foto de portada actualizada",
+    "changeCover": "📷 Cambiar portada",
+    "level": {
+      "BEGINNER": "Principiante",
+      "AMATEUR": "Amateur",
+      "SEMI_PRO": "Semi-pro",
+      "PRO": "⚡ Pro"
+    },
+    "verifiedBadge": "✓ Verified Pro",
+    "followers": "Seguidores",
+    "following": "Siguiendo",
+    "streak": { "current": "Racha actual", "longest": "Mejor racha", "days": "días" },
+    "saveSuccess": "Perfil actualizado",
+    "saveError": "Error al actualizar",
+    "age": "{age} años",
+    "noListings": "Aún no hay anuncios",
+    "noMatches": "Aún no hay partidos",
+    "noPosts": "Aún no hay publicaciones"
+  },
+  "social": {
+    "title": "Feed",
+    "createPostPlaceholder": "¿Qué hay de nuevo? Comparte tus pensamientos...",
+    "addPhoto": "🖼️ Añadir foto",
+    "share": "Publicar",
+    "like": "Me gusta",
+    "comment": "Comentar",
+    "addCommentPlaceholder": "Escribe un comentario...",
+    "send": "Enviar",
+    "postSuccess": "¡Publicación compartida!",
+    "postError": "No se pudo crear la publicación",
+    "noPosts": "Aún no hay publicaciones",
+    "feedEmpty": "Aquí aparecerán las publicaciones de los usuarios que sigues"
+  },
+  "match": {
+    "request": "Solicitud de partido",
+    "accept": "Aceptar",
+    "reject": "Rechazar",
+    "cancel": "Cancelar",
+    "status": {
+      "PENDING": "Pendiente",
+      "ACCEPTED": "Aceptado",
+      "REJECTED": "Rechazado",
+      "CANCELLED": "Cancelado",
+      "COMPLETED": "Completado",
+      "NO_SHOW": "No se presentó"
+    },
+    "noMatches": "Aún no hay partidos",
+    "rate": "Valorar",
+    "sendMessage": "Enviar mensaje"
+  },
+  "notifications": {
+    "title": "Notificaciones",
+    "empty": "Sin notificaciones",
+    "showing": "{count} notificaciones mostradas"
+  },
+  "leaderboard": {
+    "title": "Clasificación",
+    "subtitle": "Los deportistas más activos",
+    "rank": "Posición",
+    "player": "Jugador",
+    "points": "Puntos",
+    "matches": "Partidos",
+    "sport": "Deporte",
+    "city": "Ciudad",
+    "weekly": "Semana",
+    "monthly": "Mes",
+    "allTime": "Histórico"
+  },
+  "search": {
+    "title": "Buscar usuarios",
+    "placeholder": "Buscar por nombre o deporte...",
+    "noResults": "No se encontraron resultados",
+    "filters": "Filtros",
+    "sport": "Deporte",
+    "location": "Ciudad",
+    "level": "Nivel",
+    "apply": "Aplicar",
+    "reset": "Restablecer"
+  },
+  "onboarding": {
+    "title": "¡Bienvenido!",
+    "subtitle": "Completa tu perfil para encontrar un compañero deportivo",
+    "step1Title": "Información básica",
+    "step2Title": "Preferencias deportivas",
+    "step3Title": "Ubicación",
+    "step": "Paso {current} de {total}",
+    "next": "Siguiente",
+    "previous": "Anterior",
+    "finish": "Finalizar",
+    "skip": "Omitir"
+  },
+  "venues": {
+    "title": "Instalaciones deportivas",
+    "subtitle": "Encuentra instalaciones deportivas cerca de ti",
+    "noVenues": "Aún no hay instalaciones",
+    "openHours": "Horario",
+    "contact": "Contacto",
+    "address": "Dirección",
+    "priceRange": "Precios",
+    "rating": "Valoración",
+    "reviews": "Reseñas",
+    "bookNow": "Reservar",
+    "viewDetails": "Ver detalles"
+  },
+  "communities": {
+    "title": "Comunidades",
+    "subtitle": "Únete a comunidades deportivas",
+    "create": "Crear comunidad",
+    "join": "Unirse",
+    "leave": "Abandonar",
+    "members": "Miembros",
+    "noCommunities": "Aún no hay comunidades",
+    "myCommunities": "Mis comunidades",
+    "sport": "Deporte",
+    "location": "Ciudad"
+  },
+  "messages": {
+    "title": "Mensajes",
+    "noConversations": "Aún no hay mensajes",
+    "typePlaceholder": "Escribe un mensaje...",
+    "send": "Enviar",
+    "you": "Tú"
+  }
+}

@@ -114,7 +114,7 @@ export default function ProfilePage() {
   const [editForm, setEditForm] = useState<ProfileEditForm>({
     name: "", phone: "", currentPassword: "", newPassword: "",
     bio: "", cityId: "", districtId: "", gender: "", birthDate: "", sportIds: [],
-    instagram: "", tiktok: "", facebook: "", twitterX: "", vk: "",
+    instagram: "", tiktok: "", facebook: "", twitterX: "", vk: "", telegram: "", whatsapp: "",
   });
   const [saving, setSaving] = useState(false);
 
@@ -218,6 +218,8 @@ export default function ProfilePage() {
       facebook: (data.user as any).facebook ?? "",
       twitterX: (data.user as any).twitterX ?? "",
       vk: (data.user as any).vk ?? "",
+      telegram: (data.user as any).telegram ?? "",
+      whatsapp: (data.user as any).whatsapp ?? "",
     });
     setEditMode(true);
   };
@@ -292,6 +294,8 @@ export default function ProfilePage() {
       if ((editForm.facebook ?? "") !== (u.facebook ?? "")) payload.facebook = editForm.facebook || null;
       if ((editForm.twitterX ?? "") !== (u.twitterX ?? "")) payload.twitterX = editForm.twitterX || null;
       if ((editForm.vk ?? "") !== (u.vk ?? "")) payload.vk = editForm.vk || null;
+      if ((editForm.telegram ?? "") !== (u.telegram ?? "")) payload.telegram = editForm.telegram || null;
+      if ((editForm.whatsapp ?? "") !== (u.whatsapp ?? "")) payload.whatsapp = editForm.whatsapp || null;
       if (Object.keys(payload).length === 0) {
         setEditMode(false);
         return;

@@ -9,11 +9,10 @@ import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
 import { getPublicProfile, submitRating, getUserRatings, toggleFollow, getFollowStats, getLeaderboard, startDirectConversation, removeFollower } from "@/services/api";
 import { APIError } from "@/services/api";
-import type { PublicProfile, Rating, Badge, UserStoryGroup } from "@/types";
+import type { PublicProfile, Rating, Badge } from "@/types";
 import { LEVEL_LABELS, LEVEL_COLORS } from "@/types";
 import BadgeComp from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
-import StoryViewer from "@/components/StoryViewer";
 import TrainerBadgePopup from "@/components/profile/TrainerBadgePopup";
 import PostCard from "@/components/profile/PostCard";
 function StarRating({ value, onChange }: { value: number; onChange?: (v: number) => void }) {
@@ -69,10 +68,6 @@ export default function PublicProfilePage({
   const [showFollowingModal, setShowFollowingModal] = useState(false);
   const [followListData, setFollowListData] = useState<any[]>([]);
   const [followListLoading, setFollowListLoading] = useState(false);
-
-  // Story state
-  const [storyGroups, setStoryGroups] = useState<UserStoryGroup[]>([]);
-  const [storyViewerOpen, setStoryViewerOpen] = useState(false);
 
   // Follow state
   const [isFollowing, setIsFollowing] = useState(false);
@@ -154,22 +149,6 @@ export default function PublicProfilePage({
         .then(json => { if (json.success) setBlockStatus(json.type ?? null); })
         .catch(() => {});
     }
-
-    // Hikayeleri yükle
-    fetch(`/api/stories?userId=${id}`)
-      .then(r => r.json())
-      .then(json => {
-        if (json.success && json.stories.length > 0) {
-          setStoryGroups([{
-            userId: id,
-            userName: null,
-            userAvatar: null,
-            stories: json.stories,
-            hasUnread: json.stories.some((s: { viewedByMe: boolean }) => !s.viewedByMe),
-          }]);
-        }
-      })
-      .catch(() => {});
   }, [id, loadFollowStats, session]);
 
   // Sporları yükle (teklif modalı için)
@@ -455,20 +434,15 @@ export default function PublicProfilePage({
       <div className="px-4 sm:px-5 relative z-10">
         {/* Avatar row */}
         <div className="flex items-end justify-between -mt-10 sm:-mt-12 mb-1">
-          <button
-            onClick={() => storyGroups.length > 0 ? setStoryViewerOpen(true) : undefined}
-            disabled={storyGroups.length === 0}
-            className={`relative block w-20 h-20 sm:w-24 sm:h-24 rounded-full border-[3px] border-white dark:border-gray-900 shadow-md overflow-visible shrink-0 ${storyGroups.length > 0 ? "cursor-pointer" : ""}`}
+          <div
+            className="relative block w-20 h-20 sm:w-24 sm:h-24 rounded-full border-[3px] border-white dark:border-gray-900 shadow-md overflow-visible shrink-0"
           >
-            {storyGroups.length > 0 && (
-              <span className={`absolute inset-[-3px] rounded-full ${storyGroups[0].hasUnread ? "bg-gradient-to-br from-pink-500 via-orange-400 to-yellow-300" : "bg-gray-300 dark:bg-gray-600"}`} />
-            )}
             <span className="absolute inset-0 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-800 z-[1] flex items-center justify-center text-2xl sm:text-3xl font-bold text-emerald-600">
               {profile.avatarUrl ? (
                 <img src={profile.avatarUrl} alt={profile.name} className="w-full h-full object-cover" />
               ) : profile.name.charAt(0).toUpperCase()}
             </span>
-          </button>
+          </div>
 
           {/* Actions — right side */}
           <div className="flex items-center gap-2 pb-1 pt-6 sm:pt-8 flex-wrap justify-end">
@@ -598,6 +572,8 @@ export default function PublicProfilePage({
             { key: "facebook",  color: "bg-[#1877F2]",      url: `https://facebook.com/${(profile as any).facebook}`, icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg> },
             { key: "twitterX",  color: "bg-black dark:bg-white dark:text-black", url: `https://x.com/${(profile as any).twitterX}`,        icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg> },
             { key: "vk",        color: "bg-[#4C75A3]",      url: `https://vk.com/${(profile as any).vk}`,             icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M15.07 2H8.93C3.33 2 2 3.33 2 8.93v6.14C2 20.67 3.33 22 8.93 22h6.14C20.67 22 22 20.67 22 15.07V8.93C22 3.33 20.67 2 15.07 2zm3.08 13.5h-1.64c-.63 0-.82-.52-1.93-1.63-.96-.96-1.39-.96-1.39 0 0 1.63-.43 1.63-1.08 1.63-1.67 0-3.52-1.04-4.82-2.84-1.96-2.73-2.5-4.72-2.5-5.12 0-.18.15-.35.35-.35h1.64c.26 0 .35.15.44.38.51 1.57 1.39 2.95 1.74 2.95.14 0 .2-.06.2-.38V9.35c-.04-.62-.35-.67-.35-.89 0-.15.12-.3.3-.3h2.57c.22 0 .3.12.3.35v2.74c0 .22.09.3.16.3.14 0 .27-.08.55-.38.87-.99 1.5-2.51 1.5-2.51.09-.2.25-.38.5-.38h1.64c.49 0 .6.25.49.56-.21.64-2.08 2.66-2.08 2.66-.16.24-.22.35 0 .61.16.2.69.74 1.05 1.17.65.73 1.14 1.35 1.27 1.78.14.42-.08.64-.49.64z"/></svg> },
+            { key: "telegram",  color: "bg-[#26A5E4]",      url: `https://t.me/${(profile as any).telegram}`,         icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg> },
+            { key: "whatsapp",  color: "bg-[#25D366]",      url: `https://wa.me/${((profile as any).whatsapp ?? "").replace(/[^0-9]/g, "")}`, icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg> },
           ].filter(s => !!(profile as any)[s.key]);
           return socialLinks.length > 0 ? (
             <div className="flex items-center gap-1.5 mb-3">
@@ -978,16 +954,6 @@ export default function PublicProfilePage({
             </form>
           </div>
         </div>
-      )}
-
-      {/* Story Viewer */}
-      {storyViewerOpen && storyGroups.length > 0 && (
-        <StoryViewer
-          groups={storyGroups}
-          initialGroupIndex={0}
-          onClose={() => setStoryViewerOpen(false)}
-          sessionUserId={session?.user?.id}
-        />
       )}
 
       {/* Değerlendirme Modal */}

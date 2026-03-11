@@ -1,0 +1,272 @@
+{
+  "nav": {
+    "listings": "모집",
+    "leaderboard": "리더보드",
+    "social": "피드",
+    "communities": "커뮤니티",
+    "tournaments": "토너먼트",
+    "search": "검색",
+    "messages": "메시지",
+    "notifications": "알림",
+    "profile": "내 프로필",
+    "venue": "시설 프로필",
+    "myCommunities": "내 커뮤니티",
+    "settings": "설정",
+    "signOut": "로그아웃",
+    "signIn": "로그인",
+    "register": "회원가입",
+    "createListing": "+ 모집 만들기",
+    "admin": "🛡️ 관리자 패널",
+    "venues": "스포츠 시설",
+    "venueProfile": "시설 프로필",
+    "mainNav": "내비게이션",
+    "homePage": "홈",
+    "toggleMenu": "메뉴",
+    "noNotifications": "알림이 없습니다",
+    "notificationsShowing": "{count}개의 알림 표시 중",
+    "close": "닫기"
+  },
+  "common": {
+    "loading": "로딩 중...",
+    "error": "오류가 발생했습니다",
+    "notFound": "찾을 수 없음",
+    "save": "저장",
+    "cancel": "취소",
+    "delete": "삭제",
+    "edit": "편집",
+    "confirm": "확인",
+    "reject": "거절",
+    "approve": "승인",
+    "close": "닫기",
+    "submit": "제출",
+    "search": "검색",
+    "all": "전체",
+    "back": "뒤로"
+  },
+  "listings": {
+    "title": "스포츠 모집",
+    "empty": "모집을 찾을 수 없습니다",
+    "create": "모집 만들기",
+    "types": {
+      "RIVAL": "라이벌",
+      "PARTNER": "파트너",
+      "TRAINER": "트레이너",
+      "EQUIPMENT": "장비"
+    },
+    "levels": {
+      "BEGINNER": "초급",
+      "INTERMEDIATE": "중급",
+      "ADVANCED": "상급"
+    }
+  },
+  "auth": {
+    "signIn": "로그인",
+    "signUp": "회원가입",
+    "email": "이메일",
+    "password": "비밀번호",
+    "forgotPassword": "비밀번호를 잊으셨나요?",
+    "noAccount": "계정이 없으신가요?",
+    "hasAccount": "이미 계정이 있으신가요?",
+    "continueWith": "또는 다음으로 계속"
+  },
+  "tournaments": {
+    "title": "토너먼트",
+    "subtitle": "스포츠 토너먼트를 찾고 참가하세요",
+    "create": "토너먼트 만들기",
+    "empty": "아직 토너먼트가 없습니다.",
+    "join": "참가하기",
+    "leave": "탈퇴하기",
+    "status": {
+      "DRAFT": "초안",
+      "OPEN": "접수 중",
+      "ONGOING": "진행 중",
+      "COMPLETED": "완료",
+      "CANCELLED": "취소됨"
+    },
+    "format": {
+      "SINGLE_ELIMINATION": "토너먼트 방식",
+      "ROUND_ROBIN": "리그 방식",
+      "SWISS": "스위스 방식"
+    }
+  },
+  "settings": {
+    "title": "설정",
+    "profile": "프로필 편집",
+    "security": "계정 보안",
+    "professional": "프로 계정",
+    "privacy": "개인정보",
+    "notifications": "알림",
+    "pushNotifications": {
+      "title": "푸시 알림",
+      "enable": "활성화",
+      "disable": "비활성화",
+      "denied": "알림 권한이 거부되었습니다. 브라우저 설정에서 허용해 주세요.",
+      "unsupported": "브라우저에서 푸시 알림을 지원하지 않습니다.",
+      "active": "푸시 알림이 활성화되어 있습니다.",
+      "description": "경기, 메시지, 매칭에 대한 알림을 받을 수 있습니다."
+    }
+  },
+  "profile": {
+    "title": "내 프로필",
+    "editTitle": "프로필 편집",
+    "name": "이름",
+    "bio": "자기소개",
+    "bioPlaceholder": "자기소개를 작성해 주세요...",
+    "bioMaxChars": "{count}/300",
+    "location": "위치",
+    "country": "국가 선택...",
+    "city": "도시 선택...",
+    "district": "지역 선택...",
+    "sports": "내 스포츠 (최대 5개)",
+    "sportsMax": "최대 5개의 스포츠를 선택할 수 있습니다",
+    "phone": "전화번호",
+    "phonePlaceholder": "+82 10 1234 5678",
+    "birthDate": "생년월일",
+    "gender": "성별",
+    "genders": {
+      "UNSPECIFIED": "미지정",
+      "MALE": "남성",
+      "FEMALE": "여성",
+      "PREFER_NOT_TO_SAY": "밝히지 않음"
+    },
+    "currentPassword": "현재 비밀번호 (변경 시)",
+    "newPassword": "새 비밀번호",
+    "newPasswordHint": "최소 8자, 대소문자, 숫자, 특수문자 포함",
+    "socialLinks": "소셜 미디어",
+    "tabs": {
+      "posts": "📸 게시물",
+      "listings": "내 모집",
+      "responses": "보낸 요청",
+      "matches": "매치",
+      "calendar": "📅 캘린더",
+      "templates": "🔁 템플릿"
+    },
+    "completion": {
+      "complete": "프로필 완성! 🎉",
+      "missing": "미입력 항목:"
+    },
+    "uploadAvatarSuccess": "프로필 사진이 업데이트되었습니다",
+    "uploadCoverSuccess": "커버 사진이 업데이트되었습니다",
+    "changeCover": "📷 커버 변경",
+    "level": {
+      "BEGINNER": "비기너",
+      "AMATEUR": "아마추어",
+      "SEMI_PRO": "세미프로",
+      "PRO": "⚡ 프로"
+    },
+    "verifiedBadge": "✓ Verified Pro",
+    "followers": "팔로워",
+    "following": "팔로잉",
+    "streak": { "current": "현재 연속 기록", "longest": "최장 연속 기록", "days": "일" },
+    "saveSuccess": "프로필이 업데이트되었습니다",
+    "saveError": "업데이트 중 오류 발생",
+    "age": "{age}세",
+    "noListings": "아직 모집이 없습니다",
+    "noMatches": "아직 매치가 없습니다",
+    "noPosts": "아직 게시물이 없습니다"
+  },
+  "social": {
+    "title": "피드",
+    "createPostPlaceholder": "무슨 생각을 하고 계신가요? 공유해 보세요...",
+    "addPhoto": "🖼️ 사진 추가",
+    "share": "게시하기",
+    "like": "좋아요",
+    "comment": "댓글",
+    "addCommentPlaceholder": "댓글을 작성하세요...",
+    "send": "보내기",
+    "postSuccess": "게시물이 공유되었습니다!",
+    "postError": "게시물을 작성할 수 없습니다",
+    "noPosts": "아직 게시물이 없습니다",
+    "feedEmpty": "팔로우하는 사용자의 게시물이 여기에 표시됩니다"
+  },
+  "match": {
+    "request": "매치 요청",
+    "accept": "수락",
+    "reject": "거절",
+    "cancel": "취소",
+    "status": {
+      "PENDING": "대기 중",
+      "ACCEPTED": "수락됨",
+      "REJECTED": "거절됨",
+      "CANCELLED": "취소됨",
+      "COMPLETED": "완료",
+      "NO_SHOW": "불참"
+    },
+    "noMatches": "아직 매치가 없습니다",
+    "rate": "평가하기",
+    "sendMessage": "메시지 보내기"
+  },
+  "notifications": {
+    "title": "알림",
+    "empty": "알림이 없습니다",
+    "showing": "{count}개의 알림 표시 중"
+  },
+  "leaderboard": {
+    "title": "리더보드",
+    "subtitle": "가장 활발한 스포츠인",
+    "rank": "순위",
+    "player": "선수",
+    "points": "포인트",
+    "matches": "매치 수",
+    "sport": "스포츠",
+    "city": "도시",
+    "weekly": "주간",
+    "monthly": "월간",
+    "allTime": "전체 기간"
+  },
+  "search": {
+    "title": "사용자 검색",
+    "placeholder": "이름이나 스포츠로 검색...",
+    "noResults": "검색 결과가 없습니다",
+    "filters": "필터",
+    "sport": "스포츠",
+    "location": "도시",
+    "level": "수준",
+    "apply": "적용",
+    "reset": "초기화"
+  },
+  "onboarding": {
+    "title": "환영합니다!",
+    "subtitle": "프로필을 완성하고 스포츠 파트너를 찾아보세요",
+    "step1Title": "기본 정보",
+    "step2Title": "스포츠 선호",
+    "step3Title": "위치",
+    "step": "단계 {current}/{total}",
+    "next": "다음",
+    "previous": "이전",
+    "finish": "완료",
+    "skip": "건너뛰기"
+  },
+  "venues": {
+    "title": "스포츠 시설",
+    "subtitle": "근처 스포츠 시설을 찾아보세요",
+    "noVenues": "아직 시설이 없습니다",
+    "openHours": "영업시간",
+    "contact": "연락처",
+    "address": "주소",
+    "priceRange": "가격대",
+    "rating": "평점",
+    "reviews": "리뷰",
+    "bookNow": "예약하기",
+    "viewDetails": "상세 보기"
+  },
+  "communities": {
+    "title": "커뮤니티",
+    "subtitle": "스포츠 커뮤니티에 참여하세요",
+    "create": "커뮤니티 만들기",
+    "join": "참가하기",
+    "leave": "탈퇴하기",
+    "members": "멤버",
+    "noCommunities": "아직 커뮤니티가 없습니다",
+    "myCommunities": "내 커뮤니티",
+    "sport": "스포츠",
+    "location": "도시"
+  },
+  "messages": {
+    "title": "메시지",
+    "noConversations": "아직 메시지가 없습니다",
+    "typePlaceholder": "메시지를 입력하세요...",
+    "send": "보내기",
+    "you": "나"
+  }
+}

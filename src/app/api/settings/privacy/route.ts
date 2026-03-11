@@ -12,6 +12,7 @@ const privacySchema = z.object({
   profileVisibility: z.enum(["EVERYONE", "FOLLOWERS", "NOBODY"]).optional(),
   showOnLeaderboard: z.boolean().optional(),
   isPrivateProfile: z.boolean().optional(),
+  socialLinksVisibility: z.enum(["EVERYONE", "FOLLOWERS", "NOBODY"]).optional(),
 });
 
 // GET /api/settings/privacy — aktif kullanıcının gizlilik ayarlarını getir
@@ -28,6 +29,7 @@ export async function GET() {
         profileVisibility: true,
         showOnLeaderboard: true,
         isPrivateProfile: true,
+        socialLinksVisibility: true,
       },
     });
 
@@ -60,6 +62,7 @@ export async function PUT(request: Request) {
         profileVisibility: true,
         showOnLeaderboard: true,
         isPrivateProfile: true,
+        socialLinksVisibility: true,
       },
     });
 

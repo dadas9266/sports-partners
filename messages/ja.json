@@ -1,0 +1,272 @@
+{
+  "nav": {
+    "listings": "募集",
+    "leaderboard": "ランキング",
+    "social": "フィード",
+    "communities": "コミュニティ",
+    "tournaments": "トーナメント",
+    "search": "検索",
+    "messages": "メッセージ",
+    "notifications": "通知",
+    "profile": "マイプロフィール",
+    "venue": "施設プロフィール",
+    "myCommunities": "マイコミュニティ",
+    "settings": "設定",
+    "signOut": "ログアウト",
+    "signIn": "ログイン",
+    "register": "新規登録",
+    "createListing": "+ 募集を作成",
+    "admin": "🛡️ 管理パネル",
+    "venues": "スポーツ施設",
+    "venueProfile": "施設プロフィール",
+    "mainNav": "ナビゲーション",
+    "homePage": "ホーム",
+    "toggleMenu": "メニュー",
+    "noNotifications": "通知はありません",
+    "notificationsShowing": "{count}件の通知を表示中",
+    "close": "閉じる"
+  },
+  "common": {
+    "loading": "読み込み中...",
+    "error": "エラーが発生しました",
+    "notFound": "見つかりません",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "delete": "削除",
+    "edit": "編集",
+    "confirm": "確認",
+    "reject": "拒否",
+    "approve": "承認",
+    "close": "閉じる",
+    "submit": "送信",
+    "search": "検索",
+    "all": "すべて",
+    "back": "戻る"
+  },
+  "listings": {
+    "title": "スポーツ募集",
+    "empty": "募集が見つかりません",
+    "create": "募集を作成",
+    "types": {
+      "RIVAL": "対戦相手",
+      "PARTNER": "パートナー",
+      "TRAINER": "トレーナー",
+      "EQUIPMENT": "用具"
+    },
+    "levels": {
+      "BEGINNER": "初級",
+      "INTERMEDIATE": "中級",
+      "ADVANCED": "上級"
+    }
+  },
+  "auth": {
+    "signIn": "ログイン",
+    "signUp": "新規登録",
+    "email": "メールアドレス",
+    "password": "パスワード",
+    "forgotPassword": "パスワードをお忘れですか？",
+    "noAccount": "アカウントをお持ちでないですか？",
+    "hasAccount": "すでにアカウントをお持ちですか？",
+    "continueWith": "または次で続行"
+  },
+  "tournaments": {
+    "title": "トーナメント",
+    "subtitle": "スポーツトーナメントを見つけて参加しましょう",
+    "create": "トーナメントを作成",
+    "empty": "トーナメントはまだありません。",
+    "join": "参加する",
+    "leave": "退出する",
+    "status": {
+      "DRAFT": "下書き",
+      "OPEN": "参加受付中",
+      "ONGOING": "進行中",
+      "COMPLETED": "完了",
+      "CANCELLED": "中止"
+    },
+    "format": {
+      "SINGLE_ELIMINATION": "トーナメント式",
+      "ROUND_ROBIN": "総当たり",
+      "SWISS": "スイス式"
+    }
+  },
+  "settings": {
+    "title": "設定",
+    "profile": "プロフィール編集",
+    "security": "アカウントセキュリティ",
+    "professional": "プロフェッショナルアカウント",
+    "privacy": "プライバシー",
+    "notifications": "通知",
+    "pushNotifications": {
+      "title": "プッシュ通知",
+      "enable": "有効にする",
+      "disable": "無効にする",
+      "denied": "通知の許可が拒否されています。ブラウザの設定から許可してください。",
+      "unsupported": "お使いのブラウザはプッシュ通知に対応していません。",
+      "active": "プッシュ通知が有効です。",
+      "description": "試合、メッセージ、マッチングの通知を受け取れます。"
+    }
+  },
+  "profile": {
+    "title": "マイプロフィール",
+    "editTitle": "プロフィール編集",
+    "name": "氏名",
+    "bio": "自己紹介",
+    "bioPlaceholder": "自己紹介を書いてください...",
+    "bioMaxChars": "{count}/300",
+    "location": "所在地",
+    "country": "国を選択...",
+    "city": "都市を選択...",
+    "district": "地区を選択...",
+    "sports": "スポーツ（最大5つ）",
+    "sportsMax": "最大5つのスポーツを選択できます",
+    "phone": "電話番号",
+    "phonePlaceholder": "+81 90 1234 5678",
+    "birthDate": "生年月日",
+    "gender": "性別",
+    "genders": {
+      "UNSPECIFIED": "未設定",
+      "MALE": "男性",
+      "FEMALE": "女性",
+      "PREFER_NOT_TO_SAY": "回答しない"
+    },
+    "currentPassword": "現在のパスワード（変更する場合）",
+    "newPassword": "新しいパスワード",
+    "newPasswordHint": "8文字以上、大文字/小文字、数字、特殊文字を含む",
+    "socialLinks": "ソーシャルメディア",
+    "tabs": {
+      "posts": "📸 投稿",
+      "listings": "マイ募集",
+      "responses": "送信済みリクエスト",
+      "matches": "マッチ",
+      "calendar": "📅 カレンダー",
+      "templates": "🔁 テンプレート"
+    },
+    "completion": {
+      "complete": "プロフィール完成！🎉",
+      "missing": "未入力の項目："
+    },
+    "uploadAvatarSuccess": "プロフィール写真を更新しました",
+    "uploadCoverSuccess": "カバー写真を更新しました",
+    "changeCover": "📷 カバーを変更",
+    "level": {
+      "BEGINNER": "ビギナー",
+      "AMATEUR": "アマチュア",
+      "SEMI_PRO": "セミプロ",
+      "PRO": "⚡ プロ"
+    },
+    "verifiedBadge": "✓ Verified Pro",
+    "followers": "フォロワー",
+    "following": "フォロー中",
+    "streak": { "current": "現在の連続記録", "longest": "最長連続記録", "days": "日" },
+    "saveSuccess": "プロフィールを更新しました",
+    "saveError": "更新に失敗しました",
+    "age": "{age}歳",
+    "noListings": "募集はまだありません",
+    "noMatches": "マッチはまだありません",
+    "noPosts": "投稿はまだありません"
+  },
+  "social": {
+    "title": "フィード",
+    "createPostPlaceholder": "何か共有しましょう...",
+    "addPhoto": "🖼️ 写真を追加",
+    "share": "投稿する",
+    "like": "いいね",
+    "comment": "コメント",
+    "addCommentPlaceholder": "コメントを書く...",
+    "send": "送信",
+    "postSuccess": "投稿しました！",
+    "postError": "投稿に失敗しました",
+    "noPosts": "投稿はまだありません",
+    "feedEmpty": "フォローしているユーザーの投稿がここに表示されます"
+  },
+  "match": {
+    "request": "マッチリクエスト",
+    "accept": "承認",
+    "reject": "拒否",
+    "cancel": "キャンセル",
+    "status": {
+      "PENDING": "保留中",
+      "ACCEPTED": "承認済み",
+      "REJECTED": "拒否済み",
+      "CANCELLED": "キャンセル済み",
+      "COMPLETED": "完了",
+      "NO_SHOW": "不参加"
+    },
+    "noMatches": "マッチはまだありません",
+    "rate": "評価する",
+    "sendMessage": "メッセージを送る"
+  },
+  "notifications": {
+    "title": "通知",
+    "empty": "通知はありません",
+    "showing": "{count}件の通知を表示中"
+  },
+  "leaderboard": {
+    "title": "ランキング",
+    "subtitle": "最もアクティブなスポーツマン",
+    "rank": "順位",
+    "player": "プレイヤー",
+    "points": "ポイント",
+    "matches": "マッチ数",
+    "sport": "スポーツ",
+    "city": "都市",
+    "weekly": "週間",
+    "monthly": "月間",
+    "allTime": "全期間"
+  },
+  "search": {
+    "title": "ユーザー検索",
+    "placeholder": "名前やスポーツで検索...",
+    "noResults": "結果が見つかりません",
+    "filters": "フィルター",
+    "sport": "スポーツ",
+    "location": "都市",
+    "level": "レベル",
+    "apply": "適用",
+    "reset": "リセット"
+  },
+  "onboarding": {
+    "title": "ようこそ！",
+    "subtitle": "プロフィールを完成させてスポーツパートナーを見つけましょう",
+    "step1Title": "基本情報",
+    "step2Title": "スポーツの好み",
+    "step3Title": "所在地",
+    "step": "ステップ {current}/{total}",
+    "next": "次へ",
+    "previous": "戻る",
+    "finish": "完了",
+    "skip": "スキップ"
+  },
+  "venues": {
+    "title": "スポーツ施設",
+    "subtitle": "近くのスポーツ施設を探す",
+    "noVenues": "施設はまだありません",
+    "openHours": "営業時間",
+    "contact": "連絡先",
+    "address": "住所",
+    "priceRange": "料金帯",
+    "rating": "評価",
+    "reviews": "レビュー",
+    "bookNow": "予約する",
+    "viewDetails": "詳細を見る"
+  },
+  "communities": {
+    "title": "コミュニティ",
+    "subtitle": "スポーツコミュニティに参加しましょう",
+    "create": "コミュニティを作成",
+    "join": "参加する",
+    "leave": "退出する",
+    "members": "メンバー",
+    "noCommunities": "コミュニティはまだありません",
+    "myCommunities": "マイコミュニティ",
+    "sport": "スポーツ",
+    "location": "都市"
+  },
+  "messages": {
+    "title": "メッセージ",
+    "noConversations": "メッセージはまだありません",
+    "typePlaceholder": "メッセージを入力...",
+    "send": "送信",
+    "you": "あなた"
+  }
+}

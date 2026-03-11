@@ -10,6 +10,7 @@ interface PrivacySettings {
   profileVisibility: PrivacyLevel;
   showOnLeaderboard: boolean;
   isPrivateProfile: boolean;
+  socialLinksVisibility: PrivacyLevel;
 }
 
 interface BlockedUser {
@@ -122,6 +123,7 @@ export default function GizlilikPage() {
     profileVisibility: "EVERYONE",
     showOnLeaderboard: true,
     isPrivateProfile: false,
+    socialLinksVisibility: "EVERYONE",
   });
   const [blockedUsers, setBlockedUsers] = useState<BlockedUser[]>([]);
   const [followRequests, setFollowRequests] = useState<FollowRequest[]>([]);
@@ -262,6 +264,15 @@ export default function GizlilikPage() {
           icon="👁️"
           value={settings.profileVisibility}
           onChange={(v) => setSettings((s) => ({ ...s, profileVisibility: v }))}
+          disabled={saving}
+        />
+
+        <PrivacySelector
+          label="Sosyal Medya Linklerimi Kimler Görebilir?"
+          description="Telegram, WhatsApp ve diğer sosyal medya bağlantılarını kimlerin göreceğini belirle"
+          icon="🔗"
+          value={settings.socialLinksVisibility}
+          onChange={(v) => setSettings((s) => ({ ...s, socialLinksVisibility: v }))}
           disabled={saving}
         />
 

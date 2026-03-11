@@ -221,6 +221,18 @@ export const updateProfileSchema = z
       .regex(/^[a-zA-Z0-9_.]{1,32}$/, "VK kullanıcı adı yalnızca harf, rakam, nokta ve alt çizgi içerebilir (max 32 karakter)")
       .optional()
       .nullable(),
+    telegram: z
+      .string()
+      .max(32)
+      .regex(/^[a-zA-Z0-9_]{5,32}$/, "Telegram kullanıcı adı 5-32 karakter, harf, rakam ve alt çizgi içerebilir")
+      .optional()
+      .nullable(),
+    whatsapp: z
+      .string()
+      .max(20)
+      .regex(/^\+?[0-9]{7,15}$/, "WhatsApp numarası uluslararası formatta olmalı (ör: +905551234567)")
+      .optional()
+      .nullable(),
   })
   .refine(
     (data) => {

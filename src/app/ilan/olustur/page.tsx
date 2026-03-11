@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
@@ -9,11 +8,7 @@ import { useLocations, useSports, useVenues } from "@/hooks/useLocations";
 import { createListing } from "@/services/api";
 import type { CreateListingForm, ListingType } from "@/types";
 import Button from "@/components/ui/Button";
-import type { } from "@/components/VenueMapPicker";
 import LocationSelector from "@/components/LocationSelector";
-
-// Leaflet SSR sorunu — sadece client-side yükle
-const VenueMapPicker = dynamic(() => import("@/components/VenueMapPicker"), { ssr: false });
 
 export default function CreateListingPage() {
   const router = useRouter();

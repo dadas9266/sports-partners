@@ -75,6 +75,10 @@ export default function BotPanel({
   const [countries, setCountries] = useState<Country[]>([]);
   const [sports, setSports] = useState<Sport[]>([]);
   const [botCountryId, setBotCountryId] = useState("");
+  const [seedCountryId, setSeedCountryId] = useState("");
+  const [seedSportId, setSeedSportId] = useState("");
+  const [seedDateTime, setSeedDateTime] = useState("");
+  const [seeding, setSeeding] = useState(false);
 
   useEffect(() => {
     fetch("/api/locations").then(r => r.json()).then(j => { if (j.success) setCountries(j.data); });
@@ -151,9 +155,57 @@ export default function BotPanel({
     setBotForm({ ...botForm, sportIds: ids });
   }
 
+  async function seedCountry() {
+    if (!seedCountryId) { toast.error("Ülke seç"); return; }
+    if (!seedSportId) { toast.error("Spor seç"); return; }
+    const countryName = countries.find(c => c.id === seedCountryId)?.name ?? "";
+    if (!confirm(`${countryName} için tüm şehirlerde otomatik bot + görev oluşturulacak. Devam?`)) return;
+    setSeeding(true);
+    try {
+      const res = await fetch("/api/admin/bots/seed-country", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ countryId: seedCountryId, sportId: seedSportId, listingDateTime: seedDateTime || undefined }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        toast.success(json.message);
+        fetchBots();
+        fetchTasks();
+      } else { toast.error(json.error ?? "Hata"); }
+    } finally { setSeeding(false); }
+  }
+
   return (
     <div className="space-y-8">
-      {/* Bot Olusturma */}
+      {/* Ülke Canlandır — Auto Seed */}
+      <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-xl shadow p-6 border border-purple-200 dark:border-purple-800">
+        <h2 className="text-lg font-bold mb-1">🌍 Ülke Canlandır (Otomatik Seed)</h2>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Seçtiğin ülkedeki her şehir için 2 bot (1 erkek, 1 kadın) + görev otomatik oluşturulur. İsimler yerel dile göre atanır.</p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">Ülke *</label>
+            <select className="w-full border rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:border-gray-600" value={seedCountryId} onChange={e => setSeedCountryId(e.target.value)}>
+              <option value="">Ülke seç...</option>
+              {countries.map(c => <option key={c.id} value={c.id}>{c.name} ({c.cities.length} şehir)</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">Spor *</label>
+            <select className="w-full border rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:border-gray-600" value={seedSportId} onChange={e => setSeedSportId(e.target.value)}>
+              <option value="">Spor seç...</option>
+              {sports.map(s => <option key={s.id} value={s.id}>{s.icon} {s.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">İlan Tarihi (opsiyonel)</label>
+            <input type="datetime-local" className="w-full border rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" value={seedDateTime} onChange={e => setSeedDateTime(e.target.value)} />
+          </div>
+        </div>
+        <button onClick={seedCountry} disabled={seeding} className="mt-4 bg-purple-600 text-white rounded-lg px-6 py-2 text-sm font-semibold hover:bg-purple-700 disabled:opacity-50 transition">
+          {seeding ? "Oluşturuluyor..." : "🚀 Ülkeyi Canlandır"}
+        </button>
+      </div>
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
         <h2 className="text-lg font-bold mb-4">Robot Yeni Bot Olustur</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
