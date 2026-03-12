@@ -69,7 +69,7 @@ export default async function RootLayout({
               İçeriğe atla
             </a>
             <Navbar />
-            <main id="main-content" className="max-w-6xl mx-auto px-4 py-6 pb-24 md:pb-6">{children}</main>
+            <main id="main-content" className="max-w-6xl mx-auto px-4 py-6 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-6">{children}</main>
             <BottomNav />
             <PWAInstallBanner />
           </Providers>

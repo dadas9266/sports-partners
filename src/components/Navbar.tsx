@@ -191,10 +191,10 @@ export default function Navbar() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 md:gap-3">
+          <div className="flex items-center gap-1.5 md:gap-3">
             {session ? (
               <>
-                <Link href="/aktivitelerim" className="relative p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label="Aktivitelerim" title="Aktivitelerim">
+                <Link href="/aktivitelerim" className="hidden sm:inline-flex relative p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label="Aktivitelerim" title="Aktivitelerim">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                   </svg>
@@ -204,7 +204,7 @@ export default function Navbar() {
                     </span>
                   )}
                 </Link>
-                <Link href="/mesajlar" className="relative p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label={t("messages")}>
+                <Link href="/mesajlar" className="hidden sm:inline-flex relative p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label={t("messages")}>
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                   </svg>
@@ -246,7 +246,7 @@ export default function Navbar() {
                     {t("signOut")}
                   </button>
                 </Dropdown>
-                <button onClick={toggleDarkMode} className="ml-1 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label="Tema Değiştir">
+                <button onClick={toggleDarkMode} className="hidden md:inline-flex ml-1 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label="Tema Değiştir">
                   {darkMode ? (
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
@@ -272,7 +272,33 @@ export default function Navbar() {
                   {moreOpen && (
                     <>
                       <div className="fixed inset-0 z-[88]" onClick={() => setMoreOpen(false)} />
-                      <div className="absolute right-0 top-full mt-1.5 w-60 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-xl z-[89] overflow-hidden py-1.5">
+                        <div className="absolute right-0 top-full mt-1.5 w-64 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-xl z-[89] overflow-hidden py-1.5">
+                          <button
+                            onClick={() => {
+                              toggleDarkMode();
+                              setMoreOpen(false);
+                            }}
+                            className="w-full text-left flex items-center gap-3 px-4 py-2.5 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition"
+                          >
+                            <span className="text-lg">🌓</span>
+                            <span className="text-sm font-medium text-gray-800 dark:text-gray-100">Tema Değiştir</span>
+                          </button>
+                          <Link
+                            href="/mesajlar"
+                            onClick={() => setMoreOpen(false)}
+                            className={`flex items-center gap-3 px-4 py-2.5 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition ${pathname?.startsWith("/mesajlar") ? "bg-emerald-50 dark:bg-emerald-900/20" : ""}`}
+                          >
+                            <span className="text-lg">💬</span>
+                            <span className="text-sm font-medium text-gray-800 dark:text-gray-100">Mesajlar</span>
+                          </Link>
+                          <Link
+                            href="/aktivitelerim"
+                            onClick={() => setMoreOpen(false)}
+                            className={`flex items-center gap-3 px-4 py-2.5 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition ${pathname?.startsWith("/aktivitelerim") ? "bg-emerald-50 dark:bg-emerald-900/20" : ""}`}
+                          >
+                            <span className="text-lg">📌</span>
+                            <span className="text-sm font-medium text-gray-800 dark:text-gray-100">Aktivitelerim</span>
+                          </Link>
                         {[
                           { href: "/ayarlar/profil", icon: "👤", label: "Profili Düzenle" },
                           { href: "/ayarlar/guvenlik", icon: "🔒", label: "Hesap Güvenliği" },

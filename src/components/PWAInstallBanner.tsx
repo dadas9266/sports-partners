@@ -44,7 +44,7 @@ export default function PWAInstallBanner() {
   if (!visible) return null;
 
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-sm animate-slide-up">
+    <div className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] md:bottom-4 left-1/2 -translate-x-1/2 z-[70] w-[calc(100%-2rem)] max-w-sm animate-slide-up">
       <div className="flex items-center gap-3 bg-white dark:bg-gray-800 border border-emerald-200 dark:border-emerald-700 rounded-2xl shadow-xl px-4 py-3">
         <span className="text-2xl" aria-hidden="true">📱</span>
         <div className="flex-1 min-w-0">

@@ -53,13 +53,17 @@ export default function BottomNav() {
   const router = useRouter();
   const { data: session } = useSession();
 
+  const currentPath = pathname ?? "";
+  const shouldHide = currentPath.startsWith("/auth") || currentPath.startsWith("/admin");
+  if (shouldHide) return null;
+
   const isActive = (href: string) => {
     const path = pathname ?? "";
     if (href === "/") return path === "/";
     return path.startsWith(href);
   };
 
-  const profileActive = (pathname ?? "").startsWith("/profil");
+  const profileActive = currentPath.startsWith("/profil");
 
   const handleProfileTap = () => {
     if (!session) {
@@ -72,10 +76,10 @@ export default function BottomNav() {
   return (
     <nav
       aria-label="Alt menü"
-      className="md:hidden fixed bottom-0 inset-x-0 z-[65] bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-t border-gray-200/80 dark:border-gray-700/80"
-      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      className="md:hidden fixed bottom-0 inset-x-0 z-[65] px-2 pb-2"
+      style={{ paddingBottom: "max(env(safe-area-inset-bottom), 8px)" }}
     >
-      <div className="flex items-stretch h-16">
+      <div className="mx-auto flex items-stretch h-[72px] max-w-md rounded-2xl border border-gray-200/90 dark:border-gray-700/80 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl shadow-[0_8px_30px_rgba(0,0,0,0.12)]">
         {/* Sol taraf: Ana Sayfa, Keşfet, Sosyal */}
         {navItems.map(({ href, icon: Icon, label }) => {
           const active = isActive(href);
@@ -83,13 +87,15 @@ export default function BottomNav() {
             <Link
               key={href}
               href={href}
-              className={`flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors ${
+              className={`flex-1 flex flex-col items-center justify-center gap-1 text-[11px] font-semibold transition-colors min-h-[56px] ${
                 active
                   ? "text-emerald-600 dark:text-emerald-400"
                   : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
               }`}
             >
-              <Icon active={active} />
+              <span className={`rounded-xl p-1.5 ${active ? "bg-emerald-50 dark:bg-emerald-900/30" : ""}`}>
+                <Icon active={active} />
+              </span>
               <span>{label}</span>
             </Link>
           );
@@ -99,11 +105,12 @@ export default function BottomNav() {
         {session && (
           <Link
             href="/ilan/olustur"
-            className="flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium"
+            className="flex-1 flex flex-col items-center justify-center gap-1 text-[11px] font-semibold min-h-[56px]"
           >
-            <span className="flex items-center justify-center w-10 h-10 -mt-4 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg text-xl font-bold">
+            <span className="flex items-center justify-center w-11 h-11 -mt-5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg text-xl font-bold ring-4 ring-white dark:ring-gray-900">
               +
             </span>
+            <span className="text-[10px] text-gray-500 dark:text-gray-400">İlan</span>
           </Link>
         )}
 
@@ -111,14 +118,16 @@ export default function BottomNav() {
         <button
           type="button"
           onClick={handleProfileTap}
-          className={`flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors ${
+          className={`flex-1 flex flex-col items-center justify-center gap-1 text-[11px] font-semibold transition-colors min-h-[56px] ${
             profileActive
               ? "text-emerald-600 dark:text-emerald-400"
               : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
           }`}
           aria-label="Profilim"
         >
-          <ProfileIcon active={profileActive} />
+          <span className={`rounded-xl p-1.5 ${profileActive ? "bg-emerald-50 dark:bg-emerald-900/30" : ""}`}>
+            <ProfileIcon active={profileActive} />
+          </span>
           <span>Profil</span>
         </button>
       </div>
