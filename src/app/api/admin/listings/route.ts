@@ -64,6 +64,51 @@ export async function GET(req: NextRequest) {
   }
 }
 
+// Verilen listing id'leri için tüm ilişkili kayıtları transaction ile sil
+async function cascadeDeleteListings(listingIds: string[]) {
+  if (listingIds.length === 0) return 0;
+
+  // Match'leri bul (alt tablolar için gerekli)
+  const matches = await prisma.match.findMany({
+    where: { listingId: { in: listingIds } },
+    select: { id: true },
+  });
+  const matchIds = matches.map((m) => m.id);
+
+  return prisma.$transaction(async (tx) => {
+    // 1) Match alt tabloları (en derin bağımlılıklar)
+    if (matchIds.length > 0) {
+      await tx.matchOtp.deleteMany({ where: { matchId: { in: matchIds } } });
+      await tx.rating.deleteMany({ where: { matchId: { in: matchIds } } });
+      await tx.message.deleteMany({ where: { matchId: { in: matchIds } } });
+      await tx.noShowReport.deleteMany({ where: { matchId: { in: matchIds } } });
+    }
+
+    // 2) Listing'e doğrudan bağlı tablolar
+    await tx.match.deleteMany({ where: { listingId: { in: listingIds } } });
+    await tx.response.deleteMany({ where: { listingId: { in: listingIds } } });
+    await tx.favorite.deleteMany({ where: { listingId: { in: listingIds } } });
+    await tx.noShowReport.deleteMany({ where: { listingId: { in: listingIds } } });
+    await tx.equipmentDetail.deleteMany({ where: { listingId: { in: listingIds } } });
+
+    // 3) TrainerProfile listingId bağlantısını kopar (opsiyonel FK)
+    await tx.trainerProfile.updateMany({
+      where: { listingId: { in: listingIds } },
+      data: { listingId: null },
+    });
+
+    // 4) Story linkedListingId null yap (string alan, FK değil)
+    await tx.story.updateMany({
+      where: { linkedListingId: { in: listingIds } },
+      data: { linkedListingId: null },
+    });
+
+    // 5) Son olarak listing'leri sil
+    const result = await tx.listing.deleteMany({ where: { id: { in: listingIds } } });
+    return result.count;
+  });
+}
+
 // İlan(ları) sil
 export async function DELETE(req: NextRequest) {
   const adminId = await requireAdmin();
@@ -78,42 +123,26 @@ export async function DELETE(req: NextRequest) {
 
   try {
     if (allListings) {
-      // TÜM ilanları sil (Tehlikeli işlem)
-      await prisma.response.deleteMany({});
-      await prisma.match.deleteMany({});
-      const result = await prisma.listing.deleteMany({});
-      log.warn("Admin TÜM ilanları sildi", { adminId, count: result.count });
-      return NextResponse.json({ success: true, count: result.count });
+      const all = await prisma.listing.findMany({ select: { id: true } });
+      const count = await cascadeDeleteListings(all.map((l) => l.id));
+      log.warn("Admin TÜM ilanları sildi", { adminId, count });
+      return NextResponse.json({ success: true, count });
     }
 
     if (allBots) {
-      // Sadece botların ilanlarını sil
       const botListings = await prisma.listing.findMany({
         where: { user: { isBot: true } },
         select: { id: true },
       });
-      const botListingIds = botListings.map((l) => l.id);
-
-      await prisma.response.deleteMany({ where: { listingId: { in: botListingIds } } });
-      await prisma.match.deleteMany({ where: { listingId: { in: botListingIds } } });
-      const result = await prisma.listing.deleteMany({
-        where: { user: { isBot: true } },
-      });
-
-      log.info("Admin bot ilanlarını sildi", { adminId, count: result.count });
-      return NextResponse.json({ success: true, count: result.count });
+      const count = await cascadeDeleteListings(botListings.map((l) => l.id));
+      log.info("Admin bot ilanlarını sildi", { adminId, count });
+      return NextResponse.json({ success: true, count });
     }
 
     if (ids && ids.length > 0) {
-      // Belirli id'leri sil
-      await prisma.response.deleteMany({ where: { listingId: { in: ids } } });
-      await prisma.match.deleteMany({ where: { listingId: { in: ids } } });
-      const result = await prisma.listing.deleteMany({
-        where: { id: { in: ids } },
-      });
-
-      log.info("Admin seçili ilanları sildi", { adminId, count: result.count });
-      return NextResponse.json({ success: true, count: result.count });
+      const count = await cascadeDeleteListings(ids);
+      log.info("Admin seçili ilanları sildi", { adminId, count });
+      return NextResponse.json({ success: true, count });
     }
 
     return NextResponse.json({ error: "Geçersiz parametreler" }, { status: 400 });

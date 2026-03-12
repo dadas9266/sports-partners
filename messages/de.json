@@ -45,6 +45,7 @@
   },
   "listings": {
     "title": "Sport-Anzeigen",
+    "detail": "Inserat anzeigen",
     "empty": "Keine Anzeigen gefunden",
     "create": "Anzeige erstellen",
     "types": {

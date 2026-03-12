@@ -51,6 +51,7 @@
   },
   "listings": {
     "title": "Sports Listings",
+    "detail": "View Listing",
     "empty": "No listings found",
     "create": "Create Listing",
     "types": {

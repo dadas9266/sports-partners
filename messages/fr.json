@@ -45,6 +45,7 @@
   },
   "listings": {
     "title": "Annonces sportives",
+    "detail": "Voir l'annonce",
     "empty": "Aucune annonce trouvée",
     "create": "Créer une annonce",
     "types": {

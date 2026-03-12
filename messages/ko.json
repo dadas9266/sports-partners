@@ -45,6 +45,7 @@
   },
   "listings": {
     "title": "스포츠 모집",
+    "detail": "상세보기",
     "empty": "모집을 찾을 수 없습니다",
     "create": "모집 만들기",
     "types": {

@@ -50,6 +50,7 @@
   },
   "listings": {
     "title": "Spor İlanları",
+    "detail": "İlanı Gör",
     "empty": "İlan bulunamadı",
     "create": "İlan Oluştur",
     "types": {

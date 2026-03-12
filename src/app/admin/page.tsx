@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
 import BotPanel from "@/components/admin/BotPanel";
+import HealthPanel from "@/components/admin/HealthPanel";
 
 interface AdminUser {
   id: string;
@@ -96,7 +97,7 @@ export default function AdminPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"users" | "venues" | "trainers" | "reports" | "content" | "bots" | "listings">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "venues" | "trainers" | "reports" | "content" | "bots" | "listings" | "health">("users");
   const [venueProfiles, setVenueProfiles] = useState<VenueProfileAdmin[]>([]);
   const [venueLoading, setVenueLoading] = useState(false);
   const [trainerProfiles, setTrainerProfiles] = useState<TrainerProfileAdmin[]>([]);
@@ -460,7 +461,7 @@ export default function AdminPage() {
 
       {/* Sekme Butonları */}
       <div className="flex gap-2 mb-6 border-b border-gray-200 dark:border-gray-700 overflow-x-auto pb-1">
-        {([[ "users", "👥 Kullanıcılar"], ["venues", "🏙️ Mekan Onayları"], ["trainers", "🎓 Antrenör Onayları"], ["reports", "🚨 Şikayetler"], ["content", "📝 İçerik"], ["listings", "📋 İlanlar"], ["bots", "🤖 Botlar"]] as const).map(([tab, label]) => (
+        {([[ "users", "👥 Kullanıcılar"], ["venues", "🏙️ Mekan Onayları"], ["trainers", "🎓 Antrenör Onayları"], ["reports", "🚨 Şikayetler"], ["content", "📝 İçerik"], ["listings", "📋 İlanlar"], ["bots", "🤖 Botlar"], ["health", "🏥 Sistem Sağlığı"]] as const).map(([tab, label]) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -1214,6 +1215,9 @@ export default function AdminPage() {
       )}
       {/* ── Kullanıcı sekmesi sonu ── */}
       </>}
+
+      {/* ── Sistem Sağlığı Sekmesi ─────────────────────────────────────── */}
+      {activeTab === "health" && <HealthPanel />}
 
       {/* ── Bot Yönetimi Sekmesi ──────────────────────────────────────────── */}
       {activeTab === "bots" && (

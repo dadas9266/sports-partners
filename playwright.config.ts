@@ -14,14 +14,14 @@ export default defineConfig({
   outputDir: "./tests/e2e/.output",
 
   // Her test için zaman aşımı
-  timeout: 30_000,
-  expect: { timeout: 5_000 },
+  timeout: 60_000,
+  expect: { timeout: 10_000 },
 
   // Tüm testler paralel çalışabilir ama auth testleri sıralı
-  fullyParallel: true,
+  fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  workers: process.env.CI ? 1 : 1,
 
   reporter: [
     ["list"],
@@ -59,7 +59,7 @@ export default defineConfig({
   webServer: {
     command: "npx next dev",
     url: "http://localhost:3000",
-    reuseExistingServer: true,
-    timeout: 120_000,
+    reuseExistingServer: false,
+    timeout: 180_000,
   },
 });

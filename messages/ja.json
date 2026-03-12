@@ -45,6 +45,7 @@
   },
   "listings": {
     "title": "スポーツ募集",
+    "detail": "詳細を見る",
     "empty": "募集が見つかりません",
     "create": "募集を作成",
     "types": {
