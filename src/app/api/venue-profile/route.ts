@@ -4,6 +4,23 @@ import { getCurrentUserId } from "@/lib/api-utils";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("venue-profile");
+const VENUE_TYPES = [
+  "SPORTS_FACILITY",
+  "FITNESS_CENTER",
+  "SUPPLEMENT_STORE",
+  "EQUIPMENT_STORE",
+  "SPORTS_CLUB",
+  "HEALTH_CENTER",
+  "EVENT_ORGANIZER",
+  "SPORTS_NUTRITION",
+  "OTHER",
+] as const;
+
+function normalizeVenueType(value: unknown): (typeof VENUE_TYPES)[number] {
+  return typeof value === "string" && VENUE_TYPES.includes(value as (typeof VENUE_TYPES)[number])
+    ? value as (typeof VENUE_TYPES)[number]
+    : "OTHER";
+}
 
 // Kendi Venue Profilini Al — GET /api/venue-profile
 export async function GET() {
@@ -73,6 +90,7 @@ export async function PUT(request: NextRequest) {
       capacity, sports, images, openingHours, logoUrl,
       sportDetails, amenities, venueType,
     } = body;
+    const normalizedVenueType = normalizeVenueType(venueType);
 
     if (!businessName?.trim())
       return NextResponse.json({ error: "İşletme adı zorunlu" }, { status: 400 });
@@ -87,7 +105,7 @@ export async function PUT(request: NextRequest) {
         images: images ?? [],
         openingHours,
         ...(logoUrl !== undefined ? { logoUrl } : {}),
-        ...(venueType ? { venueType } : {}),
+        venueType: normalizedVenueType,
       },
       create: {
         userId,
@@ -98,7 +116,7 @@ export async function PUT(request: NextRequest) {
         images: images ?? [],
         openingHours,
         logoUrl: logoUrl ?? null,
-        venueType: venueType ?? "OTHER",
+        venueType: normalizedVenueType,
       },
     });
 

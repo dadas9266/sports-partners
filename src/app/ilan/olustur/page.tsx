@@ -14,6 +14,7 @@ export default function CreateListingPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const [loading, setLoading] = useState(false);
+  const [ownedVenueProfile, setOwnedVenueProfile] = useState<{ id: string; venueType: string } | null>(null);
 
   const { locations } = useLocations();
   const { sports } = useSports();
@@ -63,12 +64,12 @@ export default function CreateListingPage() {
   // Equipment extra fields
   const [equipForm, setEquipForm] = useState({ price: "", condition: "", brand: "", model: "" });
   // Venue detail forms
-  const [venueRentalForm, setVenueRentalForm] = useState({ rentalType: "", pricePerHour: "", capacity: "", surface: "", indoor: false });
-  const [venueMembershipForm, setVenueMembershipForm] = useState({ planName: "", durationDays: "", features: "" });
-  const [venueClassForm, setVenueClassForm] = useState({ className: "", instructor: "", durationMinutes: "", maxStudents: "", recurring: false });
-  const [venueProductForm, setVenueProductForm] = useState({ productName: "", price: "", category: "", inStock: true });
-  const [venueEventForm, setVenueEventForm] = useState({ eventName: "", eventDate: "", eventCapacity: "", entryFee: "" });
-  const [venueServiceForm, setVenueServiceForm] = useState({ serviceName: "", price: "", durationMinutes: "" });
+  const [venueRentalForm, setVenueRentalForm] = useState({ facilityType: "", courtCount: "", pricePerHour: "", pricePerSession: "", minDuration: "", availableSlots: "", surfaceType: "", hasLighting: false });
+  const [venueMembershipForm, setVenueMembershipForm] = useState({ membershipType: "", price: "", includes: "", trialAvailable: false, trialPrice: "", maxMembers: "" });
+  const [venueClassForm, setVenueClassForm] = useState({ className: "", schedule: "", instructorName: "", pricePerSession: "", priceMonthly: "", difficulty: "", maxParticipants: "" });
+  const [venueProductForm, setVenueProductForm] = useState({ productName: "", brand: "", price: "", productCategory: "", unit: "adet", inStock: true });
+  const [venueEventForm, setVenueEventForm] = useState({ eventType: "", startDate: "", endDate: "", maxParticipants: "", entryFee: "", registrationDeadline: "" });
+  const [venueServiceForm, setVenueServiceForm] = useState({ serviceType: "", pricePerSession: "", sessionDuration: "", qualifications: "" });
   const [equipImages, setEquipImages] = useState<File[]>([]);
   const [equipPreviews, setEquipPreviews] = useState<string[]>([]);
   const [uploadingEquip, setUploadingEquip] = useState(false);
@@ -97,6 +98,18 @@ export default function CreateListingPage() {
       router.push("/auth/giris");
     }
   }, [status, router]);
+
+  useEffect(() => {
+    if (!session) return;
+    fetch("/api/venue-profile")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.profile?.id) {
+          setOwnedVenueProfile({ id: data.profile.id, venueType: data.profile.venueType ?? "OTHER" });
+        }
+      })
+      .catch(() => {});
+  }, [session]);
 
   if (status === "unauthenticated") return null;
 
@@ -162,50 +175,65 @@ export default function CreateListingPage() {
       // Venue detail payloads
       if (form.type === "VENUE_RENTAL") {
         payload.venueRentalDetail = {
-          rentalType: venueRentalForm.rentalType || undefined,
+          facilityType: venueRentalForm.facilityType || undefined,
+          courtCount: venueRentalForm.courtCount ? parseInt(venueRentalForm.courtCount) : undefined,
           pricePerHour: venueRentalForm.pricePerHour ? parseFloat(venueRentalForm.pricePerHour) : undefined,
-          capacity: venueRentalForm.capacity ? parseInt(venueRentalForm.capacity) : undefined,
-          surface: venueRentalForm.surface || undefined,
-          indoor: venueRentalForm.indoor,
+          pricePerSession: venueRentalForm.pricePerSession ? parseFloat(venueRentalForm.pricePerSession) : undefined,
+          minDuration: venueRentalForm.minDuration ? parseInt(venueRentalForm.minDuration) : undefined,
+          availableSlots: venueRentalForm.availableSlots || undefined,
+          surfaceType: venueRentalForm.surfaceType || undefined,
+          hasLighting: venueRentalForm.hasLighting,
         };
       }
       if (form.type === "VENUE_MEMBERSHIP") {
         payload.venueMembershipDetail = {
-          planName: venueMembershipForm.planName || undefined,
-          durationDays: venueMembershipForm.durationDays ? parseInt(venueMembershipForm.durationDays) : undefined,
-          features: venueMembershipForm.features || undefined,
+          membershipType: venueMembershipForm.membershipType || undefined,
+          price: venueMembershipForm.price ? parseFloat(venueMembershipForm.price) : undefined,
+          includes: venueMembershipForm.includes
+            ? venueMembershipForm.includes.split(",").map((item) => item.trim()).filter(Boolean)
+            : undefined,
+          trialAvailable: venueMembershipForm.trialAvailable,
+          trialPrice: venueMembershipForm.trialPrice ? parseFloat(venueMembershipForm.trialPrice) : undefined,
+          maxMembers: venueMembershipForm.maxMembers ? parseInt(venueMembershipForm.maxMembers) : undefined,
         };
       }
       if (form.type === "VENUE_CLASS") {
         payload.venueClassDetail = {
           className: venueClassForm.className || undefined,
-          instructor: venueClassForm.instructor || undefined,
-          durationMinutes: venueClassForm.durationMinutes ? parseInt(venueClassForm.durationMinutes) : undefined,
-          maxStudents: venueClassForm.maxStudents ? parseInt(venueClassForm.maxStudents) : undefined,
-          recurring: venueClassForm.recurring,
+          schedule: venueClassForm.schedule || undefined,
+          instructorName: venueClassForm.instructorName || undefined,
+          pricePerSession: venueClassForm.pricePerSession ? parseFloat(venueClassForm.pricePerSession) : undefined,
+          priceMonthly: venueClassForm.priceMonthly ? parseFloat(venueClassForm.priceMonthly) : undefined,
+          difficulty: venueClassForm.difficulty || undefined,
+          maxParticipants: venueClassForm.maxParticipants ? parseInt(venueClassForm.maxParticipants) : undefined,
         };
       }
       if (form.type === "VENUE_PRODUCT") {
         payload.venueProductDetail = {
           productName: venueProductForm.productName || undefined,
+          brand: venueProductForm.brand || undefined,
           price: venueProductForm.price ? parseFloat(venueProductForm.price) : undefined,
-          category: venueProductForm.category || undefined,
+          productCategory: venueProductForm.productCategory || undefined,
+          unit: venueProductForm.unit || undefined,
           inStock: venueProductForm.inStock,
         };
       }
       if (form.type === "VENUE_EVENT") {
         payload.venueEventDetail = {
-          eventName: venueEventForm.eventName || undefined,
-          eventDate: venueEventForm.eventDate || undefined,
-          capacity: venueEventForm.eventCapacity ? parseInt(venueEventForm.eventCapacity) : undefined,
+          eventType: venueEventForm.eventType || undefined,
+          startDate: venueEventForm.startDate || undefined,
+          endDate: venueEventForm.endDate || undefined,
+          maxParticipants: venueEventForm.maxParticipants ? parseInt(venueEventForm.maxParticipants) : undefined,
           entryFee: venueEventForm.entryFee ? parseFloat(venueEventForm.entryFee) : undefined,
+          registrationDeadline: venueEventForm.registrationDeadline || undefined,
         };
       }
       if (form.type === "VENUE_SERVICE") {
         payload.venueServiceDetail = {
-          serviceName: venueServiceForm.serviceName || undefined,
-          price: venueServiceForm.price ? parseFloat(venueServiceForm.price) : undefined,
-          durationMinutes: venueServiceForm.durationMinutes ? parseInt(venueServiceForm.durationMinutes) : undefined,
+          serviceType: venueServiceForm.serviceType || undefined,
+          pricePerSession: venueServiceForm.pricePerSession ? parseFloat(venueServiceForm.pricePerSession) : undefined,
+          sessionDuration: venueServiceForm.sessionDuration ? parseInt(venueServiceForm.sessionDuration) : undefined,
+          qualifications: venueServiceForm.qualifications || undefined,
         };
       }
       if (form.type !== "EQUIPMENT" && !isVenueType) {
@@ -236,7 +264,7 @@ export default function CreateListingPage() {
 
   if (!session) return null;
 
-  const isVenueUser = (session.user as any)?.userType === "VENUE" || !!(session.user as any)?.venueProfile;
+  const isVenueUser = !!ownedVenueProfile || (session.user as any)?.userType === "VENUE" || !!(session.user as any)?.venueProfile;
   const isVenueListingType = (form.type as string).startsWith("VENUE_");
 
   const selectClass = "w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-emerald-500 outline-none disabled:bg-gray-100 dark:disabled:bg-gray-700";
@@ -291,6 +319,11 @@ export default function CreateListingPage() {
           {isVenueUser && (
             <div className="mt-4">
               <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">🏢 İşletme İlanları</p>
+              {ownedVenueProfile && (
+                <div className="mb-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-900/20 dark:text-emerald-300">
+                  İşletme hesabın aktif. Bu ilanlar uygulama içinde sadece başvuru toplar; iletişim ve ödeme süreçleri profil bilgileri üzerinden platform dışında ilerler.
+                </div>
+              )}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {[
                   { value: "VENUE_RENTAL", label: "🏟️ Saha/Salon Kiralama", active: "border-teal-500 bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-300" },
@@ -513,14 +546,13 @@ export default function CreateListingPage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Alan Tipi</label>
-                <select value={venueRentalForm.rentalType} onChange={(e) => setVenueRentalForm({ ...venueRentalForm, rentalType: e.target.value })} className={selectClass}>
+                <select value={venueRentalForm.facilityType} onChange={(e) => setVenueRentalForm({ ...venueRentalForm, facilityType: e.target.value })} className={selectClass}>
                   <option value="">Seçiniz</option>
-                  <option value="FIELD">Saha</option>
-                  <option value="COURT">Kort</option>
-                  <option value="POOL">Havuz</option>
-                  <option value="GYM">Salon</option>
-                  <option value="RING">Ring</option>
-                  <option value="OTHER">Diğer</option>
+                  <option value="saha">Saha</option>
+                  <option value="kort">Kort</option>
+                  <option value="havuz">Havuz</option>
+                  <option value="salon">Salon</option>
+                  <option value="ring">Ring</option>
                 </select>
               </div>
               <div>
@@ -530,17 +562,31 @@ export default function CreateListingPage() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Kapasite (kişi)</label>
-                <input type="number" min="1" value={venueRentalForm.capacity} onChange={(e) => setVenueRentalForm({ ...venueRentalForm, capacity: e.target.value })} className={selectClass} placeholder="22" />
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Alan / Kort Sayısı</label>
+                <input type="number" min="1" value={venueRentalForm.courtCount} onChange={(e) => setVenueRentalForm({ ...venueRentalForm, courtCount: e.target.value })} className={selectClass} placeholder="2" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Zemin</label>
-                <input type="text" value={venueRentalForm.surface} onChange={(e) => setVenueRentalForm({ ...venueRentalForm, surface: e.target.value })} className={selectClass} placeholder="Çim, Parke, Tartan..." />
+                <input type="text" value={venueRentalForm.surfaceType} onChange={(e) => setVenueRentalForm({ ...venueRentalForm, surfaceType: e.target.value })} className={selectClass} placeholder="Çim, Parke, Tartan..." />
               </div>
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Seans Ücreti (₺)</label>
+                <input type="number" min="0" value={venueRentalForm.pricePerSession} onChange={(e) => setVenueRentalForm({ ...venueRentalForm, pricePerSession: e.target.value })} className={selectClass} placeholder="800" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Min. Süre (dk)</label>
+                <input type="number" min="0" value={venueRentalForm.minDuration} onChange={(e) => setVenueRentalForm({ ...venueRentalForm, minDuration: e.target.value })} className={selectClass} placeholder="60" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Müsait Saatler</label>
+              <textarea value={venueRentalForm.availableSlots} onChange={(e) => setVenueRentalForm({ ...venueRentalForm, availableSlots: e.target.value })} rows={2} className={`${selectClass} resize-none`} placeholder="Hafta içi 18:00-23:00, Cumartesi 10:00-22:00" />
+            </div>
             <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-              <input type="checkbox" checked={venueRentalForm.indoor} onChange={(e) => setVenueRentalForm({ ...venueRentalForm, indoor: e.target.checked })} className="accent-teal-500" />
-              Kapalı Alan (İndoor)
+              <input type="checkbox" checked={venueRentalForm.hasLighting} onChange={(e) => setVenueRentalForm({ ...venueRentalForm, hasLighting: e.target.checked })} className="accent-teal-500" />
+              Aydınlatma Var
             </label>
           </div>
         )}
@@ -550,18 +596,32 @@ export default function CreateListingPage() {
           <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-xl p-4 space-y-3">
             <p className="font-medium text-indigo-800 dark:text-indigo-200">💳 Üyelik Paketi Detayları</p>
             <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Paket Adı *</label>
-              <input type="text" value={venueMembershipForm.planName} onChange={(e) => setVenueMembershipForm({ ...venueMembershipForm, planName: e.target.value })} className={selectClass} placeholder="Aylık Sınırsız, Haftalık VIP..." />
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Üyelik Türü *</label>
+              <input type="text" value={venueMembershipForm.membershipType} onChange={(e) => setVenueMembershipForm({ ...venueMembershipForm, membershipType: e.target.value })} className={selectClass} placeholder="Aylık, Yıllık, Günlük..." />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Süre (gün)</label>
-                <input type="number" min="1" value={venueMembershipForm.durationDays} onChange={(e) => setVenueMembershipForm({ ...venueMembershipForm, durationDays: e.target.value })} className={selectClass} placeholder="30" />
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Fiyat (₺)</label>
+                <input type="number" min="0" value={venueMembershipForm.price} onChange={(e) => setVenueMembershipForm({ ...venueMembershipForm, price: e.target.value })} className={selectClass} placeholder="1200" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Maks. Üye</label>
+                <input type="number" min="0" value={venueMembershipForm.maxMembers} onChange={(e) => setVenueMembershipForm({ ...venueMembershipForm, maxMembers: e.target.value })} className={selectClass} placeholder="150" />
               </div>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Paket Özellikleri</label>
-              <textarea value={venueMembershipForm.features} onChange={(e) => setVenueMembershipForm({ ...venueMembershipForm, features: e.target.value })} rows={2} className={`${selectClass} resize-none`} placeholder="Sınırsız salon kullanımı, özel soyunma dolabı..." />
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Dahil Hizmetler</label>
+              <textarea value={venueMembershipForm.includes} onChange={(e) => setVenueMembershipForm({ ...venueMembershipForm, includes: e.target.value })} rows={2} className={`${selectClass} resize-none`} placeholder="Sauna, havuz, PT, grup dersleri" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                <input type="checkbox" checked={venueMembershipForm.trialAvailable} onChange={(e) => setVenueMembershipForm({ ...venueMembershipForm, trialAvailable: e.target.checked })} className="accent-indigo-500" />
+                Deneme Paketi Var
+              </label>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Deneme Fiyatı (₺)</label>
+                <input type="number" min="0" value={venueMembershipForm.trialPrice} onChange={(e) => setVenueMembershipForm({ ...venueMembershipForm, trialPrice: e.target.value })} className={selectClass} placeholder="0" />
+              </div>
             </div>
           </div>
         )}
@@ -577,23 +637,31 @@ export default function CreateListingPage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Eğitmen</label>
-                <input type="text" value={venueClassForm.instructor} onChange={(e) => setVenueClassForm({ ...venueClassForm, instructor: e.target.value })} className={selectClass} placeholder="Ad Soyad" />
+                <input type="text" value={venueClassForm.instructorName} onChange={(e) => setVenueClassForm({ ...venueClassForm, instructorName: e.target.value })} className={selectClass} placeholder="Ad Soyad" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Süre (dk)</label>
-                <input type="number" min="1" value={venueClassForm.durationMinutes} onChange={(e) => setVenueClassForm({ ...venueClassForm, durationMinutes: e.target.value })} className={selectClass} placeholder="60" />
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Takvim / Program</label>
+                <input type="text" value={venueClassForm.schedule} onChange={(e) => setVenueClassForm({ ...venueClassForm, schedule: e.target.value })} className={selectClass} placeholder="Pzt-Çrş 19:00 / Cts 10:00" />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Max Öğrenci</label>
-                <input type="number" min="1" value={venueClassForm.maxStudents} onChange={(e) => setVenueClassForm({ ...venueClassForm, maxStudents: e.target.value })} className={selectClass} placeholder="15" />
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Seans Fiyatı (₺)</label>
+                <input type="number" min="0" value={venueClassForm.pricePerSession} onChange={(e) => setVenueClassForm({ ...venueClassForm, pricePerSession: e.target.value })} className={selectClass} placeholder="250" />
               </div>
-              <div className="flex items-end">
-                <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 pb-2">
-                  <input type="checkbox" checked={venueClassForm.recurring} onChange={(e) => setVenueClassForm({ ...venueClassForm, recurring: e.target.checked })} className="accent-pink-500" />
-                  Tekrarlayan Ders
-                </label>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Aylık Fiyat (₺)</label>
+                <input type="number" min="0" value={venueClassForm.priceMonthly} onChange={(e) => setVenueClassForm({ ...venueClassForm, priceMonthly: e.target.value })} className={selectClass} placeholder="1500" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Zorluk</label>
+                <input type="text" value={venueClassForm.difficulty} onChange={(e) => setVenueClassForm({ ...venueClassForm, difficulty: e.target.value })} className={selectClass} placeholder="Başlangıç, Orta, İleri" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Kontenjan</label>
+                <input type="number" min="1" value={venueClassForm.maxParticipants} onChange={(e) => setVenueClassForm({ ...venueClassForm, maxParticipants: e.target.value })} className={selectClass} placeholder="15" />
               </div>
             </div>
           </div>
@@ -614,14 +682,24 @@ export default function CreateListingPage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Kategori</label>
-                <select value={venueProductForm.category} onChange={(e) => setVenueProductForm({ ...venueProductForm, category: e.target.value })} className={selectClass}>
+                <select value={venueProductForm.productCategory} onChange={(e) => setVenueProductForm({ ...venueProductForm, productCategory: e.target.value })} className={selectClass}>
                   <option value="">Seçiniz</option>
-                  <option value="SUPPLEMENT">Supplement</option>
-                  <option value="EQUIPMENT">Ekipman</option>
-                  <option value="CLOTHING">Giyim</option>
-                  <option value="ACCESSORY">Aksesuar</option>
-                  <option value="OTHER">Diğer</option>
+                  <option value="supplement">Supplement</option>
+                  <option value="ekipman">Ekipman</option>
+                  <option value="giyim">Giyim</option>
+                  <option value="aksesuar">Aksesuar</option>
+                  <option value="other">Diğer</option>
                 </select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Marka</label>
+                <input type="text" value={venueProductForm.brand} onChange={(e) => setVenueProductForm({ ...venueProductForm, brand: e.target.value })} className={selectClass} placeholder="Marka" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Birim</label>
+                <input type="text" value={venueProductForm.unit} onChange={(e) => setVenueProductForm({ ...venueProductForm, unit: e.target.value })} className={selectClass} placeholder="adet, kutu, kg" />
               </div>
             </div>
             <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
@@ -636,22 +714,32 @@ export default function CreateListingPage() {
           <div className="bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-xl p-4 space-y-3">
             <p className="font-medium text-rose-800 dark:text-rose-200">🎉 Etkinlik/Turnuva Detayları</p>
             <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Etkinlik Adı *</label>
-              <input type="text" value={venueEventForm.eventName} onChange={(e) => setVenueEventForm({ ...venueEventForm, eventName: e.target.value })} className={selectClass} placeholder="Yaz Turnuvası, Açık Gün..." />
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Etkinlik Türü *</label>
+              <input type="text" value={venueEventForm.eventType} onChange={(e) => setVenueEventForm({ ...venueEventForm, eventType: e.target.value })} className={selectClass} placeholder="Turnuva, kamp, seminer, açık gün..." />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Etkinlik Tarihi *</label>
-                <input type="datetime-local" value={venueEventForm.eventDate} onChange={(e) => setVenueEventForm({ ...venueEventForm, eventDate: e.target.value })} className={selectClass} />
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Başlangıç</label>
+                <input type="datetime-local" value={venueEventForm.startDate} onChange={(e) => setVenueEventForm({ ...venueEventForm, startDate: e.target.value })} className={selectClass} />
               </div>
               <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Bitiş</label>
+                <input type="datetime-local" value={venueEventForm.endDate} onChange={(e) => setVenueEventForm({ ...venueEventForm, endDate: e.target.value })} className={selectClass} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
                 <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Katılımcı Kapasitesi</label>
-                <input type="number" min="1" value={venueEventForm.eventCapacity} onChange={(e) => setVenueEventForm({ ...venueEventForm, eventCapacity: e.target.value })} className={selectClass} placeholder="100" />
+                <input type="number" min="1" value={venueEventForm.maxParticipants} onChange={(e) => setVenueEventForm({ ...venueEventForm, maxParticipants: e.target.value })} className={selectClass} placeholder="100" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Katılım Ücreti (₺)</label>
+                <input type="number" min="0" value={venueEventForm.entryFee} onChange={(e) => setVenueEventForm({ ...venueEventForm, entryFee: e.target.value })} className={selectClass} placeholder="0" />
               </div>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Katılım Ücreti (₺, boş = ücretsiz)</label>
-              <input type="number" min="0" value={venueEventForm.entryFee} onChange={(e) => setVenueEventForm({ ...venueEventForm, entryFee: e.target.value })} className={selectClass} placeholder="0" />
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Son Başvuru Tarihi</label>
+              <input type="datetime-local" value={venueEventForm.registrationDeadline} onChange={(e) => setVenueEventForm({ ...venueEventForm, registrationDeadline: e.target.value })} className={selectClass} />
             </div>
           </div>
         )}
@@ -661,18 +749,22 @@ export default function CreateListingPage() {
           <div className="bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 rounded-xl p-4 space-y-3">
             <p className="font-medium text-cyan-800 dark:text-cyan-200">🔧 Hizmet Detayları</p>
             <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Hizmet Adı *</label>
-              <input type="text" value={venueServiceForm.serviceName} onChange={(e) => setVenueServiceForm({ ...venueServiceForm, serviceName: e.target.value })} className={selectClass} placeholder="Kişisel Antrenman, Fizyoterapi..." />
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Hizmet Türü *</label>
+              <input type="text" value={venueServiceForm.serviceType} onChange={(e) => setVenueServiceForm({ ...venueServiceForm, serviceType: e.target.value })} className={selectClass} placeholder="Kişisel antrenman, fizyoterapi, masaj..." />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Fiyat (₺)</label>
-                <input type="number" min="0" value={venueServiceForm.price} onChange={(e) => setVenueServiceForm({ ...venueServiceForm, price: e.target.value })} className={selectClass} placeholder="300" />
+                <input type="number" min="0" value={venueServiceForm.pricePerSession} onChange={(e) => setVenueServiceForm({ ...venueServiceForm, pricePerSession: e.target.value })} className={selectClass} placeholder="300" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Süre (dk)</label>
-                <input type="number" min="1" value={venueServiceForm.durationMinutes} onChange={(e) => setVenueServiceForm({ ...venueServiceForm, durationMinutes: e.target.value })} className={selectClass} placeholder="60" />
+                <input type="number" min="1" value={venueServiceForm.sessionDuration} onChange={(e) => setVenueServiceForm({ ...venueServiceForm, sessionDuration: e.target.value })} className={selectClass} placeholder="60" />
               </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Uzmanlık / Nitelikler</label>
+              <textarea value={venueServiceForm.qualifications} onChange={(e) => setVenueServiceForm({ ...venueServiceForm, qualifications: e.target.value })} rows={2} className={`${selectClass} resize-none`} placeholder="Sertifika, uzmanlık alanı, deneyim" />
             </div>
           </div>
         )}

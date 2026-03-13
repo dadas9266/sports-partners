@@ -24,6 +24,7 @@ interface AdminUser {
 
 interface VenueProfileAdmin {
   id: string;
+  venueType: string;
   businessName: string;
   address: string | null;
   phone: string | null;
@@ -68,6 +69,18 @@ const REPORT_REASON_LABELS: Record<string, string> = {
   INAPPROPRIATE_CONTENT: "🔞 Uygunsuz İçerik",
   SCAM: "💰 Dolandırıcılık",
   OTHER: "❓ Diğer",
+};
+
+const VENUE_TYPE_LABELS: Record<string, string> = {
+  SPORTS_FACILITY: "Spor Tesisi",
+  FITNESS_CENTER: "Fitness / Stüdyo",
+  SUPPLEMENT_STORE: "Supplement Mağazası",
+  EQUIPMENT_STORE: "Spor Malzeme Mağazası",
+  SPORTS_CLUB: "Spor Kulübü / Dernek",
+  HEALTH_CENTER: "Sağlık / Fizyoterapi",
+  EVENT_ORGANIZER: "Etkinlik Organizatörü",
+  SPORTS_NUTRITION: "Sporcu Beslenme / Restoran",
+  OTHER: "Diğer",
 };
 
 interface AdminReport {
@@ -837,6 +850,7 @@ export default function AdminPage() {
                       <div>
                         <p className="font-bold text-gray-900 dark:text-white text-sm">{venue.businessName}</p>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{venue.user.name} — {venue.user.email}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">🏷️ {VENUE_TYPE_LABELS[venue.venueType] ?? "Diğer"}</p>
                         {venue.address && <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">📍 {venue.address}</p>}
                         {venue.sports.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-2">

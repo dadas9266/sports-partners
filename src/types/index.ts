@@ -175,6 +175,63 @@ export interface ListingDetail {
     images: string[];
     isSold: boolean;
   } | null;
+  venueRentalDetail?: {
+    id: string;
+    facilityType: string;
+    courtCount: number;
+    pricePerHour?: number | null;
+    pricePerSession?: number | null;
+    minDuration?: number | null;
+    availableSlots?: string | null;
+    surfaceType?: string | null;
+    hasLighting: boolean;
+    images: string[];
+  } | null;
+  venueMembershipDetail?: {
+    id: string;
+    membershipType: string;
+    price: number;
+    includes: string[];
+    trialAvailable: boolean;
+    trialPrice?: number | null;
+    maxMembers?: number | null;
+  } | null;
+  venueClassDetail?: {
+    id: string;
+    className: string;
+    schedule?: string | null;
+    instructorName?: string | null;
+    pricePerSession?: number | null;
+    priceMonthly?: number | null;
+    difficulty?: string | null;
+    maxParticipants?: number | null;
+  } | null;
+  venueProductDetail?: {
+    id: string;
+    productCategory: string;
+    productName: string;
+    brand?: string | null;
+    price: number;
+    unit: string;
+    inStock: boolean;
+    images: string[];
+  } | null;
+  venueEventDetail?: {
+    id: string;
+    eventType: string;
+    startDate?: string | null;
+    endDate?: string | null;
+    entryFee?: number | null;
+    maxParticipants?: number | null;
+    registrationDeadline?: string | null;
+  } | null;
+  venueServiceDetail?: {
+    id: string;
+    serviceType: string;
+    sessionDuration?: number | null;
+    pricePerSession?: number | null;
+    qualifications?: string | null;
+  } | null;
 }
 
 // --- API Response Types ---
@@ -538,4 +595,16 @@ export const STATUS_LABELS: Record<string, { label: string; className: string }>
   PENDING: { label: "Bekliyor", className: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300" },
   ACCEPTED: { label: "Kabul Edildi", className: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300" },
   REJECTED: { label: "Reddedildi", className: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300" },
+};
+
+export const VENUE_TYPE_LABELS: Record<VenueType, string> = {
+  SPORTS_FACILITY: "Spor Tesisi",
+  FITNESS_CENTER: "Fitness / Stüdyo",
+  SUPPLEMENT_STORE: "Supplement Mağazası",
+  EQUIPMENT_STORE: "Spor Malzeme Mağazası",
+  SPORTS_CLUB: "Spor Kulübü / Dernek",
+  HEALTH_CENTER: "Sağlık / Fizyoterapi",
+  EVENT_ORGANIZER: "Etkinlik Organizatörü",
+  SPORTS_NUTRITION: "Sporcu Beslenme / Restoran",
+  OTHER: "Diğer",
 };

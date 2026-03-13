@@ -5,6 +5,23 @@ import { createLogger } from "@/lib/logger";
 import { createNotification } from "@/lib/notifications";
 
 const log = createLogger("profile:pro-request");
+const VENUE_TYPES = [
+  "SPORTS_FACILITY",
+  "FITNESS_CENTER",
+  "SUPPLEMENT_STORE",
+  "EQUIPMENT_STORE",
+  "SPORTS_CLUB",
+  "HEALTH_CENTER",
+  "EVENT_ORGANIZER",
+  "SPORTS_NUTRITION",
+  "OTHER",
+] as const;
+
+function normalizeVenueType(value: unknown): (typeof VENUE_TYPES)[number] {
+  return typeof value === "string" && VENUE_TYPES.includes(value as (typeof VENUE_TYPES)[number])
+    ? value as (typeof VENUE_TYPES)[number]
+    : "OTHER";
+}
 
 export async function POST(request: Request) {
   try {
@@ -73,11 +90,21 @@ export async function POST(request: Request) {
       log.info("Antrenör başvurusu otomatik onaylandı", { userId, branches });
     } else {
       // VENUE
-      const { businessName, businessAddress, businessPhone, businessWebsite, capacity, facilityNote } = details;
+      const {
+        businessName,
+        businessAddress,
+        businessPhone,
+        businessWebsite,
+        capacity,
+        facilityNote,
+        venueType,
+      } = details;
 
       if (!businessName?.trim() || !businessAddress?.trim()) {
         return NextResponse.json({ success: false, error: "Tesis adı ve adresi zorunludur" }, { status: 400 });
       }
+
+      const normalizedVenueType = normalizeVenueType(venueType);
 
       // VenueProfile oluştur — hemen onayla
       await prisma.venueProfile.upsert({
@@ -86,17 +113,21 @@ export async function POST(request: Request) {
           userId,
           businessName,
           address: businessAddress || null,
+          description: facilityNote || null,
           phone: businessPhone || null,
           website: businessWebsite || null,
           capacity: capacity ? parseInt(capacity) : null,
+          venueType: normalizedVenueType,
           isVerified: true,
         },
         update: {
           businessName,
           address: businessAddress || null,
+          description: facilityNote || null,
           phone: businessPhone || null,
           website: businessWebsite || null,
           capacity: capacity ? parseInt(capacity) : null,
+          venueType: normalizedVenueType,
           isVerified: true,
         },
       });

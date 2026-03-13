@@ -15,6 +15,7 @@ interface Facility {
 
 interface VenueDetail {
   id: string;
+  venueType: string;
   businessName: string;
   address: string | null;
   description: string | null;
@@ -39,6 +40,18 @@ const FACILITY_TYPE_LABELS: Record<string, string> = {
   havuz: "🏊 Havuz",
   ring:  "🥊 Ring",
   salon: "🏋️ Salon",
+};
+
+const VENUE_TYPE_LABELS: Record<string, string> = {
+  SPORTS_FACILITY: "Spor Tesisi",
+  FITNESS_CENTER: "Fitness / Stüdyo",
+  SUPPLEMENT_STORE: "Supplement Mağazası",
+  EQUIPMENT_STORE: "Spor Malzeme Mağazası",
+  SPORTS_CLUB: "Spor Kulübü / Dernek",
+  HEALTH_CENTER: "Sağlık / Fizyoterapi",
+  EVENT_ORGANIZER: "Etkinlik Organizatörü",
+  SPORTS_NUTRITION: "Sporcu Beslenme / Restoran",
+  OTHER: "Diğer",
 };
 
 export default function MekanDetailPage() {
@@ -165,6 +178,9 @@ export default function MekanDetailPage() {
               {venue.address && (
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">📍 {venue.address}</p>
               )}
+              <p className="mt-2 inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                {VENUE_TYPE_LABELS[venue.venueType] ?? "Diğer"}
+              </p>
             </div>
             <div className="flex flex-col items-end gap-2">
               {venue.phone && (

@@ -18,6 +18,18 @@ const LESSON_TYPES = [
   { id: "performans", label: "Performans", icon: "🏆", desc: "Yüksek performans" },
 ];
 
+const VENUE_TYPE_OPTIONS = [
+  { value: "SPORTS_FACILITY", label: "Spor Tesisi" },
+  { value: "FITNESS_CENTER", label: "Fitness / Stüdyo" },
+  { value: "SUPPLEMENT_STORE", label: "Supplement Mağazası" },
+  { value: "EQUIPMENT_STORE", label: "Spor Malzeme Mağazası" },
+  { value: "SPORTS_CLUB", label: "Spor Kulübü / Dernek" },
+  { value: "HEALTH_CENTER", label: "Sağlık / Fizyoterapi" },
+  { value: "EVENT_ORGANIZER", label: "Etkinlik Organizatörü" },
+  { value: "SPORTS_NUTRITION", label: "Sporcu Beslenme / Restoran" },
+  { value: "OTHER", label: "Diğer" },
+] as const;
+
 export default function ProfesyonelPage() {
   const { data, loading } = useProfile();
   const { sports } = useSports();
@@ -47,6 +59,7 @@ export default function ProfesyonelPage() {
 
   // Mekan formu
   const [venueForm, setVenueForm] = useState({
+    venueType: "SPORTS_FACILITY",
     businessName: "",
     businessAddress: "",
     businessPhone: "",
@@ -131,7 +144,10 @@ export default function ProfesyonelPage() {
         body: JSON.stringify({ type: "VENUE", ...venueForm }),
       });
       const json = await res.json();
-      if (json.success) toast.success("✅ Tesis hesabınız aktif edildi! Sayfayı yenileyiniz.");
+      if (json.success) {
+        toast.success("✅ Tesis hesabınız aktif edildi! Yönetim paneline yönlendiriliyorsunuz.");
+        window.location.href = "/ayarlar/isletme";
+      }
       else toast.error(json.error || "Başvuru gönderilemedi");
     } catch { toast.error("Bir hata oluştu"); }
     finally { setSubmitting(false); }
@@ -402,6 +418,17 @@ function VenueForm({ form, setForm, submitting, onSubmit, inputClass, labelClass
             onChange={(e) => setForm({ ...form, businessPhone: e.target.value })}
             className={inputClass} placeholder="05XX XXX XX XX" />
         </div>
+      </div>
+
+      <div>
+        <label className={labelClass}>İşletme Türü <span className="text-red-400">*</span></label>
+        <select value={form.venueType}
+          onChange={(e) => setForm({ ...form, venueType: e.target.value })}
+          className={inputClass}>
+          {VENUE_TYPE_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>{option.label}</option>
+          ))}
+        </select>
       </div>
 
       <div>

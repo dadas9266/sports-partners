@@ -32,6 +32,7 @@ export async function GET(req: NextRequest) {
         take: limit,
         select: {
           id: true,
+          venueType: true,
           businessName: true,
           address: true,
           phone: true,

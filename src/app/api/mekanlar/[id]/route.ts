@@ -13,6 +13,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
       where: { id },
       select: {
         id:           true,
+        venueType:    true,
         businessName: true,
         address:      true,
         description:  true,

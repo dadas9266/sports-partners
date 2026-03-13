@@ -20,6 +20,7 @@ export async function GET(
       where: { id },
       include: {
         sport: true,
+        city: true,
         district: { include: { city: { include: { country: true } } } },
         venue: true,
         user: { select: { id: true, name: true, avatarUrl: true, phone: true, email: true } },
@@ -27,6 +28,12 @@ export async function GET(
           include: { specializations: true },
         },
         equipmentDetail: true,
+        venueRentalDetail: true,
+        venueMembershipDetail: true,
+        venueClassDetail: true,
+        venueProductDetail: true,
+        venueEventDetail: true,
+        venueServiceDetail: true,
         responses: {
           include: {
             user: { select: { id: true, name: true, avatarUrl: true } },
@@ -157,6 +164,8 @@ export async function PUT(
     const updateData: Record<string, unknown> = {};
     if (parsed.data.type !== undefined) updateData.type = parsed.data.type;
     if (parsed.data.sportId !== undefined) updateData.sportId = parsed.data.sportId;
+    if (parsed.data.countryId !== undefined) updateData.countryId = parsed.data.countryId || null;
+    if (parsed.data.cityId !== undefined) updateData.cityId = parsed.data.cityId || null;
     if (parsed.data.districtId !== undefined) updateData.districtId = parsed.data.districtId;
     if (parsed.data.venueId !== undefined) updateData.venueId = parsed.data.venueId || null;
     if (parsed.data.dateTime !== undefined) updateData.dateTime = new Date(parsed.data.dateTime);
@@ -164,14 +173,184 @@ export async function PUT(
     if (parsed.data.description !== undefined) updateData.description = parsed.data.description || null;
     if (parsed.data.allowedGender !== undefined) updateData.allowedGender = parsed.data.allowedGender;
 
-    const updated = await prisma.listing.update({
-      where: { id },
-      data: updateData,
-      include: {
-        sport: true,
-        district: { include: { city: true } },
-        venue: true,
-      },
+    const targetType = parsed.data.type ?? listing.type;
+
+    const updated = await prisma.$transaction(async (tx) => {
+      const nextListing = await tx.listing.update({
+        where: { id },
+        data: updateData,
+      });
+
+      const deleteVenueDetailPromises = [
+        targetType !== "VENUE_RENTAL" ? tx.venueRentalDetail.deleteMany({ where: { listingId: id } }) : Promise.resolve(),
+        targetType !== "VENUE_MEMBERSHIP" ? tx.venueMembershipDetail.deleteMany({ where: { listingId: id } }) : Promise.resolve(),
+        targetType !== "VENUE_CLASS" ? tx.venueClassDetail.deleteMany({ where: { listingId: id } }) : Promise.resolve(),
+        targetType !== "VENUE_PRODUCT" ? tx.venueProductDetail.deleteMany({ where: { listingId: id } }) : Promise.resolve(),
+        targetType !== "VENUE_EVENT" ? tx.venueEventDetail.deleteMany({ where: { listingId: id } }) : Promise.resolve(),
+        targetType !== "VENUE_SERVICE" ? tx.venueServiceDetail.deleteMany({ where: { listingId: id } }) : Promise.resolve(),
+      ];
+
+      await Promise.all(deleteVenueDetailPromises);
+
+      if (targetType === "VENUE_RENTAL" && parsed.data.venueRentalDetail) {
+        await tx.venueRentalDetail.upsert({
+          where: { listingId: id },
+          create: {
+            listingId: id,
+            facilityType: parsed.data.venueRentalDetail.facilityType || "saha",
+            courtCount: parsed.data.venueRentalDetail.courtCount ?? 1,
+            pricePerHour: parsed.data.venueRentalDetail.pricePerHour ?? null,
+            pricePerSession: parsed.data.venueRentalDetail.pricePerSession ?? null,
+            minDuration: parsed.data.venueRentalDetail.minDuration ?? null,
+            availableSlots: parsed.data.venueRentalDetail.availableSlots || null,
+            surfaceType: parsed.data.venueRentalDetail.surfaceType || null,
+            hasLighting: parsed.data.venueRentalDetail.hasLighting ?? false,
+          },
+          update: {
+            facilityType: parsed.data.venueRentalDetail.facilityType || "saha",
+            courtCount: parsed.data.venueRentalDetail.courtCount ?? 1,
+            pricePerHour: parsed.data.venueRentalDetail.pricePerHour ?? null,
+            pricePerSession: parsed.data.venueRentalDetail.pricePerSession ?? null,
+            minDuration: parsed.data.venueRentalDetail.minDuration ?? null,
+            availableSlots: parsed.data.venueRentalDetail.availableSlots || null,
+            surfaceType: parsed.data.venueRentalDetail.surfaceType || null,
+            hasLighting: parsed.data.venueRentalDetail.hasLighting ?? false,
+          },
+        });
+      }
+
+      if (targetType === "VENUE_MEMBERSHIP" && parsed.data.venueMembershipDetail) {
+        await tx.venueMembershipDetail.upsert({
+          where: { listingId: id },
+          create: {
+            listingId: id,
+            membershipType: parsed.data.venueMembershipDetail.membershipType || "aylık",
+            price: parsed.data.venueMembershipDetail.price ?? 0,
+            includes: parsed.data.venueMembershipDetail.includes ?? [],
+            trialAvailable: parsed.data.venueMembershipDetail.trialAvailable ?? false,
+            trialPrice: parsed.data.venueMembershipDetail.trialPrice ?? null,
+            maxMembers: parsed.data.venueMembershipDetail.maxMembers ?? null,
+          },
+          update: {
+            membershipType: parsed.data.venueMembershipDetail.membershipType || "aylık",
+            price: parsed.data.venueMembershipDetail.price ?? 0,
+            includes: parsed.data.venueMembershipDetail.includes ?? [],
+            trialAvailable: parsed.data.venueMembershipDetail.trialAvailable ?? false,
+            trialPrice: parsed.data.venueMembershipDetail.trialPrice ?? null,
+            maxMembers: parsed.data.venueMembershipDetail.maxMembers ?? null,
+          },
+        });
+      }
+
+      if (targetType === "VENUE_CLASS" && parsed.data.venueClassDetail) {
+        await tx.venueClassDetail.upsert({
+          where: { listingId: id },
+          create: {
+            listingId: id,
+            className: parsed.data.venueClassDetail.className || "",
+            schedule: parsed.data.venueClassDetail.schedule || null,
+            instructorName: parsed.data.venueClassDetail.instructorName || null,
+            pricePerSession: parsed.data.venueClassDetail.pricePerSession ?? null,
+            priceMonthly: parsed.data.venueClassDetail.priceMonthly ?? null,
+            difficulty: parsed.data.venueClassDetail.difficulty || null,
+            maxParticipants: parsed.data.venueClassDetail.maxParticipants ?? null,
+          },
+          update: {
+            className: parsed.data.venueClassDetail.className || "",
+            schedule: parsed.data.venueClassDetail.schedule || null,
+            instructorName: parsed.data.venueClassDetail.instructorName || null,
+            pricePerSession: parsed.data.venueClassDetail.pricePerSession ?? null,
+            priceMonthly: parsed.data.venueClassDetail.priceMonthly ?? null,
+            difficulty: parsed.data.venueClassDetail.difficulty || null,
+            maxParticipants: parsed.data.venueClassDetail.maxParticipants ?? null,
+          },
+        });
+      }
+
+      if (targetType === "VENUE_PRODUCT" && parsed.data.venueProductDetail) {
+        await tx.venueProductDetail.upsert({
+          where: { listingId: id },
+          create: {
+            listingId: id,
+            productCategory: parsed.data.venueProductDetail.productCategory || "supplement",
+            productName: parsed.data.venueProductDetail.productName || "",
+            brand: parsed.data.venueProductDetail.brand || null,
+            price: parsed.data.venueProductDetail.price ?? 0,
+            unit: parsed.data.venueProductDetail.unit || "adet",
+            inStock: parsed.data.venueProductDetail.inStock ?? true,
+          },
+          update: {
+            productCategory: parsed.data.venueProductDetail.productCategory || "supplement",
+            productName: parsed.data.venueProductDetail.productName || "",
+            brand: parsed.data.venueProductDetail.brand || null,
+            price: parsed.data.venueProductDetail.price ?? 0,
+            unit: parsed.data.venueProductDetail.unit || "adet",
+            inStock: parsed.data.venueProductDetail.inStock ?? true,
+          },
+        });
+      }
+
+      if (targetType === "VENUE_EVENT" && parsed.data.venueEventDetail) {
+        await tx.venueEventDetail.upsert({
+          where: { listingId: id },
+          create: {
+            listingId: id,
+            eventType: parsed.data.venueEventDetail.eventType || "turnuva",
+            startDate: parsed.data.venueEventDetail.startDate ? new Date(parsed.data.venueEventDetail.startDate) : null,
+            endDate: parsed.data.venueEventDetail.endDate ? new Date(parsed.data.venueEventDetail.endDate) : null,
+            entryFee: parsed.data.venueEventDetail.entryFee ?? null,
+            maxParticipants: parsed.data.venueEventDetail.maxParticipants ?? null,
+            registrationDeadline: parsed.data.venueEventDetail.registrationDeadline ? new Date(parsed.data.venueEventDetail.registrationDeadline) : null,
+          },
+          update: {
+            eventType: parsed.data.venueEventDetail.eventType || "turnuva",
+            startDate: parsed.data.venueEventDetail.startDate ? new Date(parsed.data.venueEventDetail.startDate) : null,
+            endDate: parsed.data.venueEventDetail.endDate ? new Date(parsed.data.venueEventDetail.endDate) : null,
+            entryFee: parsed.data.venueEventDetail.entryFee ?? null,
+            maxParticipants: parsed.data.venueEventDetail.maxParticipants ?? null,
+            registrationDeadline: parsed.data.venueEventDetail.registrationDeadline ? new Date(parsed.data.venueEventDetail.registrationDeadline) : null,
+          },
+        });
+      }
+
+      if (targetType === "VENUE_SERVICE" && parsed.data.venueServiceDetail) {
+        await tx.venueServiceDetail.upsert({
+          where: { listingId: id },
+          create: {
+            listingId: id,
+            serviceType: parsed.data.venueServiceDetail.serviceType || "",
+            sessionDuration: parsed.data.venueServiceDetail.sessionDuration ?? null,
+            pricePerSession: parsed.data.venueServiceDetail.pricePerSession ?? null,
+            qualifications: parsed.data.venueServiceDetail.qualifications || null,
+          },
+          update: {
+            serviceType: parsed.data.venueServiceDetail.serviceType || "",
+            sessionDuration: parsed.data.venueServiceDetail.sessionDuration ?? null,
+            pricePerSession: parsed.data.venueServiceDetail.pricePerSession ?? null,
+            qualifications: parsed.data.venueServiceDetail.qualifications || null,
+          },
+        });
+      }
+
+      return tx.listing.findUnique({
+        where: { id: nextListing.id },
+        include: {
+          sport: true,
+          city: true,
+          district: { include: { city: { include: { country: true } } } },
+          venue: true,
+          trainerProfile: { include: { specializations: true } },
+          equipmentDetail: true,
+          venueRentalDetail: true,
+          venueMembershipDetail: true,
+          venueClassDetail: true,
+          venueProductDetail: true,
+          venueEventDetail: true,
+          venueServiceDetail: true,
+          user: { select: { id: true, name: true, avatarUrl: true } },
+          responses: true,
+        },
+      });
     });
 
     log.info("İlan güncellendi", { listingId: id, userId });
@@ -311,6 +490,12 @@ export async function DELETE(
         await tx.noShowReport.deleteMany({ where: { listingId: id } });
         await (tx as any).trainerProfile?.deleteMany({ where: { listingId: id } });
         await (tx as any).equipmentDetail?.deleteMany({ where: { listingId: id } });
+        await tx.venueRentalDetail.deleteMany({ where: { listingId: id } });
+        await tx.venueMembershipDetail.deleteMany({ where: { listingId: id } });
+        await tx.venueClassDetail.deleteMany({ where: { listingId: id } });
+        await tx.venueProductDetail.deleteMany({ where: { listingId: id } });
+        await tx.venueEventDetail.deleteMany({ where: { listingId: id } });
+        await tx.venueServiceDetail.deleteMany({ where: { listingId: id } });
         await tx.response.deleteMany({ where: { listingId: id } });
         await tx.listing.delete({ where: { id } });
       }

@@ -49,8 +49,25 @@ const AMENITY_OPTIONS = [
   "💊 İlk Yardım", "🎯 Ekipman Kiralama",
 ];
 
+const VENUE_TYPE_OPTIONS = [
+  { value: "SPORTS_FACILITY", label: "Spor Tesisi" },
+  { value: "FITNESS_CENTER", label: "Fitness / Stüdyo" },
+  { value: "SUPPLEMENT_STORE", label: "Supplement Mağazası" },
+  { value: "EQUIPMENT_STORE", label: "Spor Malzeme Mağazası" },
+  { value: "SPORTS_CLUB", label: "Spor Kulübü / Dernek" },
+  { value: "HEALTH_CENTER", label: "Sağlık / Fizyoterapi" },
+  { value: "EVENT_ORGANIZER", label: "Etkinlik Organizatörü" },
+  { value: "SPORTS_NUTRITION", label: "Sporcu Beslenme / Restoran" },
+  { value: "OTHER", label: "Diğer" },
+] as const;
+
+const VENUE_TYPE_LABELS: Record<string, string> = Object.fromEntries(
+  VENUE_TYPE_OPTIONS.map((option) => [option.value, option.label])
+);
+
 type VenueProfile = {
   id: string;
+  venueType: string;
   businessName: string;
   address: string | null;
   description: string | null;
@@ -92,6 +109,7 @@ export default function IsletmeYonetimiPage() {
   const [uploadingGallery, setUploadingGallery] = useState(false);
 
   const [form, setForm] = useState({
+    venueType: "SPORTS_FACILITY",
     businessName: "",
     address: "",
     description: "",
@@ -119,6 +137,7 @@ export default function IsletmeYonetimiPage() {
         setStats(venueData.stats);
         const p = venueData.profile;
         setForm({
+          venueType: p.venueType || "SPORTS_FACILITY",
           businessName: p.businessName || "",
           address: p.address || "",
           description: p.description || "",
@@ -300,6 +319,9 @@ export default function IsletmeYonetimiPage() {
                   🏟️ Tesis ✓
                 </span>
               )}
+              <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200">
+                {VENUE_TYPE_LABELS[form.venueType] ?? "Diğer"}
+              </span>
             </div>
             {profile.address && (
               <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
@@ -396,6 +418,10 @@ export default function IsletmeYonetimiPage() {
                   <p className="text-gray-700 dark:text-gray-200">{profile.phone}</p>
                 </div>
               )}
+              <div>
+                <p className="text-xs text-gray-400 mb-0.5">İşletme Türü</p>
+                <p className="text-gray-700 dark:text-gray-200">{VENUE_TYPE_LABELS[form.venueType] ?? "Diğer"}</p>
+              </div>
               {profile.capacity && (
                 <div>
                   <p className="text-xs text-gray-400 mb-0.5">Kapasite</p>
@@ -450,8 +476,22 @@ export default function IsletmeYonetimiPage() {
               <input id="venue-business-name" className={inputClass} value={form.businessName} onChange={e => setForm(f => ({ ...f, businessName: e.target.value }))} placeholder="Tesis adı" />
             </div>
             <div>
+              <label htmlFor="venue-type" className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">İşletme Türü *</label>
+              <select id="venue-type" className={inputClass} value={form.venueType} onChange={e => setForm(f => ({ ...f, venueType: e.target.value }))}>
+                {VENUE_TYPE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
               <label htmlFor="venue-phone" className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">Telefon</label>
               <input id="venue-phone" className={inputClass} value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="05XX XXX XX XX" />
+            </div>
+            <div className="rounded-xl border border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 px-4 py-3 text-xs text-gray-500 dark:text-gray-400">
+              Doğru işletme türü seçimi, ilan oluştur ekranında yalnızca sana uygun işletme ilan tiplerini görünür kılar.
             </div>
           </div>
 

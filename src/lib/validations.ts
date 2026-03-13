@@ -175,6 +175,8 @@ export const createListingSchema = z
 export const updateListingSchema = z.object({
   type: z.enum(["RIVAL", "PARTNER", "TRAINER", "EQUIPMENT", "VENUE_RENTAL", "VENUE_MEMBERSHIP", "VENUE_CLASS", "VENUE_PRODUCT", "VENUE_EVENT", "VENUE_SERVICE"], { message: "İlan tipi seçiniz" }).optional(),
   sportId: z.string().min(1).optional(),
+  countryId: z.string().optional().nullable(),
+  cityId: z.string().optional().nullable(),
   districtId: z.string().min(1).optional(),
   venueId: z.string().optional().nullable(),
   dateTime: z
@@ -190,6 +192,55 @@ export const updateListingSchema = z.object({
   level: z.enum(["BEGINNER", "INTERMEDIATE", "ADVANCED"]).optional(),
   allowedGender: z.enum(["ANY", "MALE_ONLY", "FEMALE_ONLY"]).optional(),
   description: z.string().max(1000).optional(),
+  venueRentalDetail: z.object({
+    facilityType: z.string().max(50).optional(),
+    courtCount: z.number().int().min(1).optional(),
+    pricePerHour: z.number().min(0).optional().nullable(),
+    pricePerSession: z.number().min(0).optional().nullable(),
+    minDuration: z.number().int().min(0).optional().nullable(),
+    availableSlots: z.string().max(2000).optional().nullable(),
+    surfaceType: z.string().max(50).optional().nullable(),
+    hasLighting: z.boolean().optional(),
+  }).optional(),
+  venueMembershipDetail: z.object({
+    membershipType: z.string().max(50).optional(),
+    price: z.number().min(0).optional(),
+    includes: z.array(z.string()).optional(),
+    trialAvailable: z.boolean().optional(),
+    trialPrice: z.number().min(0).optional().nullable(),
+    maxMembers: z.number().int().min(0).optional().nullable(),
+  }).optional(),
+  venueClassDetail: z.object({
+    className: z.string().max(100).optional(),
+    schedule: z.string().max(2000).optional().nullable(),
+    instructorName: z.string().max(100).optional().nullable(),
+    pricePerSession: z.number().min(0).optional().nullable(),
+    priceMonthly: z.number().min(0).optional().nullable(),
+    difficulty: z.string().max(50).optional().nullable(),
+    maxParticipants: z.number().int().min(0).optional().nullable(),
+  }).optional(),
+  venueProductDetail: z.object({
+    productCategory: z.string().max(50).optional(),
+    productName: z.string().max(200).optional(),
+    brand: z.string().max(100).optional().nullable(),
+    price: z.number().min(0).optional(),
+    unit: z.string().max(20).optional(),
+    inStock: z.boolean().optional(),
+  }).optional(),
+  venueEventDetail: z.object({
+    eventType: z.string().max(50).optional(),
+    startDate: z.string().optional().nullable(),
+    endDate: z.string().optional().nullable(),
+    entryFee: z.number().min(0).optional().nullable(),
+    maxParticipants: z.number().int().min(0).optional().nullable(),
+    registrationDeadline: z.string().optional().nullable(),
+  }).optional(),
+  venueServiceDetail: z.object({
+    serviceType: z.string().max(100).optional(),
+    sessionDuration: z.number().int().min(0).optional().nullable(),
+    pricePerSession: z.number().min(0).optional().nullable(),
+    qualifications: z.string().max(500).optional().nullable(),
+  }).optional(),
 });
 
 // ========== RESPONSE ==========

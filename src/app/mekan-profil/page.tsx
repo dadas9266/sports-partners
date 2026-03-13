@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 
 type VenueProfileData = {
+  venueType: string;
   businessName: string;
   address: string;
   description: string;
@@ -25,6 +26,18 @@ const SPORT_OPTIONS = [
   "Masa Tenisi", "Yoga", "Pilates", "Koşu",
 ];
 
+const VENUE_TYPE_OPTIONS = [
+  { value: "SPORTS_FACILITY", label: "Spor Tesisi" },
+  { value: "FITNESS_CENTER", label: "Fitness / Stüdyo" },
+  { value: "SUPPLEMENT_STORE", label: "Supplement Mağazası" },
+  { value: "EQUIPMENT_STORE", label: "Spor Malzeme Mağazası" },
+  { value: "SPORTS_CLUB", label: "Spor Kulübü / Dernek" },
+  { value: "HEALTH_CENTER", label: "Sağlık / Fizyoterapi" },
+  { value: "EVENT_ORGANIZER", label: "Etkinlik Organizatörü" },
+  { value: "SPORTS_NUTRITION", label: "Sporcu Beslenme / Restoran" },
+  { value: "OTHER", label: "Diğer" },
+] as const;
+
 export default function MekanProfilPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -35,6 +48,7 @@ export default function MekanProfilPage() {
   const [profileId, setProfileId] = useState<string | null>(null);
 
   const [form, setForm] = useState<VenueProfileData>({
+    venueType: "SPORTS_FACILITY",
     businessName: "", address: "", description: "", phone: "",
     website: "", capacity: "", fieldCount: "", openingHours: "", sports: [], logoUrl: "",
   });
@@ -52,6 +66,7 @@ export default function MekanProfilPage() {
         if (d.profile) {
           const p = d.profile;
           setForm({
+            venueType: p.venueType || "SPORTS_FACILITY",
             businessName: p.businessName || "",
             address: p.address || "",
             description: p.description || "",
@@ -238,6 +253,19 @@ export default function MekanProfilPage() {
             placeholder="Örn: Olimpik Spor Merkezi"
             className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-emerald-500 outline-none"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">İşletme Türü</label>
+          <select
+            value={form.venueType}
+            onChange={e => setForm(f => ({ ...f, venueType: e.target.value }))}
+            className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-emerald-500 outline-none"
+          >
+            {VENUE_TYPE_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>{option.label}</option>
+            ))}
+          </select>
         </div>
 
         <div>
