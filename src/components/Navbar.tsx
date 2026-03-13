@@ -237,9 +237,7 @@ export default function Navbar() {
                     </Link>
                   )}
                   <Link href="/profil" className="block px-4 py-2 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/30">{t("profile")}</Link>
-                  {(session.user as any)?.userType === "VENUE" && (
-                    <Link href="/ayarlar/isletme" className="block px-4 py-2 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/30">🏟️ İşletme Yönetimi</Link>
-                  )}
+                  <Link href="/ayarlar/isletme" className="block px-4 py-2 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/30">🏟️ Tesis Yönetimi</Link>
                   <Link href="/topluluklarim" className="block px-4 py-2 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/30">{t("myCommunities")}</Link>
                   <Link href="/ayarlar" className="block px-4 py-2 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/30">{t("settings")}</Link>
                   <button onClick={() => signOut()} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30">
@@ -271,54 +269,86 @@ export default function Navbar() {
                   </button>
                   {moreOpen && (
                     <>
-                      <div className="fixed inset-0 z-[88]" onClick={() => setMoreOpen(false)} />
-                        <div className="absolute right-0 top-full mt-1.5 w-64 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-xl z-[89] overflow-hidden py-1.5">
-                          <button
-                            onClick={() => {
-                              toggleDarkMode();
-                              setMoreOpen(false);
-                            }}
-                            className="w-full text-left flex items-center gap-3 px-4 py-2.5 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition"
-                          >
-                            <span className="text-lg">🌓</span>
-                            <span className="text-sm font-medium text-gray-800 dark:text-gray-100">Tema Değiştir</span>
-                          </button>
-                          <Link
-                            href="/mesajlar"
-                            onClick={() => setMoreOpen(false)}
-                            className={`flex items-center gap-3 px-4 py-2.5 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition ${pathname?.startsWith("/mesajlar") ? "bg-emerald-50 dark:bg-emerald-900/20" : ""}`}
-                          >
-                            <span className="text-lg">💬</span>
-                            <span className="text-sm font-medium text-gray-800 dark:text-gray-100">Mesajlar</span>
-                          </Link>
-                          <Link
-                            href="/aktivitelerim"
-                            onClick={() => setMoreOpen(false)}
-                            className={`flex items-center gap-3 px-4 py-2.5 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition ${pathname?.startsWith("/aktivitelerim") ? "bg-emerald-50 dark:bg-emerald-900/20" : ""}`}
-                          >
-                            <span className="text-lg">📌</span>
-                            <span className="text-sm font-medium text-gray-800 dark:text-gray-100">Aktivitelerim</span>
-                          </Link>
-                        {[
-                          { href: "/ayarlar/profil", icon: "👤", label: "Profili Düzenle" },
-                          { href: "/ayarlar/guvenlik", icon: "🔒", label: "Hesap Güvenliği" },
-                          { href: "/ayarlar/profesyonel", icon: "⭐", label: "Profesyonel Hesap" },
-                          ...((session.user as any)?.userType === "VENUE" ? [{ href: "/ayarlar/isletme", icon: "🏟️", label: "İşletme Yönetimi" }] : []),
-                          ...((session.user as any)?.userType === "TRAINER" ? [{ href: "/antrenor/derslerim", icon: "📚", label: "Ders Takibi" }] : []),
-                          { href: "/ayarlar/gizlilik", icon: "🛡️", label: "Gizlilik" },
-                          { href: "/topluluklar", icon: "🌐", label: "Topluluklar" },
-                          { href: "/turnuvalar", icon: "🏆", label: "Turnuvalar" },
-                        ].map(item => (
-                          <Link
-                            key={item.href}
-                            href={item.href}
-                            onClick={() => setMoreOpen(false)}
-                            className={`flex items-center gap-3 px-4 py-2.5 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition ${pathname?.startsWith(item.href) ? "bg-emerald-50 dark:bg-emerald-900/20" : ""}`}
-                          >
-                            <span className="text-lg">{item.icon}</span>
-                            <span className="text-sm font-medium text-gray-800 dark:text-gray-100">{item.label}</span>
-                          </Link>
-                        ))}
+                      <div className="fixed inset-0 z-[88] bg-black/40 backdrop-blur-sm" onClick={() => setMoreOpen(false)} />
+                      <div className="fixed inset-x-0 bottom-0 z-[89] max-h-[82vh] overflow-y-auto rounded-t-[28px] border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900">
+                        <div className="mx-auto mt-3 h-1.5 w-14 rounded-full bg-gray-300 dark:bg-gray-700" />
+                        <div className="px-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-4">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <img src={session.user?.image || "/icons/avatar.svg"} alt="Profil" className="h-11 w-11 rounded-2xl border border-emerald-200 object-cover shadow-sm dark:border-emerald-700" />
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">{session.user?.name}</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">Mobil hızlı erişim</p>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => setMoreOpen(false)}
+                              className="rounded-xl p-2 text-gray-500 transition hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+                              aria-label={t("close")}
+                            >
+                              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                          </div>
+
+                          <div className="mt-4 grid grid-cols-4 gap-2">
+                            {[
+                              { href: "/mesajlar", icon: "💬", label: "Mesajlar" },
+                              { href: "/aktivitelerim", icon: "📌", label: "Aktivite" },
+                              { href: "/ayarlar", icon: "⚙️", label: "Ayarlar" },
+                              { action: () => { toggleDarkMode(); setMoreOpen(false); }, icon: "🌓", label: "Tema" },
+                            ].map((item) => (
+                              item.href ? (
+                                <Link
+                                  key={item.label}
+                                  href={item.href}
+                                  onClick={() => setMoreOpen(false)}
+                                  className="rounded-2xl bg-gray-50 px-2 py-3 text-center text-xs font-semibold text-gray-700 transition hover:bg-emerald-50 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                                >
+                                  <span className="mb-1 block text-lg">{item.icon}</span>
+                                  {item.label}
+                                </Link>
+                              ) : (
+                                <button
+                                  key={item.label}
+                                  type="button"
+                                  onClick={item.action}
+                                  className="rounded-2xl bg-gray-50 px-2 py-3 text-center text-xs font-semibold text-gray-700 transition hover:bg-emerald-50 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                                >
+                                  <span className="mb-1 block text-lg">{item.icon}</span>
+                                  {item.label}
+                                </button>
+                              )
+                            ))}
+                          </div>
+
+                          <div className="mt-5">
+                            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">Dil</p>
+                            <LanguageSwitcher mode="full" onSelect={() => setMoreOpen(false)} />
+                          </div>
+
+                          <div className="mt-5 space-y-1">
+                            {[
+                              { href: "/ayarlar/profil", icon: "👤", label: "Profili Düzenle" },
+                              { href: "/ayarlar/guvenlik", icon: "🔒", label: "Hesap Güvenliği" },
+                              { href: "/ayarlar/profesyonel", icon: "⭐", label: "Profesyonel Hesap" },
+                              { href: "/ayarlar/isletme", icon: "🏟️", label: "Tesis Yönetimi" },
+                              ...((session.user as any)?.userType === "TRAINER" ? [{ href: "/antrenor/derslerim", icon: "📚", label: "Ders Takibi" }] : []),
+                              { href: "/ayarlar/gizlilik", icon: "🛡️", label: "Gizlilik" },
+                              { href: "/topluluklar", icon: "🌐", label: "Topluluklar" },
+                              { href: "/turnuvalar", icon: "🏆", label: "Turnuvalar" },
+                            ].map((item) => (
+                              <Link
+                                key={item.href}
+                                href={item.href}
+                                onClick={() => setMoreOpen(false)}
+                                className={`flex items-center gap-3 rounded-2xl px-4 py-3 transition ${pathname?.startsWith(item.href) ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300" : "text-gray-800 hover:bg-gray-50 dark:text-gray-100 dark:hover:bg-gray-800"}`}
+                              >
+                                <span className="text-lg">{item.icon}</span>
+                                <span className="text-sm font-medium">{item.label}</span>
+                              </Link>
+                            ))}
+                          </div>
+                        </div>
                       </div>
                     </>
                   )}
@@ -328,6 +358,9 @@ export default function Navbar() {
               <>
                 <Link href="/auth/giris" className="hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-1.5 rounded-lg transition text-sm font-medium">{t("signIn")}</Link>
                 <Link href="/auth/kayit" className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold px-4 py-1.5 rounded-xl hover:opacity-90 transition text-sm shadow-sm">{t("register")}</Link>
+                <div className="md:hidden">
+                  <LanguageSwitcher />
+                </div>
                 <button onClick={toggleDarkMode} className="ml-1 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400" aria-label="Tema Değiştir">
                   {darkMode ? (
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">

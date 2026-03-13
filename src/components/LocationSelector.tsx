@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { useLocations } from "@/hooks/useLocations";
+import { useLocale } from "next-intl";
 
 interface LocationSelectorProps {
   countryId: string;
@@ -30,6 +31,19 @@ export default function LocationSelector({
   selectClass: customSelectClass,
   error,
 }: LocationSelectorProps) {
+  const locale = useLocale();
+  const isTr = locale === "tr";
+
+  const text = {
+    country: isTr ? "Ülke" : "Country",
+    countrySelect: isTr ? "Ülke Seçiniz" : "Select Country",
+    city: isTr ? "Şehir" : "City",
+    cityOptional: isTr ? "(opsiyonel)" : "(optional)",
+    citySelect: isTr ? "Şehir Seçiniz" : "Select City",
+    district: isTr ? "İlçe" : "District",
+    districtSelect: isTr ? "İlçe Seçiniz (opsiyonel)" : "Select District (optional)",
+  };
+
   const { locations, loading } = useLocations();
 
   const countries = locations || [];
@@ -50,14 +64,14 @@ export default function LocationSelector({
     <div className={className}>
       {/* Ülke Seçimi */}
       <div>
-        {showLabels && <label className={labelClass}>Ülke</label>}
+        {showLabels && <label className={labelClass}>{text.country}</label>}
         <select
           value={countryId}
           onChange={(e) => onChange({ countryId: e.target.value, cityId: "", districtId: "" })}
           disabled={disabled || loading}
           className={`${selectClass} ${error?.country ? "border-red-500" : ""}`}
         >
-          <option value="">{showLabels ? "Ülke Seçiniz" : "Ülke"}</option>
+          <option value="">{showLabels ? text.countrySelect : text.country}</option>
           {countries.map((c) => (
             <option key={c.id} value={c.id}>
               {c.name}
@@ -69,14 +83,14 @@ export default function LocationSelector({
 
       {/* Şehir Seçimi */}
       <div>
-        {showLabels && <label className={labelClass}>Şehir <span className="font-normal text-xs text-gray-400">(opsiyonel)</span></label>}
+        {showLabels && <label className={labelClass}>{text.city} <span className="font-normal text-xs text-gray-400">{text.cityOptional}</span></label>}
         <select
           value={cityId}
           onChange={(e) => onChange({ cityId: e.target.value, districtId: "" })}
           disabled={disabled || loading || !countryId}
           className={`${selectClass} ${error?.city ? "border-red-500" : ""}`}
         >
-          <option value="">{showLabels ? "Şehir Seçiniz" : "Şehir"}</option>
+          <option value="">{showLabels ? text.citySelect : text.city}</option>
           {cities.map((c) => (
             <option key={c.id} value={c.id}>
               {c.name}
@@ -89,14 +103,14 @@ export default function LocationSelector({
       {/* İlçe Seçimi — şehirde ilçe verisi varsa göster */}
       {districts.length > 0 && (
       <div>
-        {showLabels && <label className={labelClass}>İlçe <span className="text-gray-400 font-normal text-xs">(opsiyonel)</span></label>}
+        {showLabels && <label className={labelClass}>{text.district} <span className="text-gray-400 font-normal text-xs">{text.cityOptional}</span></label>}
         <select
           value={districtId}
           onChange={(e) => onChange({ districtId: e.target.value })}
           disabled={disabled || loading || !cityId}
           className={`${selectClass} ${error?.district ? "border-red-500" : ""}`}
         >
-          <option value="">{showLabels ? "İlçe Seçiniz (opsiyonel)" : "İlçe"}</option>
+          <option value="">{showLabels ? text.districtSelect : text.district}</option>
           {districts.map((d) => (
             <option key={d.id} value={d.id}>
               {d.name}

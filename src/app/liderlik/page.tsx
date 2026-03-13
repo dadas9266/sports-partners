@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLocale } from "next-intl";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { getLeaderboard, getSports } from "@/services/api";
 import type { LeaderboardEntry, Sport } from "@/types";
 
 import BadgeChip from "@/components/social/BadgeChip";
+import { getCompetitiveLevelLabel } from "@/lib/localized-ui";
 
 function StarDisplay({ value, count }: { value: number; count: number }) {
   return (
@@ -34,15 +36,13 @@ type FriendEntry = {
   isMe: boolean; rank: number;
 };
 
-const LEVEL_LABELS: Record<string, string> = {
-  BEGINNER: "Acemi", AMATEUR: "Amatör", SEMI_PRO: "Yarı Pro", PRO: "⚡ Pro",
-};
 const LEVEL_COLORS: Record<string, string> = {
   BEGINNER: "bg-gray-100 text-gray-600", AMATEUR: "bg-green-100 text-green-700",
   SEMI_PRO: "bg-purple-100 text-purple-700", PRO: "bg-amber-100 text-amber-700",
 };
 
 export default function LiderlikPage() {
+  const locale = useLocale();
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [sports, setSports] = useState<Sport[]>([]);
   const [selectedSport, setSelectedSport] = useState<string>("");
@@ -84,8 +84,8 @@ export default function LiderlikPage() {
       </div>
 
       {/* Mode Toggle */}
-      <div className="flex justify-center mb-6">
-        <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1 gap-1">
+      <div className="mb-6 overflow-x-auto">
+        <div className="mx-auto flex w-max bg-gray-100 dark:bg-gray-800 rounded-xl p-1 gap-1">
           <button onClick={() => setMode("global")}
             className={`px-5 py-2 rounded-lg text-sm font-semibold transition ${
               mode === "global" ? "bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 shadow-sm" : "text-gray-500 dark:text-gray-400 hover:text-gray-700"
@@ -105,8 +105,8 @@ export default function LiderlikPage() {
       {mode === "global" && (
         <>
         {/* Time Period Filter */}
-        <div className="flex justify-center mb-4">
-          <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1 gap-1">
+        <div className="mb-4 overflow-x-auto">
+          <div className="mx-auto flex w-max bg-gray-100 dark:bg-gray-800 rounded-xl p-1 gap-1">
             {([
               { key: "all" as const, label: "Tüm Zamanlar" },
               { key: "monthly" as const, label: "Bu Ay" },
@@ -121,7 +121,8 @@ export default function LiderlikPage() {
             ))}
           </div>
         </div>
-        <div className="flex flex-wrap gap-2 mb-6 justify-center">
+        <div className="mb-6 overflow-x-auto">
+        <div className="flex w-max gap-2 px-1 mx-auto">
         <button
           onClick={() => setSelectedSport("")}
           className={`px-4 py-2 rounded-full text-sm font-medium transition ${
@@ -146,6 +147,7 @@ export default function LiderlikPage() {
           </button>
         ))}
       </div>
+      </div>
       </>
       )}
 
@@ -160,7 +162,7 @@ export default function LiderlikPage() {
             </div>
           ) : friendEntries.map((entry) => (
             <Link key={entry.id} href={`/profil/${entry.id}`}
-              className={`flex items-center gap-4 rounded-xl border p-4 hover:shadow-md transition ${
+              className={`flex flex-wrap sm:flex-nowrap items-start sm:items-center gap-3 sm:gap-4 rounded-xl border p-3 sm:p-4 hover:shadow-md transition ${
                 entry.isMe
                   ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-700"
                   : "bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700"
@@ -176,7 +178,7 @@ export default function LiderlikPage() {
                   <span className="font-semibold text-gray-800 dark:text-gray-100">{entry.name}</span>
                   {entry.isMe && <span className="text-xs bg-emerald-500 text-white px-2 py-0.5 rounded-full">Sen</span>}
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${LEVEL_COLORS[entry.userLevel] || "bg-gray-100 text-gray-600"}`}>
-                    {LEVEL_LABELS[entry.userLevel] || entry.userLevel}
+                    {getCompetitiveLevelLabel(entry.userLevel, locale)}
                   </span>
                   {/* Puan Rozeti */}
                   {typeof entry.totalPoints === "number" && (
@@ -191,7 +193,7 @@ export default function LiderlikPage() {
                   <span>🤝 {entry.totalMatches} maç</span>
                 </div>
               </div>
-              <div className="text-right shrink-0">
+              <div className="w-full sm:w-auto sm:text-right pl-14 sm:pl-0">
                 <p className="text-lg font-black text-violet-700 dark:text-violet-300">{entry.totalPoints}</p>
                 <p className="text-xs text-gray-400">XP</p>
               </div>
@@ -267,7 +269,7 @@ export default function LiderlikPage() {
             <Link
               key={entry.id}
               href={`/profil/${entry.id}`}
-              className={`flex items-center gap-4 rounded-xl border p-4 hover:shadow-md transition ${
+              className={`flex flex-wrap sm:flex-nowrap items-start sm:items-center gap-3 sm:gap-4 rounded-xl border p-3 sm:p-4 hover:shadow-md transition ${
                 idx === 0
                   ? "bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 border-yellow-200 dark:border-yellow-700"
                   : idx === 1
@@ -333,15 +335,20 @@ export default function LiderlikPage() {
                 {/* Rozetler */}
                 {entry.badges.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-1.5">
-                    {entry.badges.map((b) => (
+                    {entry.badges.slice(0, 3).map((b) => (
                       <BadgeChip key={b.id} badge={b} />
                     ))}
+                    {entry.badges.length > 3 && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-medium">
+                        +{entry.badges.length - 3}
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
 
               {/* Puan + istatistik */}
-              <div className="text-right shrink-0">
+              <div className="w-full sm:w-auto sm:text-right pl-14 sm:pl-0">
                 <StarDisplay value={entry.avgRating} count={entry.ratingCount} />
                 <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                   🤝 {entry.totalMatches} eşleşme

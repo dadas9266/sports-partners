@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import { useLocale } from "next-intl";
 import FilterBar from "@/components/FilterBar";
 import ListingCard from "@/components/ListingCard";
 import Pagination from "@/components/ui/Pagination";
@@ -36,6 +37,34 @@ export default function HomeClient({
   turkeyId,
 }: HomeClientProps) {
   const { data: session } = useSession();
+  const locale = useLocale();
+  const isTr = locale === "tr";
+  const text = {
+    fetchError: isTr ? "İlanlar yüklenemedi" : "Could not load listings",
+    heroTitle: isTr ? "Spor Partneri & Rakip Bul" : "Find a Sports Partner or Rival",
+    heroSubtitle: isTr ? "Spor yapmak için birini mi arıyorsun? Doğru yerdesin!" : "Looking for someone to train or compete with? You are in the right place.",
+    startNow: isTr ? "Hemen Başla" : "Get Started",
+    signIn: isTr ? "Giriş Yap" : "Sign In",
+    personalized: isTr ? "✨ Sana Özel" : "✨ For You",
+    popular: isTr ? "🔥 Popüler İlanlar" : "🔥 Popular Listings",
+    allListingsTab: isTr ? "📋 Tüm İlanlar" : "📋 All Listings",
+    feedTab: isTr ? "🌐 Keşfet" : "🌐 Discover",
+    found: isTr ? "ilan bulundu" : "listings found",
+    retry: isTr ? "Tekrar Dene" : "Try Again",
+    noCityListings: isTr ? "Bu şehirde henüz ilan yok" : "No listings in this city yet",
+    firstListingHint: isTr ? "İlk ilanı vererek spor arkadaşı bulmaya başla!" : "Post the first listing and start finding sports partners!",
+    firstListingCta: isTr ? "🎉 İlk ilanı sen ver!" : "🎉 Post the first listing",
+    noResults: isTr ? "Henüz uygun ilan bulunamadı" : "No matching listings found yet",
+    noResultsHint: isTr ? "Filtreleri değiştirmeyi deneyin veya yeni bir ilan oluşturun" : "Try changing filters or create a new listing",
+    feedIntro: isTr ? "👥 Takip ettiğin kişilerin ilanları ve ilgi alanlarına göre seçilmiş içerikler" : "👥 Listings from people you follow and selected recommendations",
+    noFeed: isTr ? "Keşfedecek içerik bulunamadı" : "No content to discover",
+    noFeedHint: isTr ? "Daha fazla kullanıcı takip et veya profilini güncelle" : "Follow more users or update your profile",
+    updateProfile: isTr ? "Profili Güncelle →" : "Update Profile →",
+    followingBadge: isTr ? "👥 Takip" : "👥 Following",
+    prev: isTr ? "← Önceki" : "← Previous",
+    page: isTr ? "Sayfa" : "Page",
+    next: isTr ? "Sonraki →" : "Next →",
+  };
   
   // İlanlar state - SSR'dan gelen verilerle başla
   const [listings, setListings] = useState<ListingSummary[]>(initialListings);
@@ -73,16 +102,16 @@ export default function HomeClient({
           setPagination(data.pagination);
         } else {
           setListings([]);
-          setError((data as any).error || "İlanlar yüklenemedi");
+          setError((data as any).error || text.fetchError);
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "İlanlar yüklenemedi");
+        setError(err instanceof Error ? err.message : text.fetchError);
         setListings([]);
       } finally {
         setLoading(false);
       }
     },
-    [initialPageSize]
+    [initialPageSize, text.fetchError]
   );
 
   const fetchWithFilters = useCallback(
@@ -136,18 +165,18 @@ export default function HomeClient({
         <div className="relative text-center">
           <div className="text-4xl mb-3" role="img" aria-label="kupa">🏆</div>
           <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-2">
-            Spor Partneri &amp; Rakip Bul
+            {text.heroTitle}
           </h1>
           <p className="text-emerald-100 text-base md:text-lg max-w-xl mx-auto">
-            Spor yapmak için birini mi arıyorsun? Doğru yerdesin!
+            {text.heroSubtitle}
           </p>
           {!session && (
             <div className="flex justify-center gap-3 mt-5">
               <a href="/auth/kayit" className="bg-white text-emerald-700 font-bold px-5 py-2.5 rounded-xl hover:bg-emerald-50 transition shadow text-sm">
-                Hemen Başla
+                {text.startNow}
               </a>
               <a href="/auth/giris" className="border border-white/50 text-white font-semibold px-5 py-2.5 rounded-xl hover:bg-white/10 transition text-sm">
-                Giriş Yap
+                {text.signIn}
               </a>
             </div>
           )}
@@ -158,7 +187,7 @@ export default function HomeClient({
       {recommendations.length > 0 && (
         <div className="mb-8">
           <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-3">
-            {recReason === "personalized" ? "✨ Sana Özel" : "🔥 Popüler İlanlar"}
+            {recReason === "personalized" ? text.personalized : text.popular}
           </h2>
           <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin snap-x snap-mandatory">
             {recommendations.map((listing) => (
@@ -177,13 +206,13 @@ export default function HomeClient({
             onClick={() => setActiveTab("all")}
             className={`px-4 py-2 text-sm font-medium transition border-b-2 -mb-px ${activeTab === "all" ? "border-emerald-500 text-emerald-600 dark:text-emerald-400" : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700"}`}
           >
-            📋 Tüm İlanlar
+            {text.allListingsTab}
           </button>
           <button
             onClick={() => setActiveTab("feed")}
             className={`px-4 py-2 text-sm font-medium transition border-b-2 -mb-px ${activeTab === "feed" ? "border-emerald-500 text-emerald-600 dark:text-emerald-400" : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700"}`}
           >
-            🌐 Keşfet
+            {text.feedTab}
           </button>
         </div>
       )}
@@ -199,7 +228,7 @@ export default function HomeClient({
 
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              {pagination.total > 0 ? `${pagination.total} ilan bulundu` : ""}
+              {pagination.total > 0 ? `${pagination.total} ${text.found}` : ""}
             </p>
           </div>
           {error && (
@@ -209,7 +238,7 @@ export default function HomeClient({
                 onClick={() => fetchWithFilters({})}
                 className="mt-3 text-emerald-600 dark:text-emerald-400 hover:underline font-semibold"
               >
-                Tekrar Dene
+                {text.retry}
               </button>
             </div>
           )}
@@ -246,26 +275,26 @@ export default function HomeClient({
                 <>
                   <span className="text-6xl" role="img" aria-label="baloncuk">🏙️</span>
                   <p className="mt-4 text-gray-700 dark:text-gray-300 text-xl font-semibold">
-                    Bu şehirde henüz ilan yok
+                    {text.noCityListings}
                   </p>
                   <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
-                    İlk ilanı vererek spor arkadaşı bulmaya başla!
+                    {text.firstListingHint}
                   </p>
                   <Link
                     href="/ilan/olustur"
                     className="mt-6 inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-3 rounded-xl transition shadow-lg shadow-emerald-600/20"
                   >
-                    🎉 İlk ilanı sen ver!
+                    {text.firstListingCta}
                   </Link>
                 </>
               ) : (
                 <>
                   <span className="text-6xl" role="img" aria-label="üzgün yüz">😕</span>
                   <p className="mt-4 text-gray-500 dark:text-gray-400 text-lg">
-                    Henüz uygun ilan bulunamadı
+                    {text.noResults}
                   </p>
                   <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">
-                    Filtreleri değiştirmeyi deneyin veya yeni bir ilan oluşturun
+                    {text.noResultsHint}
                   </p>
                 </>
               )}
@@ -293,7 +322,7 @@ export default function HomeClient({
       {activeTab === "feed" && (
         <div>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-            👥 Takip ettiğin kişilerin ilanları ve ilgi alanlarına göre seçilmiş içerikler
+            {text.feedIntro}
           </p>
           {feedLoading ? (
             <div className="flex justify-center py-12">
@@ -302,12 +331,12 @@ export default function HomeClient({
           ) : feedListings.length === 0 ? (
             <div className="text-center py-16">
               <span className="text-6xl">🌐</span>
-              <p className="mt-4 text-gray-500 dark:text-gray-400 text-lg">Keşfedecek içerik bulunamadı</p>
+              <p className="mt-4 text-gray-500 dark:text-gray-400 text-lg">{text.noFeed}</p>
               <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">
-                Daha fazla kullanıcı takip et veya profilini güncelle
+                {text.noFeedHint}
               </p>
               <Link href="/profil" className="mt-3 inline-block text-emerald-600 dark:text-emerald-400 hover:underline font-semibold">
-                Profili Güncelle →
+                {text.updateProfile}
               </Link>
             </div>
           ) : (
@@ -317,7 +346,7 @@ export default function HomeClient({
                   <div key={listing.id} className="relative">
                     {listing.isFromFollowing && (
                       <span className="absolute top-2 right-2 z-10 bg-emerald-500 text-white text-[10px] px-2 py-0.5 rounded-full font-medium">
-                        👥 Takip
+                        {text.followingBadge}
                       </span>
                     )}
                     <ListingCard listing={listing} />
@@ -330,15 +359,15 @@ export default function HomeClient({
                   disabled={feedPage <= 1}
                   className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm disabled:opacity-50 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
                 >
-                  ← Önceki
+                  {text.prev}
                 </button>
-                <span className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">Sayfa {feedPage}</span>
+                <span className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">{text.page} {feedPage}</span>
                 <button
                   onClick={() => setFeedPage((p) => p + 1)}
                   disabled={!feedHasNext}
                   className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm disabled:opacity-50 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
                 >
-                  Sonraki →
+                  {text.next}
                 </button>
               </div>
             </>

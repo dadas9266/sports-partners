@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useLocale } from "next-intl";
 import { signOut } from "next-auth/react";
 import toast from "react-hot-toast";
 import { updateProfile } from "@/services/api";
@@ -13,6 +14,46 @@ const labelClass = "block text-sm font-medium text-gray-700 dark:text-gray-300 m
 
 export default function GuvenlikPage() {
   const router = useRouter();
+  const locale = useLocale();
+  const isTr = locale === "tr";
+  const text = {
+    enterCurrentPassword: isTr ? "Mevcut şifrenizi giriniz" : "Please enter your current password",
+    minLength: isTr ? "Yeni şifre en az 8 karakter olmalı" : "New password must be at least 8 characters",
+    requireUpper: isTr ? "Yeni şifre büyük harf içermeli" : "New password must include an uppercase letter",
+    requireNumber: isTr ? "Yeni şifre rakam içermeli" : "New password must include a number",
+    requireSpecial: isTr ? "Yeni şifre özel karakter içermeli" : "New password must include a special character",
+    mismatch: isTr ? "Şifreler eşleşmiyor" : "Passwords do not match",
+    changed: isTr ? "Şifre başarıyla değiştirildi ✓" : "Password changed successfully ✓",
+    changeFailed: isTr ? "Şifre değiştirilemedi" : "Password could not be changed",
+    genericError: isTr ? "Bir hata oluştu" : "An error occurred",
+    ruleMin: isTr ? "En az 8 karakter" : "At least 8 characters",
+    ruleUpper: isTr ? "Büyük harf" : "Uppercase letter",
+    ruleLower: isTr ? "Küçük harf" : "Lowercase letter",
+    ruleNumber: isTr ? "Rakam" : "Number",
+    ruleSpecial: isTr ? "Özel karakter" : "Special character",
+    title: isTr ? "Şifre Değiştir" : "Change Password",
+    subtitle: isTr ? "Güçlü bir şifre hesabını korur." : "A strong password protects your account.",
+    currentPassword: isTr ? "Mevcut Şifre" : "Current Password",
+    currentPasswordPlaceholder: isTr ? "Mevcut şifreniz" : "Your current password",
+    hide: isTr ? "Gizle" : "Hide",
+    show: isTr ? "Göster" : "Show",
+    newPassword: isTr ? "Yeni Şifre" : "New Password",
+    newPasswordPlaceholder: isTr ? "Yeni şifreniz" : "Your new password",
+    newPasswordRepeat: isTr ? "Yeni Şifre Tekrar" : "Repeat New Password",
+    newPasswordRepeatPlaceholder: isTr ? "Yeni şifrenizi tekrar giriniz" : "Enter your new password again",
+    submit: isTr ? "Şifremi Değiştir" : "Change My Password",
+    dangerTitle: isTr ? "Tehlikeli Bölge" : "Danger Zone",
+    dangerDesc: isTr
+      ? "Hesabını kalıcı olarak silmek istersen aşağıdaki butonu kullan. Bu işlem geri alınamaz; tüm verileriniz silinecektir."
+      : "Use the button below to permanently delete your account. This action cannot be undone and all your data will be removed.",
+    deleteAccount: isTr ? "Hesabımı Sil" : "Delete My Account",
+    confirmPasswordPrompt: isTr ? "Onaylamak için şifrenizi giriniz:" : "Enter your password to confirm:",
+    deletedSuccess: isTr ? "Hesabınız silindi. Hoşça kalın." : "Your account has been deleted.",
+    deleteFailed: isTr ? "Hesap silinemedi" : "Account could not be deleted",
+    deleting: isTr ? "Siliniyor..." : "Deleting...",
+    deleteConfirm: isTr ? "Evet, Hesabımı Sil" : "Yes, Delete My Account",
+    cancel: isTr ? "Vazgeç" : "Cancel",
+  };
   const [savingPassword, setSavingPassword] = useState(false);
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: "",
@@ -29,12 +70,12 @@ export default function GuvenlikPage() {
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!passwordForm.currentPassword) { toast.error("Mevcut şifrenizi giriniz"); return; }
-    if (passwordForm.newPassword.length < 8) { toast.error("Yeni şifre en az 8 karakter olmalı"); return; }
-    if (!/[A-Z]/.test(passwordForm.newPassword)) { toast.error("Yeni şifre büyük harf içermeli"); return; }
-    if (!/[0-9]/.test(passwordForm.newPassword)) { toast.error("Yeni şifre rakam içermeli"); return; }
-    if (!/[^A-Za-z0-9]/.test(passwordForm.newPassword)) { toast.error("Yeni şifre özel karakter içermeli"); return; }
-    if (passwordForm.newPassword !== passwordForm.newPasswordConfirm) { toast.error("Şifreler eşleşmiyor"); return; }
+    if (!passwordForm.currentPassword) { toast.error(text.enterCurrentPassword); return; }
+    if (passwordForm.newPassword.length < 8) { toast.error(text.minLength); return; }
+    if (!/[A-Z]/.test(passwordForm.newPassword)) { toast.error(text.requireUpper); return; }
+    if (!/[0-9]/.test(passwordForm.newPassword)) { toast.error(text.requireNumber); return; }
+    if (!/[^A-Za-z0-9]/.test(passwordForm.newPassword)) { toast.error(text.requireSpecial); return; }
+    if (passwordForm.newPassword !== passwordForm.newPasswordConfirm) { toast.error(text.mismatch); return; }
 
     setSavingPassword(true);
     try {
@@ -43,13 +84,13 @@ export default function GuvenlikPage() {
         newPassword: passwordForm.newPassword,
       });
       if (res.success) {
-        toast.success("Şifre başarıyla değiştirildi ✓");
+        toast.success(text.changed);
         setPasswordForm({ currentPassword: "", newPassword: "", newPasswordConfirm: "" });
       } else {
-        toast.error((res as any).error || "Şifre değiştirilemedi");
+        toast.error((res as any).error || text.changeFailed);
       }
     } catch {
-      toast.error("Bir hata oluştu");
+      toast.error(text.genericError);
     } finally {
       setSavingPassword(false);
     }
@@ -57,32 +98,32 @@ export default function GuvenlikPage() {
 
   // Şifre kuralları göstergesi
   const rules = [
-    { test: passwordForm.newPassword.length >= 8, label: "En az 8 karakter" },
-    { test: /[A-Z]/.test(passwordForm.newPassword), label: "Büyük harf" },
-    { test: /[a-z]/.test(passwordForm.newPassword), label: "Küçük harf" },
-    { test: /[0-9]/.test(passwordForm.newPassword), label: "Rakam" },
-    { test: /[^A-Za-z0-9]/.test(passwordForm.newPassword), label: "Özel karakter" },
+    { test: passwordForm.newPassword.length >= 8, label: text.ruleMin },
+    { test: /[A-Z]/.test(passwordForm.newPassword), label: text.ruleUpper },
+    { test: /[a-z]/.test(passwordForm.newPassword), label: text.ruleLower },
+    { test: /[0-9]/.test(passwordForm.newPassword), label: text.ruleNumber },
+    { test: /[^A-Za-z0-9]/.test(passwordForm.newPassword), label: text.ruleSpecial },
   ];
 
   return (
     <div className="space-y-6">
       {/* ─── Şifre Değiştir ──────────────────────────────────── */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6">
-        <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-1">Şifre Değiştir</h2>
+        <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-1">{text.title}</h2>
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
-          Güçlü bir şifre hesabını korur.
+          {text.subtitle}
         </p>
 
         <form onSubmit={handlePasswordChange} className="space-y-4">
           <div>
-            <label className={labelClass}>Mevcut Şifre</label>
+            <label className={labelClass}>{text.currentPassword}</label>
             <div className="relative">
               <input
                 type={showCurrent ? "text" : "password"}
                 value={passwordForm.currentPassword}
                 onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
                 className={inputClass}
-                placeholder="Mevcut şifreniz"
+                placeholder={text.currentPasswordPlaceholder}
                 autoComplete="current-password"
               />
               <button
@@ -90,20 +131,20 @@ export default function GuvenlikPage() {
                 onClick={() => setShowCurrent(!showCurrent)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm hover:text-gray-600"
               >
-                {showCurrent ? "Gizle" : "Göster"}
+                {showCurrent ? text.hide : text.show}
               </button>
             </div>
           </div>
 
           <div>
-            <label className={labelClass}>Yeni Şifre</label>
+            <label className={labelClass}>{text.newPassword}</label>
             <div className="relative">
               <input
                 type={showNew ? "text" : "password"}
                 value={passwordForm.newPassword}
                 onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
                 className={inputClass}
-                placeholder="Yeni şifreniz"
+                placeholder={text.newPasswordPlaceholder}
                 autoComplete="new-password"
               />
               <button
@@ -111,7 +152,7 @@ export default function GuvenlikPage() {
                 onClick={() => setShowNew(!showNew)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm hover:text-gray-600"
               >
-                {showNew ? "Gizle" : "Göster"}
+                {showNew ? text.hide : text.show}
               </button>
             </div>
             {passwordForm.newPassword && (
@@ -127,23 +168,23 @@ export default function GuvenlikPage() {
           </div>
 
           <div>
-            <label className={labelClass}>Yeni Şifre Tekrar</label>
+            <label className={labelClass}>{text.newPasswordRepeat}</label>
             <input
               type="password"
               value={passwordForm.newPasswordConfirm}
               onChange={(e) => setPasswordForm({ ...passwordForm, newPasswordConfirm: e.target.value })}
               className={inputClass}
-              placeholder="Yeni şifrenizi tekrar giriniz"
+              placeholder={text.newPasswordRepeatPlaceholder}
               autoComplete="new-password"
             />
             {passwordForm.newPasswordConfirm && passwordForm.newPassword !== passwordForm.newPasswordConfirm && (
-              <p className="text-xs text-red-500 mt-1">Şifreler eşleşmiyor</p>
+              <p className="text-xs text-red-500 mt-1">{text.mismatch}</p>
             )}
           </div>
 
           <div className="flex justify-end pt-1">
             <Button type="submit" loading={savingPassword} className="min-w-[160px]">
-              Şifremi Değiştir
+              {text.submit}
             </Button>
           </div>
         </form>
@@ -151,10 +192,9 @@ export default function GuvenlikPage() {
 
       {/* ─── Hesap Silme ──────────────────────────────── */}
       <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-2xl p-6">
-        <h3 className="text-base font-semibold text-red-700 dark:text-red-400 mb-1">Tehlikeli Bölge</h3>
+        <h3 className="text-base font-semibold text-red-700 dark:text-red-400 mb-1">{text.dangerTitle}</h3>
         <p className="text-sm text-red-600 dark:text-red-300 mb-4">
-          Hesabını kalıcı olarak silmek istersen aşağıdaki butonu kullan.
-          Bu işlem geri alınamaz; tüm verileriniz silinecektir.
+          {text.dangerDesc}
         </p>
 
         {!showDeleteConfirm ? (
@@ -162,19 +202,19 @@ export default function GuvenlikPage() {
             onClick={() => setShowDeleteConfirm(true)}
             className="px-4 py-2 text-sm font-medium text-red-700 dark:text-red-400 border border-red-300 dark:border-red-700 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30 transition"
           >
-            Hesabımı Sil
+            {text.deleteAccount}
           </button>
         ) : (
           <div className="space-y-3">
             <p className="text-sm font-medium text-red-700 dark:text-red-300">
-              Onaylamak için şifrenizi giriniz:
+              {text.confirmPasswordPrompt}
             </p>
             <input
               type="password"
               value={deletePassword}
               onChange={(e) => setDeletePassword(e.target.value)}
               className={inputClass}
-              placeholder="Mevcut şifreniz"
+              placeholder={text.currentPasswordPlaceholder}
               autoComplete="current-password"
             />
             <div className="flex gap-3">
@@ -190,27 +230,27 @@ export default function GuvenlikPage() {
                     });
                     const data = await res.json();
                     if (data.success) {
-                      toast.success("Hesabınız silindi. Hoşça kalın.");
+                      toast.success(text.deletedSuccess);
                       await signOut({ redirect: false });
                       router.push("/auth/login");
                     } else {
-                      toast.error(data.error || "Hesap silinemedi");
+                      toast.error(data.error || text.deleteFailed);
                     }
                   } catch {
-                    toast.error("Bir hata oluştu");
+                    toast.error(text.genericError);
                   } finally {
                     setDeleting(false);
                   }
                 }}
                 className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-xl hover:bg-red-700 transition disabled:opacity-50"
               >
-                {deleting ? "Siliniyor..." : "Evet, Hesabımı Sil"}
+                {deleting ? text.deleting : text.deleteConfirm}
               </button>
               <button
                 onClick={() => { setShowDeleteConfirm(false); setDeletePassword(""); }}
                 className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition"
               >
-                Vazgeç
+                {text.cancel}
               </button>
             </div>
           </div>

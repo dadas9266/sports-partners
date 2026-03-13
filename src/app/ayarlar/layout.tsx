@@ -2,58 +2,69 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import Link from "next/link";
-
-const MENU = [
-  {
-    href: "/profil",
-    icon: "👤",
-    label: "Profili Düzenle",
-    desc: "Ad, biyografi, konum, fotoğraf",
-  },
-  {
-    href: "/ayarlar/guvenlik",
-    icon: "🔒",
-    label: "Hesap Güvenliği",
-    desc: "Şifre ve e-posta değiştir",
-  },
-  {
-    href: "/ayarlar/profesyonel",
-    icon: "⭐",
-    label: "Profesyonel Hesap",
-    desc: "Antrenör veya tesis başvurusu",
-  },
-  {
-    href: "/ayarlar/isletme",
-    icon: "🏟️",
-    label: "İşletme Yönetimi",
-    desc: "Tesis profili, ilanlar, galeri",
-  },
-  {
-    href: "/ayarlar/gizlilik",
-    icon: "🛡️",
-    label: "Gizlilik",
-    desc: "Hesap görünürlüğü, engellenenler",
-  },
-  {
-    href: "/ayarlar/bildirimler",
-    icon: "🔔",
-    label: "Bildirimler",
-    desc: "Push bildirim tercihleri",
-  },
-  {
-    href: "/ayarlar/davet",
-    icon: "🎁",
-    label: "Arkadaşını Davet Et",
-    desc: "Davet kodu ile arkadaşını getir",
-  },
-];
+import { useLocale } from "next-intl";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export default function AyarlarLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const locale = useLocale();
+  const isTr = locale === "tr";
   const { status } = useSession();
+
+  const text = {
+    title: isTr ? "Ayarlar" : "Settings",
+    quickTitle: isTr ? "Hızlı Ayarlar" : "Quick Settings",
+    quickDesc: isTr ? "Dil ve hesap bölümlerine mobilde daha rahat eriş." : "Quick mobile access to language and account sections.",
+    backToProfile: isTr ? "← Profilime Dön" : "← Back to Profile",
+  };
+
+  const menu = useMemo(() => ([
+    {
+      href: "/profil",
+      icon: "👤",
+      label: isTr ? "Profili Düzenle" : "Edit Profile",
+      desc: isTr ? "Ad, biyografi, konum, fotoğraf" : "Name, bio, location, photo",
+    },
+    {
+      href: "/ayarlar/guvenlik",
+      icon: "🔒",
+      label: isTr ? "Hesap Güvenliği" : "Account Security",
+      desc: isTr ? "Şifre ve e-posta değiştir" : "Change password and email",
+    },
+    {
+      href: "/ayarlar/profesyonel",
+      icon: "⭐",
+      label: isTr ? "Profesyonel Hesap" : "Professional Account",
+      desc: isTr ? "Antrenör veya tesis başvurusu" : "Trainer or venue application",
+    },
+    {
+      href: "/ayarlar/isletme",
+      icon: "🏟️",
+      label: isTr ? "İşletme Yönetimi" : "Venue Management",
+      desc: isTr ? "Tesis profili, ilanlar, galeri" : "Venue profile, listings, gallery",
+    },
+    {
+      href: "/ayarlar/gizlilik",
+      icon: "🛡️",
+      label: isTr ? "Gizlilik" : "Privacy",
+      desc: isTr ? "Hesap görünürlüğü, engellenenler" : "Visibility and blocked users",
+    },
+    {
+      href: "/ayarlar/bildirimler",
+      icon: "🔔",
+      label: isTr ? "Bildirimler" : "Notifications",
+      desc: isTr ? "Push bildirim tercihleri" : "Push notification preferences",
+    },
+    {
+      href: "/ayarlar/davet",
+      icon: "🎁",
+      label: isTr ? "Arkadaşını Davet Et" : "Invite Friends",
+      desc: isTr ? "Davet kodu ile arkadaşını getir" : "Invite your friends with your code",
+    },
+  ]), [isTr]);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/auth/giris");
@@ -69,12 +80,39 @@ export default function AyarlarLayout({ children }: { children: React.ReactNode 
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-8">Ayarlar</h1>
+      <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-8">{text.title}</h1>
+      <div className="md:hidden mb-5 rounded-3xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <div>
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{text.quickTitle}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{text.quickDesc}</p>
+          </div>
+          <LanguageSwitcher />
+        </div>
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {menu.map((item) => {
+            const active = pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`min-w-max rounded-2xl px-3 py-2 text-xs font-semibold transition ${
+                  active
+                    ? "bg-emerald-500 text-white"
+                    : "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200"
+                }`}
+              >
+                {item.icon} {item.label}
+              </Link>
+            );
+          })}
+        </div>
+      </div>
       <div className="flex flex-col md:flex-row gap-6">
         {/* Sidebar */}
-        <aside className="w-full md:w-64 shrink-0">
+        <aside className="hidden md:block w-full md:w-64 shrink-0">
           <nav className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden">
-            {MENU.map((item) => {
+            {menu.map((item) => {
               const active = pathname === item.href;
               return (
                 <Link
@@ -102,7 +140,7 @@ export default function AyarlarLayout({ children }: { children: React.ReactNode 
             href="/profil"
             className="mt-4 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 px-1"
           >
-            ← Profilime Dön
+            {text.backToProfile}
           </Link>
         </aside>
 

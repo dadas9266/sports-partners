@@ -61,8 +61,9 @@ export async function PUT(request: NextRequest) {
     if (!user)
       return NextResponse.json({ error: "Kullanıcı bulunamadı" }, { status: 404 });
 
-    // VENUE tipi değilse, tipi güncelle
-    if (user.userType !== "VENUE") {
+    // Sadece bireysel hesapları VENUE'ye yükselt.
+    // TRAINER gibi profesyonel rolleri ezmeyerek çift rol kullanımını korur.
+    if (user.userType === "INDIVIDUAL") {
       await prisma.user.update({ where: { id: userId }, data: { userType: "VENUE" } });
     }
 

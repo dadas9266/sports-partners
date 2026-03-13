@@ -1,18 +1,20 @@
 "use client";
 
 import { differenceInYears } from "date-fns";
+import { useLocale } from "next-intl";
 import toast from "react-hot-toast";
 import Button from "@/components/ui/Button";
-import { GENDER_LABELS } from "@/types";
 import TrainerBadgePopup from "@/components/profile/TrainerBadgePopup";
+import SocialLinksRow from "@/components/social/SocialLinksRow";
+import { getCompetitiveLevelLabel } from "@/lib/localized-ui";
 
 const GENDER_ICONS: Record<string, string> = { MALE: "♂️", FEMALE: "♀️" };
 
-const LEVEL_CONFIG: Record<string, { label: string; cls: string }> = {
-  BEGINNER: { label: "Acemi",    cls: "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300" },
-  AMATEUR:  { label: "Amatör",   cls: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" },
-  SEMI_PRO: { label: "Yarı Pro", cls: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300" },
-  PRO:      { label: "⚡ Pro",   cls: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300" },
+const LEVEL_CONFIG: Record<string, { cls: string }> = {
+  BEGINNER: { cls: "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300" },
+  AMATEUR:  { cls: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" },
+  SEMI_PRO: { cls: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300" },
+  PRO:      { cls: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300" },
 };
 
 interface ProfileHeaderViewProps {
@@ -38,6 +40,7 @@ export default function ProfileHeaderView({
   onFollowerClick,
   onFollowingClick,
 }: ProfileHeaderViewProps) {
+  const locale = useLocale();
   const lvl = user.userLevel || "BEGINNER";
   const levelCfg = LEVEL_CONFIG[lvl] || LEVEL_CONFIG.BEGINNER;
 
@@ -66,14 +69,6 @@ export default function ProfileHeaderView({
       else toast.error(json.error || "Yüklenemedi");
     } finally { setUploadingAvatar(false); }
   };
-
-  const socialLinks = [
-    { key: "instagram", color: "bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400", url: `https://instagram.com/${user.instagram}`, icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg> },
-    { key: "tiktok",    color: "bg-black",          url: `https://tiktok.com/@${user.tiktok}`,    icon: <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.79a8.18 8.18 0 004.78 1.52V6.85a4.85 4.85 0 01-1.01-.16z"/></svg> },
-    { key: "facebook",  color: "bg-[#1877F2]",      url: `https://facebook.com/${user.facebook}`, icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg> },
-    { key: "twitterX",  color: "bg-black",          url: `https://x.com/${user.twitterX}`,        icon: <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg> },
-    { key: "vk",        color: "bg-[#4C75A3]",      url: `https://vk.com/${user.vk}`,             icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M15.07 2H8.93C3.33 2 2 3.33 2 8.93v6.14C2 20.67 3.33 22 8.93 22h6.14C20.67 22 22 20.67 22 15.07V8.93C22 3.33 20.67 2 15.07 2zm3.08 13.5h-1.64c-.63 0-.82-.52-1.93-1.63-.96-.96-1.39-.96-1.39 0 0 1.63-.43 1.63-1.08 1.63-1.67 0-3.52-1.04-4.82-2.84-1.96-2.73-2.5-4.72-2.5-5.12 0-.18.15-.35.35-.35h1.64c.26 0 .35.15.44.38.51 1.57 1.39 2.95 1.74 2.95.14 0 .2-.06.2-.38V9.35c-.04-.62-.35-.67-.35-.89 0-.15.12-.3.3-.3h2.57c.22 0 .3.12.3.35v2.74c0 .22.09.3.16.3.14 0 .27-.08.55-.38.87-.99 1.5-2.51 1.5-2.51.09-.2.25-.38.5-.38h1.64c.49 0 .6.25.49.56-.21.64-2.08 2.66-2.08 2.66-.16.24-.22.35 0 .61.16.2.69.74 1.05 1.17.65.73 1.14 1.35 1.27 1.78.14.42-.08.64-.49.64z"/></svg> },
-  ].filter(s => !!(user as Record<string, any>)[s.key]);
 
   return (
     <div>
@@ -125,16 +120,18 @@ export default function ProfileHeaderView({
           </div>
 
           {/* Social icons — right side */}
-          {socialLinks.length > 0 && (
-            <div className="flex items-center gap-1.5 flex-wrap justify-end pb-1">
-              {socialLinks.map(s => (
-                <a key={s.key} href={s.url} target="_blank" rel="noopener noreferrer"
-                  className={`w-7 h-7 flex items-center justify-center rounded-full ${s.color} text-white hover:opacity-80 transition-opacity shadow-sm`}>
-                  {s.icon}
-                </a>
-              ))}
-            </div>
-          )}
+          <SocialLinksRow
+            links={{
+              instagram: user.instagram,
+              tiktok: user.tiktok,
+              facebook: user.facebook,
+              twitterX: user.twitterX,
+              vk: user.vk,
+              telegram: user.telegram,
+              whatsapp: user.whatsapp,
+            }}
+            className="justify-end pb-1"
+          />
         </div>
 
         {/* Name + info */}
@@ -159,7 +156,7 @@ export default function ProfileHeaderView({
               </span>
             )}
             <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${levelCfg.cls}`}>
-              {levelCfg.label}
+              {getCompetitiveLevelLabel(lvl, locale)}
             </span>
           </div>
           <div className="flex items-center gap-2 mt-0.5 text-sm text-gray-500 dark:text-gray-400">

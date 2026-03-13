@@ -110,22 +110,13 @@ async function main() {
       const sport = sports[Math.floor(Math.random() * sports.length)];
       const district = city.districts[Math.floor(Math.random() * city.districts.length)];
       
-      // Spor türüne göre uygun fiili seç
-      const oynamakGerekenler = ["Futbol", "Basketbol", "Tenis", "Voleybol", "Masa Tenisi", "Squash", "Pickleball", "Padel", "Bilardo", "Dart"];
-      const yapmakGerekenler = ["Fitness", "Yoga / Pilates", "Koşu", "Yürüyüş", "Bisiklet", "Kaykay / Paten"];
-      
-      let eylem = "yapmak";
-      if (oynamakGerekenler.includes(sport.name)) eylem = "oynamak";
-      else if (sport.name === "Balık Tutma" || sport.name === "Hiking (Doğa Yürüyüşü)" || sport.name === "Yüzme") eylem = "gitmek";
-      else if (yapmakGerekenler.includes(sport.name)) eylem = "yapmak";
-      
       const cumleler = [
-        `${sport.name} ${eylem} isteyen var mı?`,
+        `Bu hafta ${sport.name} için partner arıyorum.`,
         `${district?.name} tarafında ${sport.name} için partner arıyorum.`,
-        `Hafta sonu ${sport.name} ${eylem} planı olan var mı?`,
-        `${sport.name} ${eylem} için seviyesi farketmez arkadaş arıyorum.`,
-        `${district?.name} çevresinde ${sport.name} ${eylem} isteyen mesaj atabilir.`,
-        `${sport.name} ${eylem} istiyorum, katılmak isteyen gelebilir.`
+        `Hafta sonu ${sport.name} için plan yapan varsa eşleşebiliriz.`,
+        `${sport.name} için seviyeden bağımsız bir eşleşme arıyorum.`,
+        `${district?.name} çevresinde ${sport.name} için ilan açtım, katılmak isteyen yazabilir.`,
+        `${sport.name} için uygun bir eşleşme arıyorum.`
       ];
 
       const listing = await prisma.listing.create({

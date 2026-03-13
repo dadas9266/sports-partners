@@ -139,6 +139,57 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Group/club post notifications (non-blocking)
+    try {
+      if (groupId) {
+        const [group, members] = await Promise.all([
+          prisma.group.findUnique({ where: { id: groupId }, select: { name: true } }),
+          prisma.groupMembership.findMany({
+            where: { groupId, status: "APPROVED", userId: { not: userId } },
+            select: { userId: true },
+          }),
+        ]);
+
+        if (members.length > 0) {
+          const actor = post.user.name || "Bir kullanıcı";
+          const preview = content ? `: \"${content.slice(0, 80)}${content.length > 80 ? "..." : ""}\"` : ".";
+          await prisma.notification.createMany({
+            data: members.map((m) => ({
+              userId: m.userId,
+              type: "COMMUNITY_UPDATE",
+              title: "Yeni Grup Gönderisi",
+              body: `${actor}, ${group?.name ?? "grup"} içinde yeni bir gönderi paylaştı${preview}`,
+              link: `/gruplar/${groupId}`,
+            })),
+          });
+        }
+      } else if (clubId) {
+        const [club, members] = await Promise.all([
+          prisma.club.findUnique({ where: { id: clubId }, select: { name: true } }),
+          prisma.userClubMembership.findMany({
+            where: { clubId, status: "APPROVED", userId: { not: userId } },
+            select: { userId: true },
+          }),
+        ]);
+
+        if (members.length > 0) {
+          const actor = post.user.name || "Bir kullanıcı";
+          const preview = content ? `: \"${content.slice(0, 80)}${content.length > 80 ? "..." : ""}\"` : ".";
+          await prisma.notification.createMany({
+            data: members.map((m) => ({
+              userId: m.userId,
+              type: "COMMUNITY_UPDATE",
+              title: "Yeni Kulüp Gönderisi",
+              body: `${actor}, ${club?.name ?? "kulüp"} içinde yeni bir gönderi paylaştı${preview}`,
+              link: `/kulupler/${clubId}`,
+            })),
+          });
+        }
+      }
+    } catch (notifyErr) {
+      log.error("Post notification create error", notifyErr);
+    }
+
     return NextResponse.json(post, { status: 201 });
   } catch (err) {
     log.error("Post oluşturma hatası", err);

@@ -3,25 +3,34 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { format, formatDistanceToNow, differenceInYears } from "date-fns";
-import { tr } from "date-fns/locale";
-import { useTranslations } from "next-intl";
+import { tr, enUS, ru, de, fr, es, ja, ko } from "date-fns/locale";
+import { useLocale, useTranslations } from "next-intl";
+import { localizeSportName } from "@/lib/localized-ui";
 import { ListingSummary } from "@/types";
 
 // Acil ilan geri sayım
-function UrgentCountdown({ expiresAt }: { expiresAt: string }) {
+function UrgentCountdown({
+  expiresAt,
+  expiredText,
+  leftText,
+}: {
+  expiresAt: string;
+  expiredText: string;
+  leftText: string;
+}) {
   const [remaining, setRemaining] = useState("");
   useEffect(() => {
     function update() {
       const diff = new Date(expiresAt).getTime() - Date.now();
-      if (diff <= 0) { setRemaining("Süresi doldu"); return; }
+      if (diff <= 0) { setRemaining(expiredText); return; }
       const mins = Math.floor(diff / 60000);
       const secs = Math.floor((diff % 60000) / 1000);
-      setRemaining(`${mins}:${secs.toString().padStart(2, "0")} kaldı`);
+      setRemaining(`${mins}:${secs.toString().padStart(2, "0")} ${leftText}`);
     }
     update();
     const id = setInterval(update, 1000);
     return () => clearInterval(id);
-  }, [expiresAt]);
+  }, [expiresAt, expiredText, leftText]);
   return (
     <span className="text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 px-2 py-0.5 rounded-full font-bold tabular-nums">
       🔴 {remaining}
@@ -63,31 +72,10 @@ const GENDER_ICONS: Record<string, string> = {
   PREFER_NOT_TO_SAY: "👤",
 };
 
-const STATUS_LABELS: Record<string, { label: string; className: string }> = {
-  MATCHED: {
-    label: "Eşleşti",
-    className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
-  },
-  CLOSED: {
-    label: "Kapandı",
-    className: "bg-gray-100 text-gray-600 dark:bg-gray-700/50 dark:text-gray-400",
-  },
-  EXPIRED: {
-    label: "Süresi Doldu",
-    className: "bg-orange-100 text-orange-700 dark:bg-orange-950/30 dark:text-orange-400",
-  },
-};
-
 const LEVEL_COLORS: Record<string, string> = {
   BEGINNER: "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400",
   INTERMEDIATE: "bg-yellow-50 text-yellow-600 dark:bg-yellow-900/20 dark:text-yellow-400",
   ADVANCED: "bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400",
-};
-
-const GENDER_LABELS: Record<string, string> = {
-  MALE: "Erkek",
-  FEMALE: "Kadın",
-  PREFER_NOT_TO_SAY: "Belirtilmemiş",
 };
 
 type ListingCardProps = {
@@ -96,15 +84,69 @@ type ListingCardProps = {
 
 export default function ListingCard({ listing }: ListingCardProps) {
   const router = useRouter();
+  const locale = useLocale();
+  const isTr = locale === "tr";
+  const dateLocale =
+    locale === "tr" ? tr :
+    locale === "ru" ? ru :
+    locale === "de" ? de :
+    locale === "fr" ? fr :
+    locale === "es" ? es :
+    locale === "ja" ? ja :
+    locale === "ko" ? ko : enUS;
+
+  const text = {
+    expired: isTr ? "Süresi doldu" : "Expired",
+    left: isTr ? "kaldı" : "left",
+    urgent: isTr ? "ACİL" : "URGENT",
+    anonymous: isTr ? "Anonim" : "Anonymous",
+    femaleOnly: isTr ? "Yalnızca Kadınlar" : "Women only",
+    maleOnly: isTr ? "Yalnızca Erkekler" : "Men only",
+    compatible: isTr ? "uyumlu" : "match",
+    matched: isTr ? "Eşleşti" : "Matched",
+    closed: isTr ? "Kapandı" : "Closed",
+    expiredStatus: isTr ? "Süresi Doldu" : "Expired",
+    unspecified: isTr ? "Belirtilmemiş" : "Unspecified",
+    male: isTr ? "Erkek" : "Male",
+    female: isTr ? "Kadın" : "Female",
+    responseTrainer: isTr ? "başvuru" : "applications",
+    responseDefault: isTr ? "karşılık" : "responses",
+    group: isTr ? "Grup" : "Group",
+    perHour: isTr ? "/sa" : "/h",
+    detail: isTr ? "Detay" : "Details",
+  };
+
+  const statusLabels: Record<string, { label: string; className: string }> = {
+    MATCHED: {
+      label: text.matched,
+      className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
+    },
+    CLOSED: {
+      label: text.closed,
+      className: "bg-gray-100 text-gray-600 dark:bg-gray-700/50 dark:text-gray-400",
+    },
+    EXPIRED: {
+      label: text.expiredStatus,
+      className: "bg-orange-100 text-orange-700 dark:bg-orange-950/30 dark:text-orange-400",
+    },
+  };
+
+  const genderLabels: Record<string, string> = {
+    MALE: text.male,
+    FEMALE: text.female,
+    PREFER_NOT_TO_SAY: text.unspecified,
+  };
+
+  const localizedSportName = localizeSportName(listing.sport.name, locale);
 
   const t = useTranslations("listings");
 
   const dateStr = format(new Date(listing.dateTime), "d MMM yyyy, HH:mm", {
-    locale: tr,
+    locale: dateLocale,
   });
 
   const timeLeft = listing.expiresAt
-    ? formatDistanceToNow(new Date(listing.expiresAt), { locale: tr, addSuffix: false })
+    ? formatDistanceToNow(new Date(listing.expiresAt), { locale: dateLocale, addSuffix: false })
     : null;
 
   const handleUserClick = (e: React.MouseEvent) => {
@@ -130,7 +172,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
       }`}
       role="button"
       tabIndex={0}
-      aria-label={`${listing.sport.name} ${t("title")} ${t("detail")}`}
+      aria-label={`${localizedSportName} ${t("title")} ${t("detail")}`}
     >
       <div className="p-4">
       {/* Üst etiketler */}
@@ -145,30 +187,30 @@ export default function ListingCard({ listing }: ListingCardProps) {
         </span>
         {(listing as any).isUrgent && (
           <span className="text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 px-2 py-0.5 rounded-full font-bold animate-pulse">
-            ⚡ {t("urgent") || "ACİL"}
+            ⚡ {t("urgent") || text.urgent}
           </span>
         )}
         {(listing as any).isAnonymous && (
           <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">
-            🕵️ {t("anonymous") || "Anonim"}
+            🕵️ {t("anonymous") || text.anonymous}
           </span>
         )}
         {listing.isQuick && timeLeft && (
           <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">
-            ⚡ {timeLeft} {t("left") || "kaldı"}
+            ⚡ {timeLeft} {t("left") || text.left}
           </span>
         )}
         {(listing as any).isUrgent && (listing as any).expiresAt && (
-          <UrgentCountdown expiresAt={(listing as any).expiresAt} />
+          <UrgentCountdown expiresAt={(listing as any).expiresAt} expiredText={text.expired} leftText={text.left} />
         )}
         {listing.allowedGender === "FEMALE_ONLY" && (
           <span className="text-xs bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300 px-2 py-0.5 rounded-full font-semibold">
-            👩 {t("femaleOnly") || "Yalnızca Kadınlar"}
+            👩 {t("femaleOnly") || text.femaleOnly}
           </span>
         )}
         {listing.allowedGender === "MALE_ONLY" && (
           <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full font-semibold">
-            👨 {t("maleOnly") || "Yalnızca Erkekler"}
+            👨 {t("maleOnly") || text.maleOnly}
           </span>
         )}
         {typeof listing.compatibilityScore === "number" && listing.compatibilityScore > 0 && (
@@ -181,13 +223,13 @@ export default function ListingCard({ listing }: ListingCardProps) {
                 : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400"
             }`}
           >
-            🎯 %{listing.compatibilityScore} {t("compatible") || "uyumlu"}
+            🎯 %{listing.compatibilityScore} {t("compatible") || text.compatible}
           </span>
         )}
-        {listing.status && STATUS_LABELS[listing.status] && listing.status !== "OPEN" && (
-          <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${STATUS_LABELS[listing.status].className}`}>
+        {listing.status && statusLabels[listing.status] && listing.status !== "OPEN" && (
+          <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${statusLabels[listing.status].className}`}>
             {listing.status === "MATCHED" ? "✅ " : ""}
-            {t(`status.${listing.status}`) || STATUS_LABELS[listing.status].label}
+            {t(`status.${listing.status}`) || statusLabels[listing.status].label}
           </span>
         )}
       </div>
@@ -197,13 +239,13 @@ export default function ListingCard({ listing }: ListingCardProps) {
           <span
             className="text-2xl"
             role="img"
-            aria-label={listing.sport.name}
+            aria-label={localizedSportName}
           >
             {listing.sport.icon || "🏅"}
           </span>
           <div>
             <h3 className="font-semibold text-gray-800 dark:text-gray-100">
-              {listing.sport.name}
+              {localizedSportName}
             </h3>
           </div>
         </div>
@@ -260,7 +302,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
             </button>
             <div className="flex items-center gap-1.5 text-xs">
               {listing.user.gender && (
-                <span title={GENDER_LABELS[listing.user.gender]} className="opacity-70">
+                <span title={genderLabels[listing.user.gender]} className="opacity-70">
                   {GENDER_ICONS[listing.user.gender]}
                 </span>
               )}
@@ -285,28 +327,28 @@ export default function ListingCard({ listing }: ListingCardProps) {
             {listing.maxParticipants > 2 ? (
               <>👥 {listing._count.responses + 1}/{listing.maxParticipants}</>
             ) : (
-              <>💬 {listing._count.responses} {listing.type === "TRAINER" ? "başvuru" : "karşılık"}</>
+              <>💬 {listing._count.responses} {listing.type === "TRAINER" ? text.responseTrainer : text.responseDefault}</>
             )}
           </span>
           {listing.maxParticipants > 2 && (
             <span className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-1.5 py-0.5 rounded-full font-medium shrink-0">
-              Grup
+              {text.group}
             </span>
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {listing.type === "EQUIPMENT" && listing.equipmentDetail && (
             <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">
-              💰 {listing.equipmentDetail.price.toLocaleString("tr-TR")} ₺
+              💰 {listing.equipmentDetail.price.toLocaleString(locale === "tr" ? "tr-TR" : "en-US")} ₺
             </span>
           )}
           {listing.type === "TRAINER" && listing.trainerProfile?.hourlyRate && (
             <span className="text-sm font-bold text-blue-700 dark:text-blue-400">
-              {listing.trainerProfile.hourlyRate.toLocaleString("tr-TR")} ₺<span className="text-xs font-normal opacity-70">/sa</span>
+              {listing.trainerProfile.hourlyRate.toLocaleString(locale === "tr" ? "tr-TR" : "en-US")} ₺<span className="text-xs font-normal opacity-70">{text.perHour}</span>
             </span>
           )}
           <span className={`inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg ${typeConfig.badgeCls} bg-gray-50 dark:bg-gray-700/60 group-hover:brightness-110 transition`}>
-            Detay <span className="group-hover:translate-x-0.5 transition-transform inline-block">→</span>
+            {text.detail} <span className="group-hover:translate-x-0.5 transition-transform inline-block">→</span>
           </span>
         </div>
       </div>

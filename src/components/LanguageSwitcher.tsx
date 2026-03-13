@@ -17,10 +17,17 @@ const LOCALES = [
 function getLocaleCookie(): string {
   if (typeof document === "undefined") return "tr";
   const match = document.cookie.match(/(?:^|;\s*)locale=([^;]*)/);
-  return match ? decodeURIComponent(match[1]) : "tr";
+  const nextLocaleMatch = document.cookie.match(/(?:^|;\s*)NEXT_LOCALE=([^;]*)/);
+  return match ? decodeURIComponent(match[1]) : nextLocaleMatch ? decodeURIComponent(nextLocaleMatch[1]) : "tr";
 }
 
-export default function LanguageSwitcher() {
+export default function LanguageSwitcher({
+  mode = "compact",
+  onSelect,
+}: {
+  mode?: "compact" | "full";
+  onSelect?: () => void;
+}) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [current, setCurrent] = useState("tr");
@@ -40,15 +47,41 @@ export default function LanguageSwitcher() {
   }, []);
 
   const switchLocale = (locale: string) => {
-    document.cookie = `locale=${locale};path=/;max-age=31536000`;
+    document.cookie = `locale=${locale};path=/;max-age=31536000;SameSite=Lax`;
+    document.cookie = `NEXT_LOCALE=${locale};path=/;max-age=31536000;SameSite=Lax`;
     setCurrent(locale);
     setOpen(false);
+    onSelect?.();
     startTransition(() => {
       router.refresh();
     });
   };
 
   const currentLocale = LOCALES.find((l) => l.code === current) ?? LOCALES[0];
+
+  if (mode === "full") {
+    return (
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {LOCALES.map(({ code, label, flag }) => (
+          <button
+            key={code}
+            type="button"
+            onClick={() => switchLocale(code)}
+            disabled={isPending}
+            className={`rounded-2xl border px-3 py-3 text-left transition ${
+              current === code
+                ? "border-emerald-500 bg-emerald-50 text-emerald-700 dark:border-emerald-400 dark:bg-emerald-900/30 dark:text-emerald-300"
+                : "border-gray-200 bg-white text-gray-700 hover:border-emerald-300 hover:bg-emerald-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:border-emerald-500 dark:hover:bg-gray-700"
+            }`}
+          >
+            <div className="text-base">{flag}</div>
+            <div className="mt-1 text-xs font-semibold uppercase tracking-wide">{code}</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">{label}</div>
+          </button>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="relative" ref={ref}>

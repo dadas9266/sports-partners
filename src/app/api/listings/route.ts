@@ -328,6 +328,7 @@ export async function POST(request: Request) {
         isBanned: true, currentStreak: true, userType: true,
         name: true, birthDate: true, sports: { select: { id: true } },
         trainerProfile: { select: { id: true } },
+        venueProfile: { select: { id: true } },
       },
     });
 
@@ -389,8 +390,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // Sadece VENUE tipindeki kullanıcılar venueId içeren ilan oluşturabilir
-    if (parsed.data.venueId && user?.userType !== "VENUE") {
+    // Venue profili olan (veya VENUE tipindeki) kullanıcılar venueId içeren ilan oluşturabilir
+    const isVenue = user?.userType === "VENUE" || !!user?.venueProfile;
+    if (parsed.data.venueId && !isVenue) {
       return NextResponse.json(
         { success: false, error: "İşletme ilanı oluşturabilmek için İşletme hesabına sahip olmanız gereklidir." },
         { status: 403 }

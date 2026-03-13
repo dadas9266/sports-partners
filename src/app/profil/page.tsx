@@ -34,7 +34,7 @@ function getMissingProfileFields(user: any) {
   if (!user.birthDate) missing.push("Doğum tarihi");
   if (user.userType === "VENUE") {
     // venueProfile ilişkili model üzerinden kontrol (User'da doğrudan alan yok)
-    if (!user.venueProfile?.name) missing.push("Tesis adı");
+    if (!user.venueProfile?.businessName) missing.push("Tesis adı");
     if (!user.venueProfile?.address) missing.push("Tesis adresi");
   }
   if (user.userType === "TRAINER" && (!user.trainerProfile?.specializations || user.trainerProfile.specializations.length === 0)) {

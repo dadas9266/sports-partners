@@ -79,7 +79,7 @@ const inputClass =
   "w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition text-sm";
 
 export default function IsletmeYonetimiPage() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
 
   const [profile, setProfile] = useState<VenueProfile | null>(null);
@@ -106,8 +106,7 @@ export default function IsletmeYonetimiPage() {
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/auth/giris");
-    if (status === "authenticated" && (session?.user as any)?.userType !== "VENUE") router.push("/ayarlar/profesyonel");
-  }, [status, session, router]);
+  }, [status, router]);
 
   useEffect(() => {
     if (status !== "authenticated") return;
@@ -248,13 +247,13 @@ export default function IsletmeYonetimiPage() {
         <span className="text-5xl">🏟️</span>
         <h2 className="mt-4 text-xl font-bold text-gray-800 dark:text-gray-100">İşletme Profili Bulunamadı</h2>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 mb-5">
-          İşletme yönetim panelini kullanabilmek için önce bir tesis hesabı oluşturmanız gerekiyor.
+          İşletme yönetim panelini kullanabilmek için önce tesis profilinizi oluşturmanız gerekiyor.
         </p>
         <Link
-          href="/ayarlar/profesyonel"
+          href="/mekan-profil"
           className="inline-block px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-semibold transition"
         >
-          🏟️ Tesis Hesabı Oluştur
+          🏟️ Tesis Profili Oluştur
         </Link>
       </div>
     );
@@ -447,39 +446,39 @@ export default function IsletmeYonetimiPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">Tesis Adı *</label>
-              <input className={inputClass} value={form.businessName} onChange={e => setForm(f => ({ ...f, businessName: e.target.value }))} placeholder="Tesis adı" />
+              <label htmlFor="venue-business-name" className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">Tesis Adı *</label>
+              <input id="venue-business-name" className={inputClass} value={form.businessName} onChange={e => setForm(f => ({ ...f, businessName: e.target.value }))} placeholder="Tesis adı" />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">Telefon</label>
-              <input className={inputClass} value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="05XX XXX XX XX" />
+              <label htmlFor="venue-phone" className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">Telefon</label>
+              <input id="venue-phone" className={inputClass} value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="05XX XXX XX XX" />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">Adres *</label>
-            <input className={inputClass} value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} placeholder="Tesis adresi" />
+            <label htmlFor="venue-address" className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">Adres *</label>
+            <input id="venue-address" className={inputClass} value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} placeholder="Tesis adresi" />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">Açıklama</label>
-            <textarea rows={4} className={`${inputClass} resize-none`} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Tesisiniz hakkında kısa bir tanıtım..." />
+            <label htmlFor="venue-description" className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">Açıklama</label>
+            <textarea id="venue-description" rows={4} className={`${inputClass} resize-none`} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Tesisiniz hakkında kısa bir tanıtım..." />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">Website</label>
-              <input className={inputClass} value={form.website} onChange={e => setForm(f => ({ ...f, website: e.target.value }))} placeholder="https://" />
+              <label htmlFor="venue-website" className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">Website</label>
+              <input id="venue-website" className={inputClass} value={form.website} onChange={e => setForm(f => ({ ...f, website: e.target.value }))} placeholder="https://" />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">Kapasite (kişi)</label>
-              <input type="number" min={1} className={inputClass} value={form.capacity} onChange={e => setForm(f => ({ ...f, capacity: e.target.value }))} placeholder="100" />
+              <label htmlFor="venue-capacity" className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">Kapasite (kişi)</label>
+              <input id="venue-capacity" type="number" min={1} className={inputClass} value={form.capacity} onChange={e => setForm(f => ({ ...f, capacity: e.target.value }))} placeholder="100" />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">Çalışma Saatleri</label>
-            <textarea rows={3} className={`${inputClass} resize-none`} value={form.openingHours} onChange={e => setForm(f => ({ ...f, openingHours: e.target.value }))} placeholder={"Hft-İçi: 07:00–22:00\nHafta Sonu: 08:00–21:00"} />
+            <label htmlFor="venue-opening-hours" className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">Çalışma Saatleri</label>
+            <textarea id="venue-opening-hours" rows={3} className={`${inputClass} resize-none`} value={form.openingHours} onChange={e => setForm(f => ({ ...f, openingHours: e.target.value }))} placeholder={"Hft-İçi: 07:00–22:00\nHafta Sonu: 08:00–21:00"} />
           </div>
 
           <div>

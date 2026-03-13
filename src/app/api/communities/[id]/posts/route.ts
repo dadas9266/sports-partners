@@ -120,6 +120,38 @@ export async function POST(req: NextRequest, { params }: Params) {
       },
     });
 
+    // Community member notifications (non-blocking)
+    try {
+      const [community, members] = await Promise.all([
+        (prisma as any).community.findUnique({
+          where: { id: communityId },
+          select: { name: true },
+        }),
+        (prisma as any).communityMembership.findMany({
+          where: { communityId, status: "APPROVED", userId: { not: userId } },
+          select: { userId: true },
+        }),
+      ]);
+
+      if (members.length > 0) {
+        const actor = post.user.name || "Bir kullanıcı";
+        const raw = content ? sanitizeText(content) : "";
+        const preview = raw ? `: \"${raw.slice(0, 80)}${raw.length > 80 ? "..." : ""}\"` : ".";
+
+        await prisma.notification.createMany({
+          data: members.map((m: { userId: string }) => ({
+            userId: m.userId,
+            type: "COMMUNITY_UPDATE",
+            title: "Yeni Topluluk Gönderisi",
+            body: `${actor}, ${community?.name ?? "topluluk"} içinde yeni bir gönderi paylaştı${preview}`,
+            link: `/topluluklar/${communityId}`,
+          })),
+        });
+      }
+    } catch (notifyErr) {
+      log.error("Community post notification error", { notifyErr, communityId, userId });
+    }
+
     log.info("Community post created", { postId: post.id, communityId, userId });
     return NextResponse.json({ success: true, data: post }, { status: 201 });
   } catch (err) {
