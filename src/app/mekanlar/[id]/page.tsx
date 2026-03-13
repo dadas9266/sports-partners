@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 
 interface Facility {
   id: string;
@@ -41,6 +42,7 @@ const FACILITY_TYPE_LABELS: Record<string, string> = {
 };
 
 export default function MekanDetailPage() {
+  const { data: session } = useSession();
   const params = useParams();
   const id = typeof params?.id === "string" ? params.id : "";
   const [venue, setVenue]     = useState<VenueDetail | null>(null);
@@ -93,6 +95,8 @@ export default function MekanDetailPage() {
       </div>
     );
   }
+
+  const isOwner = session?.user?.id === venue.user.id;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
@@ -147,14 +151,24 @@ export default function MekanDetailPage() {
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">📍 {venue.address}</p>
               )}
             </div>
-            {venue.phone && (
-              <a
-                href={`tel:${venue.phone}`}
-                className="flex-shrink-0 px-4 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 text-sm font-medium hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors"
-              >
-                📞 Ara
-              </a>
-            )}
+            <div className="flex flex-col items-end gap-2">
+              {venue.phone && (
+                <a
+                  href={`tel:${venue.phone}`}
+                  className="flex-shrink-0 px-4 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 text-sm font-medium hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors"
+                >
+                  📞 Ara
+                </a>
+              )}
+              {isOwner && (
+                <Link
+                  href="/ayarlar/isletme"
+                  className="flex-shrink-0 px-4 py-2 rounded-xl border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-sm font-semibold hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors"
+                >
+                  ⚙️ Kurucu Paneli
+                </Link>
+              )}
+            </div>
           </div>
 
           {/* Quick stats */}
@@ -202,6 +216,31 @@ export default function MekanDetailPage() {
           {venue.description && (
             <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
               <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">{venue.description}</p>
+            </div>
+          )}
+
+          {isOwner && (
+            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+              <div className="rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-900/20 p-4">
+                <h2 className="text-sm font-bold text-emerald-800 dark:text-emerald-300">👑 Kurucu Yönetim Alanı</h2>
+                <p className="text-xs text-emerald-700/80 dark:text-emerald-400 mt-1">
+                  Bu işletme topluluk sayfasının kurucususun. Yönetim panelinden galeri, ilanlar ve işletme bilgilerini düzenleyebilirsin.
+                </p>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  <Link
+                    href="/ayarlar/isletme"
+                    className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors"
+                  >
+                    Yönetim Panelini Aç
+                  </Link>
+                  <Link
+                    href="/ilan/olustur"
+                    className="px-3 py-1.5 rounded-lg border border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 text-xs font-semibold hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors"
+                  >
+                    Topluluk İlanı Paylaş
+                  </Link>
+                </div>
+              </div>
             </div>
           )}
 

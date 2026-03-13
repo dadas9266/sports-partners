@@ -396,6 +396,14 @@ export default function CommunityDetailPage() {
 
             {/* Actions */}
             <div className="flex flex-col items-end gap-2">
+              {isAdmin && (
+                <button
+                  onClick={() => setActiveTab("manage")}
+                  className="px-4 py-2 rounded-xl border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-semibold hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors"
+                >
+                  ⚙️ Yönetim Paneli
+                </button>
+              )}
               {!isCreator && (
                 myStatus === "APPROVED" ? (
                   <button
