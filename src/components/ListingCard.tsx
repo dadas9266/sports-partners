@@ -64,6 +64,42 @@ const LISTING_TYPE_CONFIG = {
     badgeVariant: "purple" as const,
     badgeCls: "text-purple-600 dark:text-purple-400",
   },
+  VENUE_RENTAL: {
+    label: "🏟️ Kiralık",
+    accentColor: "border-l-teal-500",
+    badgeVariant: "emerald" as const,
+    badgeCls: "text-teal-600 dark:text-teal-400",
+  },
+  VENUE_MEMBERSHIP: {
+    label: "💳 Üyelik",
+    accentColor: "border-l-indigo-500",
+    badgeVariant: "blue" as const,
+    badgeCls: "text-indigo-600 dark:text-indigo-400",
+  },
+  VENUE_CLASS: {
+    label: "📚 Ders/Kurs",
+    accentColor: "border-l-pink-500",
+    badgeVariant: "orange" as const,
+    badgeCls: "text-pink-600 dark:text-pink-400",
+  },
+  VENUE_PRODUCT: {
+    label: "🛍️ Ürün",
+    accentColor: "border-l-amber-500",
+    badgeVariant: "orange" as const,
+    badgeCls: "text-amber-600 dark:text-amber-400",
+  },
+  VENUE_EVENT: {
+    label: "🎉 Etkinlik",
+    accentColor: "border-l-rose-500",
+    badgeVariant: "orange" as const,
+    badgeCls: "text-rose-600 dark:text-rose-400",
+  },
+  VENUE_SERVICE: {
+    label: "🔧 Hizmet",
+    accentColor: "border-l-cyan-500",
+    badgeVariant: "blue" as const,
+    badgeCls: "text-cyan-600 dark:text-cyan-400",
+  },
 } as const;
 
 const GENDER_ICONS: Record<string, string> = {

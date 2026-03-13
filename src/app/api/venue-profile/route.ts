@@ -71,7 +71,7 @@ export async function PUT(request: NextRequest) {
     const {
       businessName, address, description, phone, website,
       capacity, sports, images, openingHours, logoUrl,
-      sportDetails, amenities,
+      sportDetails, amenities, venueType,
     } = body;
 
     if (!businessName?.trim())
@@ -87,6 +87,7 @@ export async function PUT(request: NextRequest) {
         images: images ?? [],
         openingHours,
         ...(logoUrl !== undefined ? { logoUrl } : {}),
+        ...(venueType ? { venueType } : {}),
       },
       create: {
         userId,
@@ -97,6 +98,7 @@ export async function PUT(request: NextRequest) {
         images: images ?? [],
         openingHours,
         logoUrl: logoUrl ?? null,
+        venueType: venueType ?? "OTHER",
       },
     });
 

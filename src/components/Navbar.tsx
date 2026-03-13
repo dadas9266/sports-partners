@@ -237,7 +237,9 @@ export default function Navbar() {
                     </Link>
                   )}
                   <Link href="/profil" className="block px-4 py-2 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/30">{t("profile")}</Link>
-                  <Link href="/ayarlar/isletme" className="block px-4 py-2 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/30">🏟️ Tesis Yönetimi</Link>
+                  {((session.user as any)?.userType === "VENUE" || (session.user as any)?.venueProfile) && (
+                    <Link href="/ayarlar/isletme" className="block px-4 py-2 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/30">🏟️ Tesis Yönetimi</Link>
+                  )}
                   <Link href="/topluluklarim" className="block px-4 py-2 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/30">{t("myCommunities")}</Link>
                   <Link href="/ayarlar" className="block px-4 py-2 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/30">{t("settings")}</Link>
                   <button onClick={() => signOut()} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30">
@@ -331,7 +333,7 @@ export default function Navbar() {
                               { href: "/ayarlar/profil", icon: "👤", label: "Profili Düzenle" },
                               { href: "/ayarlar/guvenlik", icon: "🔒", label: "Hesap Güvenliği" },
                               { href: "/ayarlar/profesyonel", icon: "⭐", label: "Profesyonel Hesap" },
-                              { href: "/ayarlar/isletme", icon: "🏟️", label: "Tesis Yönetimi" },
+                              ...((session.user as any)?.userType === "VENUE" || (session.user as any)?.venueProfile ? [{ href: "/ayarlar/isletme", icon: "🏟️", label: "Tesis Yönetimi" }] : []),
                               ...((session.user as any)?.userType === "TRAINER" ? [{ href: "/antrenor/derslerim", icon: "📚", label: "Ders Takibi" }] : []),
                               { href: "/ayarlar/gizlilik", icon: "🛡️", label: "Gizlilik" },
                               { href: "/topluluklar", icon: "🌐", label: "Topluluklar" },

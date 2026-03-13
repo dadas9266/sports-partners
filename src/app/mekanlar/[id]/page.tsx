@@ -50,6 +50,7 @@ export default function MekanDetailPage() {
   const [notFound, setNotFound] = useState(false);
   const [activeImg, setActiveImg] = useState(0);
   const [mapCoords, setMapCoords] = useState<{ lat: number; lon: number } | null>(null);
+  const [venueListings, setVenueListings] = useState<any[]>([]);
 
   useEffect(() => {
     fetch(`/api/mekanlar/${id}`)
@@ -75,6 +76,20 @@ export default function MekanDetailPage() {
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
   }, [id]);
+
+  // Fetch venue owner's listings
+  useEffect(() => {
+    if (!venue) return;
+    fetch(`/api/listings?userId=${venue.user.id}&limit=20`)
+      .then(r => r.json())
+      .then(json => {
+        if (json.success && json.data) {
+          const vListings = json.data.filter((l: any) => (l.type as string).startsWith("VENUE_"));
+          setVenueListings(vListings);
+        }
+      })
+      .catch(() => {});
+  }, [venue]);
 
   if (loading) {
     return (
@@ -315,6 +330,45 @@ export default function MekanDetailPage() {
                   {e}
                 </span>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Venue Listings */}
+        {venueListings.length > 0 && (
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 mb-6">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">📋 İşletme İlanları</h2>
+            <div className="space-y-3">
+              {venueListings.map((listing: any) => {
+                const typeLabels: Record<string, string> = {
+                  VENUE_RENTAL: "🏟️ Kiralık",
+                  VENUE_MEMBERSHIP: "💳 Üyelik",
+                  VENUE_CLASS: "📚 Ders/Kurs",
+                  VENUE_PRODUCT: "🛍️ Ürün",
+                  VENUE_EVENT: "🎉 Etkinlik",
+                  VENUE_SERVICE: "🔧 Hizmet",
+                };
+                return (
+                  <Link
+                    key={listing.id}
+                    href={`/ilan/${listing.id}`}
+                    className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700/70 transition-colors"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">
+                          {typeLabels[listing.type] ?? listing.type}
+                        </span>
+                        <span className="text-xs text-gray-400">{listing.sport?.name}</span>
+                      </div>
+                      <p className="text-sm font-medium text-gray-800 dark:text-gray-200 mt-1 truncate">
+                        {listing.description || "Açıklama yok"}
+                      </p>
+                    </div>
+                    <span className="text-gray-400 text-sm ml-2">→</span>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         )}

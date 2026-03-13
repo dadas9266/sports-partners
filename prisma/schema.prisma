@@ -216,8 +216,15 @@ model Venue {
 enum ListingType {
   RIVAL
   PARTNER
-  TRAINER    // Eğitmen ilanı
-  EQUIPMENT  // Satılık spor malzemesi
+  TRAINER          // Eğitmen ilanı
+  EQUIPMENT        // Satılık spor malzemesi
+  // İşletme ilan tipleri
+  VENUE_RENTAL     // Saha/Kort/Salon Kiralama
+  VENUE_MEMBERSHIP // Üyelik Paketi
+  VENUE_CLASS      // Ders/Kurs Programı
+  VENUE_PRODUCT    // Ürün Satışı (Supplement, Malzeme)
+  VENUE_EVENT      // Etkinlik/Turnuva Duyurusu
+  VENUE_SERVICE    // Hizmet (Fizyoterapi, Masaj, Diyet)
 }
 
 enum Level {
@@ -281,6 +288,12 @@ model Listing {
   noShows         NoShowReport[]
   trainerProfile  TrainerProfile?
   equipmentDetail EquipmentDetail?
+  venueRentalDetail   VenueRentalDetail?
+  venueMembershipDetail VenueMembershipDetail?
+  venueClassDetail    VenueClassDetail?
+  venueProductDetail  VenueProductDetail?
+  venueEventDetail    VenueEventDetail?
+  venueServiceDetail  VenueServiceDetail?
 
   @@index([status, dateTime])
   @@index([sportId])
@@ -594,11 +607,25 @@ model MatchOtp {
   @@index([code, expiresAt])
 }
 
+// ========== İŞLETME TÜRÜ ==========
+enum VenueType {
+  SPORTS_FACILITY   // Spor Tesisi (kort, saha, havuz)
+  FITNESS_CENTER    // Fitness/Spor Salonu, Pilates, Yoga Stüdyosu
+  SUPPLEMENT_STORE  // Supplement/Spor Gıda Mağazası
+  EQUIPMENT_STORE   // Spor Malzeme Mağazası
+  SPORTS_CLUB       // Spor Kulübü/Dernek
+  HEALTH_CENTER     // Sağlık/Rehabilitasyon/Fizyoterapi
+  EVENT_ORGANIZER   // Etkinlik/Turnuva Organizatörü
+  SPORTS_NUTRITION  // Sporcu Restoran/Diyetisyen/Meal Prep
+  OTHER             // Diğer
+}
+
 // ========== MEKAN PROFİLİ ==========
 model VenueProfile {
   id           String   @id @default(cuid())
   userId       String   @unique
   user         User     @relation(fields: [userId], references: [id])
+  venueType    VenueType @default(OTHER)           // İşletme türü
   businessName String                            // Tesis / Kurum adı
   address      String?                           // Tam adres
   description  String?                           // Açıklama
@@ -656,6 +683,113 @@ model EquipmentDetail {
   isSold      Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@index([listingId])
+}
+
+// ========== İŞLETME İLAN DETAYLARI ==========
+
+// Saha/Kort/Salon Kiralama detayı
+model VenueRentalDetail {
+  id              String   @id @default(cuid())
+  listingId       String   @unique
+  listing         Listing  @relation(fields: [listingId], references: [id])
+  facilityType    String                         // "kort" | "saha" | "havuz" | "salon" | "ring"
+  courtCount      Int      @default(1)           // Müsait alan sayısı
+  pricePerHour    Float?                         // Saatlik ücret
+  pricePerSession Float?                         // Seans ücreti
+  minDuration     Int?                           // Min kiralama (dakika)
+  availableSlots  String?                        // JSON: [{day,startTime,endTime}]
+  surfaceType     String?                        // "çim" | "sert" | "tartan" | "parke"
+  hasLighting     Boolean  @default(false)       // Aydınlatma
+  images          String[] @default([])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([listingId])
+}
+
+// Üyelik Paketi detayı
+model VenueMembershipDetail {
+  id              String   @id @default(cuid())
+  listingId       String   @unique
+  listing         Listing  @relation(fields: [listingId], references: [id])
+  membershipType  String                         // "günlük" | "haftalık" | "aylık" | "yıllık"
+  price           Float                          // Ücret
+  includes        String[] @default([])          // Dahil hizmetler: ["sauna","havuz","PT"]
+  trialAvailable  Boolean  @default(false)       // Deneme var mı
+  trialPrice      Float?                         // Deneme ücreti
+  maxMembers      Int?                           // Kalan kontenjan
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([listingId])
+}
+
+// Ders/Kurs detayı
+model VenueClassDetail {
+  id              String   @id @default(cuid())
+  listingId       String   @unique
+  listing         Listing  @relation(fields: [listingId], references: [id])
+  className       String                         // "Pilates" | "Yoga" | "CrossFit" | serbest
+  schedule        String?                        // JSON: [{day,time}]
+  instructorName  String?                        // Eğitmen adı
+  pricePerSession Float?                         // Seans ücreti
+  priceMonthly    Float?                         // Aylık paket
+  difficulty      String?                        // "başlangıç" | "orta" | "ileri"
+  maxParticipants Int?                           // Kontenjan
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([listingId])
+}
+
+// Ürün Satışı detayı (Supplement, Malzeme vs.)
+model VenueProductDetail {
+  id              String   @id @default(cuid())
+  listingId       String   @unique
+  listing         Listing  @relation(fields: [listingId], references: [id])
+  productCategory String                         // "supplement" | "giyim" | "ekipman" | "aksesuar"
+  productName     String                         // Ürün adı
+  brand           String?                        // Marka
+  price           Float                          // Fiyat
+  unit            String   @default("adet")      // "adet" | "kg" | "paket"
+  inStock         Boolean  @default(true)        // Stokta var mı
+  images          String[] @default([])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([listingId])
+}
+
+// Etkinlik/Turnuva detayı
+model VenueEventDetail {
+  id                   String    @id @default(cuid())
+  listingId            String    @unique
+  listing              Listing   @relation(fields: [listingId], references: [id])
+  eventType            String                    // "turnuva" | "kamp" | "seminer" | "açık gün"
+  startDate            DateTime?
+  endDate              DateTime?
+  entryFee             Float?                    // Katılım ücreti (bilgi amaçlı)
+  maxParticipants      Int?
+  registrationDeadline DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@index([listingId])
+}
+
+// Hizmet detayı (Fizyoterapi, Masaj, Beslenme Danışmanlığı)
+model VenueServiceDetail {
+  id              String   @id @default(cuid())
+  listingId       String   @unique
+  listing         Listing  @relation(fields: [listingId], references: [id])
+  serviceType     String                         // "fizyoterapi" | "masaj" | "beslenme" | "psikoloji"
+  sessionDuration Int?                           // Dakika
+  pricePerSession Float?                         // Seans ücreti
+  qualifications  String?                        // Uzmanlık/sertifika
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@index([listingId])
 }

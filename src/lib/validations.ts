@@ -40,7 +40,7 @@ export const loginSchema = z.object({
 // ========== LISTING ==========
 export const createListingSchema = z
   .object({
-  type: z.enum(["RIVAL", "PARTNER", "TRAINER", "EQUIPMENT"], { message: "İlan tipi seçiniz" }),
+  type: z.enum(["RIVAL", "PARTNER", "TRAINER", "EQUIPMENT", "VENUE_RENTAL", "VENUE_MEMBERSHIP", "VENUE_CLASS", "VENUE_PRODUCT", "VENUE_EVENT", "VENUE_SERVICE"], { message: "İlan tipi seçiniz" }),
   sportId: z.string().min(1, "Spor dalı seçiniz"),
   countryId: z.string().optional().nullable(),
   cityId: z.string().optional().nullable(),
@@ -86,6 +86,58 @@ export const createListingSchema = z
     model: z.string().max(100).optional(),
     images: z.array(z.string()).optional().default([]),
   }).optional(),
+  // İşletme ilanı için ek alanlar
+  venueRentalDetail: z.object({
+    facilityType: z.string().max(50).optional(),
+    courtCount: z.number().int().min(1).optional(),
+    pricePerHour: z.number().min(0).optional(),
+    pricePerSession: z.number().min(0).optional(),
+    minDuration: z.number().int().min(0).optional(),
+    availableSlots: z.string().max(2000).optional(),
+    surfaceType: z.string().max(50).optional(),
+    hasLighting: z.boolean().optional(),
+    images: z.array(z.string()).optional().default([]),
+  }).optional(),
+  venueMembershipDetail: z.object({
+    membershipType: z.string().max(50).optional(),
+    price: z.number().min(0).optional(),
+    includes: z.array(z.string()).optional().default([]),
+    trialAvailable: z.boolean().optional(),
+    trialPrice: z.number().min(0).optional(),
+    maxMembers: z.number().int().min(0).optional(),
+  }).optional(),
+  venueClassDetail: z.object({
+    className: z.string().max(100).optional(),
+    schedule: z.string().max(2000).optional(),
+    instructorName: z.string().max(100).optional(),
+    pricePerSession: z.number().min(0).optional(),
+    priceMonthly: z.number().min(0).optional(),
+    difficulty: z.string().max(50).optional(),
+    maxParticipants: z.number().int().min(0).optional(),
+  }).optional(),
+  venueProductDetail: z.object({
+    productCategory: z.string().max(50).optional(),
+    productName: z.string().max(200).optional(),
+    brand: z.string().max(100).optional(),
+    price: z.number().min(0).optional(),
+    unit: z.string().max(20).optional(),
+    inStock: z.boolean().optional(),
+    images: z.array(z.string()).optional().default([]),
+  }).optional(),
+  venueEventDetail: z.object({
+    eventType: z.string().max(50).optional(),
+    startDate: z.string().optional(),
+    endDate: z.string().optional(),
+    entryFee: z.number().min(0).optional(),
+    maxParticipants: z.number().int().min(0).optional(),
+    registrationDeadline: z.string().optional(),
+  }).optional(),
+  venueServiceDetail: z.object({
+    serviceType: z.string().max(100).optional(),
+    sessionDuration: z.number().int().min(0).optional(),
+    pricePerSession: z.number().min(0).optional(),
+    qualifications: z.string().max(500).optional(),
+  }).optional(),
 })
 .superRefine((data, ctx) => {
   // RIVAL ve PARTNER için tarih zorunlu ve gelecekte olmalı
@@ -111,10 +163,17 @@ export const createListingSchema = z
     }
   }
   // EQUIPMENT için herhangi bir tarih/seviye validasyonu yapılmaz
+  // VENUE_* tipleri için tarih/seviye zorunlu değil (VENUE_EVENT hariç tarih opsiyonel)
+  if (data.type === "VENUE_EVENT" && data.venueEventDetail?.startDate) {
+    const date = new Date(data.venueEventDetail.startDate);
+    if (isNaN(date.getTime()) || date <= new Date()) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Etkinlik tarihi gelecekte olmalıdır", path: ["venueEventDetail", "startDate"] });
+    }
+  }
 });
 
 export const updateListingSchema = z.object({
-  type: z.enum(["RIVAL", "PARTNER", "TRAINER", "EQUIPMENT"], { message: "İlan tipi seçiniz" }).optional(),
+  type: z.enum(["RIVAL", "PARTNER", "TRAINER", "EQUIPMENT", "VENUE_RENTAL", "VENUE_MEMBERSHIP", "VENUE_CLASS", "VENUE_PRODUCT", "VENUE_EVENT", "VENUE_SERVICE"], { message: "İlan tipi seçiniz" }).optional(),
   sportId: z.string().min(1).optional(),
   districtId: z.string().min(1).optional(),
   venueId: z.string().optional().nullable(),
@@ -149,7 +208,8 @@ export const listingFilterSchema = z.object({
   lon: z.string().optional(),
   radius: z.string().optional(),
   level: z.enum(["BEGINNER", "INTERMEDIATE", "ADVANCED"]).optional(),
-  type: z.enum(["RIVAL", "PARTNER", "TRAINER", "EQUIPMENT"]).optional(),
+  type: z.enum(["RIVAL", "PARTNER", "TRAINER", "EQUIPMENT", "VENUE_RENTAL", "VENUE_MEMBERSHIP", "VENUE_CLASS", "VENUE_PRODUCT", "VENUE_EVENT", "VENUE_SERVICE"]).optional(),
+  userId: z.string().optional(),
   upcoming: z.string().optional(),
   quickOnly: z.string().optional(),  // "true" for hızlı ilan filter
   isRecurring: z.string().optional(), // "true" for recurring listings

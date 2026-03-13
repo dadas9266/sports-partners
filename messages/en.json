@@ -58,7 +58,13 @@
       "RIVAL": "Rival",
       "PARTNER": "Partner",
       "TRAINER": "Trainer",
-      "EQUIPMENT": "Equipment"
+      "EQUIPMENT": "Equipment",
+      "VENUE_RENTAL": "Venue Rental",
+      "VENUE_MEMBERSHIP": "Membership",
+      "VENUE_CLASS": "Class/Course",
+      "VENUE_PRODUCT": "Product",
+      "VENUE_EVENT": "Event",
+      "VENUE_SERVICE": "Service"
     },
     "levels": {
       "BEGINNER": "Beginner",

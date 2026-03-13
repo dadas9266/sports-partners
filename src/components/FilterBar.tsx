@@ -35,6 +35,14 @@ export default function FilterBar({ onFilterChange, initialLocations, initialSpo
     partner: isTr ? "Partner Arıyor" : "Looking for Partner",
     trainer: isTr ? "Eğitmen" : "Trainer",
     equipment: isTr ? "Satılık Malzeme" : "Equipment",
+    venueRental: isTr ? "🏟️ Saha/Kort Kiralama" : "🏟️ Venue Rental",
+    venueMembership: isTr ? "🎫 Üyelik Paketi" : "🎫 Membership",
+    venueClass: isTr ? "🏫 Ders/Kurs" : "🏫 Class/Course",
+    venueProduct: isTr ? "📦 Ürün Satışı" : "📦 Product",
+    venueEvent: isTr ? "🏆 Etkinlik" : "🏆 Event",
+    venueService: isTr ? "💆 Hizmet" : "💆 Service",
+    individualGroup: isTr ? "Bireysel" : "Individual",
+    venueGroup: isTr ? "İşletme" : "Venue",
     today: isTr ? "Bugün" : "Today",
     week: isTr ? "Bu Hafta" : "This Week",
     weekend: isTr ? "Hafta Sonu" : "Weekend",
@@ -207,10 +215,20 @@ export default function FilterBar({ onFilterChange, initialLocations, initialSpo
           aria-label={text.typeAria}
         >
           <option value="">{text.type}</option>
-          <option value="RIVAL">{text.rival}</option>
-          <option value="PARTNER">{text.partner}</option>
-          <option value="TRAINER">{text.trainer}</option>
-          <option value="EQUIPMENT">{text.equipment}</option>
+          <optgroup label={text.individualGroup}>
+            <option value="RIVAL">{text.rival}</option>
+            <option value="PARTNER">{text.partner}</option>
+            <option value="TRAINER">{text.trainer}</option>
+            <option value="EQUIPMENT">{text.equipment}</option>
+          </optgroup>
+          <optgroup label={text.venueGroup}>
+            <option value="VENUE_RENTAL">{text.venueRental}</option>
+            <option value="VENUE_MEMBERSHIP">{text.venueMembership}</option>
+            <option value="VENUE_CLASS">{text.venueClass}</option>
+            <option value="VENUE_PRODUCT">{text.venueProduct}</option>
+            <option value="VENUE_EVENT">{text.venueEvent}</option>
+            <option value="VENUE_SERVICE">{text.venueService}</option>
+          </optgroup>
         </select>
       </div>
 
@@ -235,7 +253,7 @@ export default function FilterBar({ onFilterChange, initialLocations, initialSpo
         </div>
 
         {/* Fiyat Aralığı — yalnızca EQUIPMENT veya TRAINER seçiliyken ya da tip seçilmemişse */}
-        {(!selectedType || selectedType === "EQUIPMENT" || selectedType === "TRAINER") && (
+        {(!selectedType || selectedType === "EQUIPMENT" || selectedType === "TRAINER" || selectedType.startsWith("VENUE_")) && (
           <div className="flex items-center gap-2">
             <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{text.price}</span>
             <input

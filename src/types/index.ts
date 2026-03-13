@@ -3,7 +3,8 @@
 // =============================================
 
 // --- Enum Types ---
-export type ListingType = "RIVAL" | "PARTNER" | "TRAINER" | "EQUIPMENT";
+export type ListingType = "RIVAL" | "PARTNER" | "TRAINER" | "EQUIPMENT" | "VENUE_RENTAL" | "VENUE_MEMBERSHIP" | "VENUE_CLASS" | "VENUE_PRODUCT" | "VENUE_EVENT" | "VENUE_SERVICE";
+export type VenueType = "SPORTS_FACILITY" | "FITNESS_CENTER" | "SUPPLEMENT_STORE" | "EQUIPMENT_STORE" | "SPORTS_CLUB" | "HEALTH_CENTER" | "EVENT_ORGANIZER" | "SPORTS_NUTRITION" | "OTHER";
 export type Level = "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
 export type ListingStatus = "OPEN" | "CLOSED" | "MATCHED" | "EXPIRED";
 export type ResponseStatus = "PENDING" | "ACCEPTED" | "REJECTED";

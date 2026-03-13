@@ -62,6 +62,13 @@ export default function CreateListingPage() {
   const [trainerForm, setTrainerForm] = useState({ experience: "", specialization: "", gymName: "", gymAddress: "" });
   // Equipment extra fields
   const [equipForm, setEquipForm] = useState({ price: "", condition: "", brand: "", model: "" });
+  // Venue detail forms
+  const [venueRentalForm, setVenueRentalForm] = useState({ rentalType: "", pricePerHour: "", capacity: "", surface: "", indoor: false });
+  const [venueMembershipForm, setVenueMembershipForm] = useState({ planName: "", durationDays: "", features: "" });
+  const [venueClassForm, setVenueClassForm] = useState({ className: "", instructor: "", durationMinutes: "", maxStudents: "", recurring: false });
+  const [venueProductForm, setVenueProductForm] = useState({ productName: "", price: "", category: "", inStock: true });
+  const [venueEventForm, setVenueEventForm] = useState({ eventName: "", eventDate: "", eventCapacity: "", entryFee: "" });
+  const [venueServiceForm, setVenueServiceForm] = useState({ serviceName: "", price: "", durationMinutes: "" });
   const [equipImages, setEquipImages] = useState<File[]>([]);
   const [equipPreviews, setEquipPreviews] = useState<string[]>([]);
   const [uploadingEquip, setUploadingEquip] = useState(false);
@@ -111,6 +118,7 @@ export default function CreateListingPage() {
         }
         setUploadingEquip(false);
       }
+      const isVenueType = (form.type as string).startsWith("VENUE_");
       const payload: any = {
         type: form.type as string,
         sportId: form.sportId,
@@ -120,10 +128,10 @@ export default function CreateListingPage() {
         venueId: form.venueId || null,
         latitude: form.latitude ?? undefined,
         longitude: form.longitude ?? undefined,
-        // EQUIPMENT için tarih gönderilmez; TRAINER için opsiyonel (dolu ise gönderilir); diğerleri zorunlu
-        ...(form.type !== "EQUIPMENT" && form.type !== "TRAINER" && { dateTime: form.dateTime }),
+        // EQUIPMENT ve VENUE_* için tarih gönderilmez; TRAINER için opsiyonel
+        ...(!isVenueType && form.type !== "EQUIPMENT" && form.type !== "TRAINER" && { dateTime: form.dateTime }),
         ...(form.type === "TRAINER" && form.dateTime ? { dateTime: form.dateTime } : {}),
-        level: form.type === "EQUIPMENT" ? "BEGINNER" : form.level as string,
+        level: (form.type === "EQUIPMENT" || isVenueType) ? "BEGINNER" : form.level as string,
         description: form.description || undefined,
         maxParticipants: form.maxParticipants,
         allowedGender: form.allowedGender,
@@ -151,7 +159,56 @@ export default function CreateListingPage() {
           images: uploadedEquipUrls,
         };
       }
-      if (form.type !== "EQUIPMENT") {
+      // Venue detail payloads
+      if (form.type === "VENUE_RENTAL") {
+        payload.venueRentalDetail = {
+          rentalType: venueRentalForm.rentalType || undefined,
+          pricePerHour: venueRentalForm.pricePerHour ? parseFloat(venueRentalForm.pricePerHour) : undefined,
+          capacity: venueRentalForm.capacity ? parseInt(venueRentalForm.capacity) : undefined,
+          surface: venueRentalForm.surface || undefined,
+          indoor: venueRentalForm.indoor,
+        };
+      }
+      if (form.type === "VENUE_MEMBERSHIP") {
+        payload.venueMembershipDetail = {
+          planName: venueMembershipForm.planName || undefined,
+          durationDays: venueMembershipForm.durationDays ? parseInt(venueMembershipForm.durationDays) : undefined,
+          features: venueMembershipForm.features || undefined,
+        };
+      }
+      if (form.type === "VENUE_CLASS") {
+        payload.venueClassDetail = {
+          className: venueClassForm.className || undefined,
+          instructor: venueClassForm.instructor || undefined,
+          durationMinutes: venueClassForm.durationMinutes ? parseInt(venueClassForm.durationMinutes) : undefined,
+          maxStudents: venueClassForm.maxStudents ? parseInt(venueClassForm.maxStudents) : undefined,
+          recurring: venueClassForm.recurring,
+        };
+      }
+      if (form.type === "VENUE_PRODUCT") {
+        payload.venueProductDetail = {
+          productName: venueProductForm.productName || undefined,
+          price: venueProductForm.price ? parseFloat(venueProductForm.price) : undefined,
+          category: venueProductForm.category || undefined,
+          inStock: venueProductForm.inStock,
+        };
+      }
+      if (form.type === "VENUE_EVENT") {
+        payload.venueEventDetail = {
+          eventName: venueEventForm.eventName || undefined,
+          eventDate: venueEventForm.eventDate || undefined,
+          capacity: venueEventForm.eventCapacity ? parseInt(venueEventForm.eventCapacity) : undefined,
+          entryFee: venueEventForm.entryFee ? parseFloat(venueEventForm.entryFee) : undefined,
+        };
+      }
+      if (form.type === "VENUE_SERVICE") {
+        payload.venueServiceDetail = {
+          serviceName: venueServiceForm.serviceName || undefined,
+          price: venueServiceForm.price ? parseFloat(venueServiceForm.price) : undefined,
+          durationMinutes: venueServiceForm.durationMinutes ? parseInt(venueServiceForm.durationMinutes) : undefined,
+        };
+      }
+      if (form.type !== "EQUIPMENT" && !isVenueType) {
         payload.isQuick = form.isQuick;
         payload.isUrgent = form.isUrgent;
         payload.expiresAt = form.isQuick && form.expiresAt ? form.expiresAt : undefined;
@@ -178,6 +235,9 @@ export default function CreateListingPage() {
   }
 
   if (!session) return null;
+
+  const isVenueUser = (session.user as any)?.userType === "VENUE" || !!(session.user as any)?.venueProfile;
+  const isVenueListingType = (form.type as string).startsWith("VENUE_");
 
   const selectClass = "w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-emerald-500 outline-none disabled:bg-gray-100 dark:disabled:bg-gray-700";
 
@@ -224,6 +284,35 @@ export default function CreateListingPage() {
                 Eğitmen ilanı verebilmek için eğitmen başvurunuzun onaylanmış olması gerekir.
                 Henüz başvurmadıysanız <a href="/profil" className="underline font-medium">profilinizden</a> başvurabilirsiniz.
               </span>
+            </div>
+          )}
+
+          {/* Venue listing types - only for venue users */}
+          {isVenueUser && (
+            <div className="mt-4">
+              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">🏢 İşletme İlanları</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {[
+                  { value: "VENUE_RENTAL", label: "🏟️ Saha/Salon Kiralama", active: "border-teal-500 bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-300" },
+                  { value: "VENUE_MEMBERSHIP", label: "💳 Üyelik Paketi", active: "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300" },
+                  { value: "VENUE_CLASS", label: "📚 Ders/Kurs", active: "border-pink-500 bg-pink-50 dark:bg-pink-900/20 text-pink-700 dark:text-pink-300" },
+                  { value: "VENUE_PRODUCT", label: "🛍️ Ürün Satışı", active: "border-amber-500 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300" },
+                  { value: "VENUE_EVENT", label: "🎉 Etkinlik/Turnuva", active: "border-rose-500 bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-300" },
+                  { value: "VENUE_SERVICE", label: "🔧 Hizmet", active: "border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-300" },
+                ].map((t) => (
+                  <button
+                    key={t.value}
+                    type="button"
+                    onClick={() => setForm({ ...form, type: t.value as ListingType })}
+                    className={`p-3 rounded-lg border-2 text-center transition text-sm font-medium ${
+                      form.type === t.value ? t.active : "border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-300"
+                    }`}
+                    aria-pressed={form.type === t.value}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -319,8 +408,8 @@ export default function CreateListingPage() {
           />
         </div>
 
-        {/* Tarih/Saat (EQUIPMENT için gösterilmez) */}
-        {form.type !== "EQUIPMENT" && (
+        {/* Tarih/Saat (EQUIPMENT ve VENUE_* için gösterilmez) */}
+        {form.type !== "EQUIPMENT" && !isVenueListingType && (
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Tarih ve Saat {form.type !== "TRAINER" ? "*" : "(antrenman başlangıcı)"}
@@ -417,8 +506,179 @@ export default function CreateListingPage() {
           </div>
         )}
 
-        {/* Seviye (EQUIPMENT için gizle) */}
-        {form.type !== "EQUIPMENT" && (
+        {/* ─── VENUE_RENTAL: Saha/Salon Kiralama ─── */}
+        {form.type === "VENUE_RENTAL" && (
+          <div className="bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-xl p-4 space-y-3">
+            <p className="font-medium text-teal-800 dark:text-teal-200">🏟️ Saha/Salon Kiralama Detayları</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Alan Tipi</label>
+                <select value={venueRentalForm.rentalType} onChange={(e) => setVenueRentalForm({ ...venueRentalForm, rentalType: e.target.value })} className={selectClass}>
+                  <option value="">Seçiniz</option>
+                  <option value="FIELD">Saha</option>
+                  <option value="COURT">Kort</option>
+                  <option value="POOL">Havuz</option>
+                  <option value="GYM">Salon</option>
+                  <option value="RING">Ring</option>
+                  <option value="OTHER">Diğer</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Saatlik Ücret (₺)</label>
+                <input type="number" min="0" value={venueRentalForm.pricePerHour} onChange={(e) => setVenueRentalForm({ ...venueRentalForm, pricePerHour: e.target.value })} className={selectClass} placeholder="500" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Kapasite (kişi)</label>
+                <input type="number" min="1" value={venueRentalForm.capacity} onChange={(e) => setVenueRentalForm({ ...venueRentalForm, capacity: e.target.value })} className={selectClass} placeholder="22" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Zemin</label>
+                <input type="text" value={venueRentalForm.surface} onChange={(e) => setVenueRentalForm({ ...venueRentalForm, surface: e.target.value })} className={selectClass} placeholder="Çim, Parke, Tartan..." />
+              </div>
+            </div>
+            <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+              <input type="checkbox" checked={venueRentalForm.indoor} onChange={(e) => setVenueRentalForm({ ...venueRentalForm, indoor: e.target.checked })} className="accent-teal-500" />
+              Kapalı Alan (İndoor)
+            </label>
+          </div>
+        )}
+
+        {/* ─── VENUE_MEMBERSHIP: Üyelik Paketi ─── */}
+        {form.type === "VENUE_MEMBERSHIP" && (
+          <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-xl p-4 space-y-3">
+            <p className="font-medium text-indigo-800 dark:text-indigo-200">💳 Üyelik Paketi Detayları</p>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Paket Adı *</label>
+              <input type="text" value={venueMembershipForm.planName} onChange={(e) => setVenueMembershipForm({ ...venueMembershipForm, planName: e.target.value })} className={selectClass} placeholder="Aylık Sınırsız, Haftalık VIP..." />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Süre (gün)</label>
+                <input type="number" min="1" value={venueMembershipForm.durationDays} onChange={(e) => setVenueMembershipForm({ ...venueMembershipForm, durationDays: e.target.value })} className={selectClass} placeholder="30" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Paket Özellikleri</label>
+              <textarea value={venueMembershipForm.features} onChange={(e) => setVenueMembershipForm({ ...venueMembershipForm, features: e.target.value })} rows={2} className={`${selectClass} resize-none`} placeholder="Sınırsız salon kullanımı, özel soyunma dolabı..." />
+            </div>
+          </div>
+        )}
+
+        {/* ─── VENUE_CLASS: Ders/Kurs ─── */}
+        {form.type === "VENUE_CLASS" && (
+          <div className="bg-pink-50 dark:bg-pink-900/20 border border-pink-200 dark:border-pink-800 rounded-xl p-4 space-y-3">
+            <p className="font-medium text-pink-800 dark:text-pink-200">📚 Ders/Kurs Detayları</p>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Ders Adı *</label>
+              <input type="text" value={venueClassForm.className} onChange={(e) => setVenueClassForm({ ...venueClassForm, className: e.target.value })} className={selectClass} placeholder="Yüzme Başlangıç, Pilates, Kickboks..." />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Eğitmen</label>
+                <input type="text" value={venueClassForm.instructor} onChange={(e) => setVenueClassForm({ ...venueClassForm, instructor: e.target.value })} className={selectClass} placeholder="Ad Soyad" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Süre (dk)</label>
+                <input type="number" min="1" value={venueClassForm.durationMinutes} onChange={(e) => setVenueClassForm({ ...venueClassForm, durationMinutes: e.target.value })} className={selectClass} placeholder="60" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Max Öğrenci</label>
+                <input type="number" min="1" value={venueClassForm.maxStudents} onChange={(e) => setVenueClassForm({ ...venueClassForm, maxStudents: e.target.value })} className={selectClass} placeholder="15" />
+              </div>
+              <div className="flex items-end">
+                <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 pb-2">
+                  <input type="checkbox" checked={venueClassForm.recurring} onChange={(e) => setVenueClassForm({ ...venueClassForm, recurring: e.target.checked })} className="accent-pink-500" />
+                  Tekrarlayan Ders
+                </label>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ─── VENUE_PRODUCT: Ürün Satışı ─── */}
+        {form.type === "VENUE_PRODUCT" && (
+          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 space-y-3">
+            <p className="font-medium text-amber-800 dark:text-amber-200">🛍️ Ürün Detayları</p>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Ürün Adı *</label>
+              <input type="text" value={venueProductForm.productName} onChange={(e) => setVenueProductForm({ ...venueProductForm, productName: e.target.value })} className={selectClass} placeholder="Whey Protein, Dumbbell Set..." />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Fiyat (₺)</label>
+                <input type="number" min="0" value={venueProductForm.price} onChange={(e) => setVenueProductForm({ ...venueProductForm, price: e.target.value })} className={selectClass} placeholder="250" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Kategori</label>
+                <select value={venueProductForm.category} onChange={(e) => setVenueProductForm({ ...venueProductForm, category: e.target.value })} className={selectClass}>
+                  <option value="">Seçiniz</option>
+                  <option value="SUPPLEMENT">Supplement</option>
+                  <option value="EQUIPMENT">Ekipman</option>
+                  <option value="CLOTHING">Giyim</option>
+                  <option value="ACCESSORY">Aksesuar</option>
+                  <option value="OTHER">Diğer</option>
+                </select>
+              </div>
+            </div>
+            <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+              <input type="checkbox" checked={venueProductForm.inStock} onChange={(e) => setVenueProductForm({ ...venueProductForm, inStock: e.target.checked })} className="accent-amber-500" />
+              Stokta Mevcut
+            </label>
+          </div>
+        )}
+
+        {/* ─── VENUE_EVENT: Etkinlik/Turnuva ─── */}
+        {form.type === "VENUE_EVENT" && (
+          <div className="bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-xl p-4 space-y-3">
+            <p className="font-medium text-rose-800 dark:text-rose-200">🎉 Etkinlik/Turnuva Detayları</p>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Etkinlik Adı *</label>
+              <input type="text" value={venueEventForm.eventName} onChange={(e) => setVenueEventForm({ ...venueEventForm, eventName: e.target.value })} className={selectClass} placeholder="Yaz Turnuvası, Açık Gün..." />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Etkinlik Tarihi *</label>
+                <input type="datetime-local" value={venueEventForm.eventDate} onChange={(e) => setVenueEventForm({ ...venueEventForm, eventDate: e.target.value })} className={selectClass} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Katılımcı Kapasitesi</label>
+                <input type="number" min="1" value={venueEventForm.eventCapacity} onChange={(e) => setVenueEventForm({ ...venueEventForm, eventCapacity: e.target.value })} className={selectClass} placeholder="100" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Katılım Ücreti (₺, boş = ücretsiz)</label>
+              <input type="number" min="0" value={venueEventForm.entryFee} onChange={(e) => setVenueEventForm({ ...venueEventForm, entryFee: e.target.value })} className={selectClass} placeholder="0" />
+            </div>
+          </div>
+        )}
+
+        {/* ─── VENUE_SERVICE: Hizmet ─── */}
+        {form.type === "VENUE_SERVICE" && (
+          <div className="bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 rounded-xl p-4 space-y-3">
+            <p className="font-medium text-cyan-800 dark:text-cyan-200">🔧 Hizmet Detayları</p>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Hizmet Adı *</label>
+              <input type="text" value={venueServiceForm.serviceName} onChange={(e) => setVenueServiceForm({ ...venueServiceForm, serviceName: e.target.value })} className={selectClass} placeholder="Kişisel Antrenman, Fizyoterapi..." />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Fiyat (₺)</label>
+                <input type="number" min="0" value={venueServiceForm.price} onChange={(e) => setVenueServiceForm({ ...venueServiceForm, price: e.target.value })} className={selectClass} placeholder="300" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Süre (dk)</label>
+                <input type="number" min="1" value={venueServiceForm.durationMinutes} onChange={(e) => setVenueServiceForm({ ...venueServiceForm, durationMinutes: e.target.value })} className={selectClass} placeholder="60" />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Seviye (EQUIPMENT ve VENUE_* için gizle) */}
+        {form.type !== "EQUIPMENT" && !isVenueListingType && (
           <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Seviye *
@@ -492,8 +752,8 @@ export default function CreateListingPage() {
           </div>
         )}
 
-        {/* Cinsiyet Kısıtlı (EQUIPMENT için gizle) */}
-        {form.type !== "EQUIPMENT" && (
+        {/* Cinsiyet Kısıtlı (EQUIPMENT ve VENUE_* için gizle) */}
+        {form.type !== "EQUIPMENT" && !isVenueListingType && (
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Katılımcı Cinsiyeti
@@ -521,8 +781,8 @@ export default function CreateListingPage() {
         </div>
         )}
 
-        {/* Yaş Aralığı Kısıtlaması (EQUIPMENT dışındaki ilanlar için) */}
-        {form.type !== "EQUIPMENT" && (
+        {/* Yaş Aralığı Kısıtlaması (EQUIPMENT ve VENUE_* dışındaki ilanlar için) */}
+        {form.type !== "EQUIPMENT" && !isVenueListingType && (
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Başvuru Yaş Aralığı <span className="text-gray-400 font-normal">(opsiyonel)</span>
@@ -566,7 +826,7 @@ export default function CreateListingPage() {
         )}
 
         {/* Grup Seçimi */}
-        {myGroups.length > 0 && (
+        {myGroups.length > 0 && !isVenueListingType && (
         <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4">
           <p className="font-medium text-purple-800 dark:text-purple-200 mb-2">👥 Grup İlanı (Opsiyonel)</p>
           <p className="text-xs text-purple-600 dark:text-purple-400 mb-3">Bu ilanı bir grubunuzla ilişkilendirebilirsiniz.</p>
@@ -585,8 +845,8 @@ export default function CreateListingPage() {
         </div>
         )}
 
-        {/* Hızlı İlan Modu (EQUIPMENT ve TRAINER için gizle) */}
-        {form.type !== "EQUIPMENT" && form.type !== "TRAINER" && (
+        {/* Hızlı İlan Modu (EQUIPMENT, TRAINER ve VENUE_* için gizle) */}
+        {form.type !== "EQUIPMENT" && form.type !== "TRAINER" && !isVenueListingType && (
         <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
           <div className="flex items-center justify-between">
             <div>
@@ -651,7 +911,7 @@ export default function CreateListingPage() {
         )}
 
         {/* 🕵️ KÖR MAÇ — Anonim İlan */}
-        {form.type !== "EQUIPMENT" && form.type !== "TRAINER" && (
+        {form.type !== "EQUIPMENT" && form.type !== "TRAINER" && !isVenueListingType && (
         <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
           <div className="flex items-center justify-between">
             <div>
@@ -687,7 +947,7 @@ export default function CreateListingPage() {
         )}
 
         {/* Tekrarlayan Etkinlik */}
-        {!form.isQuick && form.type !== "EQUIPMENT" && form.type !== "TRAINER" && (
+        {!form.isQuick && form.type !== "EQUIPMENT" && form.type !== "TRAINER" && !isVenueListingType && (
           <div className="bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800 rounded-xl p-4">
             <div className="flex items-center justify-between mb-3">
               <div>
@@ -756,7 +1016,7 @@ export default function CreateListingPage() {
           loading={loading || uploadingEquip}
           disabled={
             !form.type ||
-            (form.type === "EQUIPMENT" ? (!equipForm.price || !equipForm.condition) : !form.level)
+            (form.type === "EQUIPMENT" ? (!equipForm.price || !equipForm.condition) : isVenueListingType ? false : !form.level)
           }
           className="w-full text-lg"
         >

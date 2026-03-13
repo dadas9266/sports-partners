@@ -57,7 +57,13 @@
       "RIVAL": "Rakip",
       "PARTNER": "Partner",
       "TRAINER": "Antrenör",
-      "EQUIPMENT": "Malzeme"
+      "EQUIPMENT": "Malzeme",
+      "VENUE_RENTAL": "Saha/Salon Kiralama",
+      "VENUE_MEMBERSHIP": "Üyelik Paketi",
+      "VENUE_CLASS": "Ders/Kurs",
+      "VENUE_PRODUCT": "Ürün",
+      "VENUE_EVENT": "Etkinlik",
+      "VENUE_SERVICE": "Hizmet"
     },
     "levels": {
       "BEGINNER": "Başlangıç",
