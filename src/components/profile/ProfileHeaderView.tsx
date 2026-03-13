@@ -88,13 +88,6 @@ export default function ProfileHeaderView({
             onChange={e => { const f = e.target.files?.[0]; if (f) handleCoverUpload(f); }} />
         </label>
 
-        {/* Edit button — top right */}
-        <div className="absolute top-3 right-3 z-20">
-          <button onClick={onEditClick}
-            className="text-xs font-semibold px-3 py-1.5 rounded-full bg-black/40 text-white hover:bg-black/55 backdrop-blur-sm transition">
-            ✏️ Düzenle
-          </button>
-        </div>
       </div>
 
       {/* ── PROFILE INFO ─────────────────────────────────── */}
@@ -184,6 +177,16 @@ export default function ProfileHeaderView({
           {(user.currentStreak || 0) > 0 && (
             <span className="text-orange-500"><strong>🔥 {user.currentStreak}</strong> <span className="text-gray-500 dark:text-gray-400">seri</span></span>
           )}
+        </div>
+
+        <div className="mb-3">
+          <button
+            type="button"
+            onClick={onEditClick}
+            className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full border border-emerald-500 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition"
+          >
+            ✏️ Profili Düzenle
+          </button>
         </div>
 
         {user.bio && (

@@ -232,6 +232,7 @@ export async function PUT(request: Request) {
 
     const updateData: Record<string, unknown> = {};
     const userBefore = await prisma.user.findUnique({ where: { id: userId } });
+    let hasAnyChanges = false;
 
     if (parsed.data.name !== undefined) {
       updateData.name = parsed.data.name;
@@ -277,6 +278,9 @@ export async function PUT(request: Request) {
     if ("vk" in parsed.data) updateData.vk = parsed.data.vk ?? null;
     if ("telegram" in parsed.data) updateData.telegram = parsed.data.telegram ?? null;
     if ("whatsapp" in parsed.data) updateData.whatsapp = parsed.data.whatsapp ?? null;
+    if ("socialLinksVisibility" in parsed.data && parsed.data.socialLinksVisibility !== undefined) {
+      updateData.socialLinksVisibility = parsed.data.socialLinksVisibility;
+    }
 
     // Favori sporlar güncelleme
     const sportIds = "sportIds" in parsed.data ? (parsed.data as { sportIds?: string[] }).sportIds : undefined;
@@ -285,6 +289,7 @@ export async function PUT(request: Request) {
         where: { id: userId },
         data: { sports: { set: sportIds.map((id) => ({ id })) } },
       });
+      hasAnyChanges = true;
     }
 
     // Şifre değiştirme
@@ -317,7 +322,72 @@ export async function PUT(request: Request) {
       updateData.passwordHash = await bcrypt.hash(parsed.data.newPassword, 12);
     }
 
-    if (Object.keys(updateData).length === 0) {
+    const trainerFieldsTouched = [
+      "trainerUniversity",
+      "trainerDepartment",
+      "trainerGymName",
+      "trainerExperienceYears",
+      "trainerLessonTypes",
+      "trainerProvidesEquipment",
+      "trainerCertNote",
+      "trainerSpecializations",
+    ].some((k) => k in parsed.data);
+
+    if (trainerFieldsTouched) {
+      const canEditTrainer = userBefore?.userType === "TRAINER" || !!(await prisma.trainerProfile.findUnique({ where: { userId } }));
+      if (!canEditTrainer) {
+        return NextResponse.json(
+          { success: false, error: "Antrenör bilgileri yalnızca antrenör hesaplarda güncellenebilir" },
+          { status: 403 }
+        );
+      }
+
+      const trainerUpdate: Record<string, unknown> = {};
+      if ("trainerUniversity" in parsed.data) trainerUpdate.university = parsed.data.trainerUniversity ?? null;
+      if ("trainerDepartment" in parsed.data) trainerUpdate.department = parsed.data.trainerDepartment ?? null;
+      if ("trainerGymName" in parsed.data) trainerUpdate.gymName = parsed.data.trainerGymName ?? null;
+      if ("trainerExperienceYears" in parsed.data) trainerUpdate.experienceYears = parsed.data.trainerExperienceYears ?? null;
+      if ("trainerLessonTypes" in parsed.data) trainerUpdate.lessonTypes = parsed.data.trainerLessonTypes ?? [];
+      if ("trainerProvidesEquipment" in parsed.data) trainerUpdate.providesEquipment = parsed.data.trainerProvidesEquipment ?? null;
+      if ("trainerCertNote" in parsed.data) trainerUpdate.certNote = parsed.data.trainerCertNote ?? null;
+
+      if (Object.keys(trainerUpdate).length > 0) {
+        await prisma.trainerProfile.upsert({
+          where: { userId },
+          update: trainerUpdate,
+          create: {
+            userId,
+            university: (trainerUpdate.university as string | null | undefined) ?? null,
+            department: (trainerUpdate.department as string | null | undefined) ?? null,
+            gymName: (trainerUpdate.gymName as string | null | undefined) ?? null,
+            experienceYears: (trainerUpdate.experienceYears as number | null | undefined) ?? null,
+            lessonTypes: (trainerUpdate.lessonTypes as string[] | undefined) ?? [],
+            providesEquipment: (trainerUpdate.providesEquipment as boolean | null | undefined) ?? null,
+            certNote: (trainerUpdate.certNote as string | null | undefined) ?? null,
+          },
+        });
+        hasAnyChanges = true;
+      }
+
+      if ("trainerSpecializations" in parsed.data && Array.isArray(parsed.data.trainerSpecializations)) {
+        const profile = await prisma.trainerProfile.findUnique({ where: { userId }, select: { id: true } });
+        if (profile) {
+          await prisma.trainerSpecialization.deleteMany({ where: { profileId: profile.id } });
+          const rows = parsed.data.trainerSpecializations
+            .filter((s) => s.sportName.trim().length > 0)
+            .map((s) => ({ profileId: profile.id, sportName: s.sportName.trim(), years: s.years }));
+          if (rows.length > 0) {
+            await prisma.trainerSpecialization.createMany({ data: rows });
+          }
+          hasAnyChanges = true;
+        }
+      }
+    }
+
+    const hasUserChanges = Object.keys(updateData).length > 0;
+    hasAnyChanges = hasAnyChanges || hasUserChanges;
+
+    if (!hasAnyChanges) {
       return NextResponse.json(
         { success: false, error: "Güncellenecek bir alan bulunamadı" },
         { status: 400 }
@@ -327,16 +397,26 @@ export async function PUT(request: Request) {
 
     // Trust score update kaldırıldı (guvenPuani alanı mevcut değil)
 
-    const updated = await prisma.user.update({
-      where: { id: userId },
-      data: updateData,
-      select: {
-        id: true, name: true, email: true, phone: true,
-        bio: true, avatarUrl: true, coverUrl: true,
-        city: { select: { id: true, name: true } },
-        sports: { select: { id: true, name: true, icon: true } },
-      },
-    });
+    const updated = hasUserChanges
+      ? await prisma.user.update({
+          where: { id: userId },
+          data: updateData,
+          select: {
+            id: true, name: true, email: true, phone: true,
+            bio: true, avatarUrl: true, coverUrl: true,
+            city: { select: { id: true, name: true } },
+            sports: { select: { id: true, name: true, icon: true } },
+          },
+        })
+      : await prisma.user.findUnique({
+          where: { id: userId },
+          select: {
+            id: true, name: true, email: true, phone: true,
+            bio: true, avatarUrl: true, coverUrl: true,
+            city: { select: { id: true, name: true } },
+            sports: { select: { id: true, name: true, icon: true } },
+          },
+        });
 
     // Profil cache'ini temizle
     await cacheDel(cacheKey.profile(userId));

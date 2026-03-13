@@ -233,6 +233,23 @@ export const updateProfileSchema = z
       .regex(/^\+?[0-9]{7,15}$/, "WhatsApp numarası uluslararası formatta olmalı (ör: +905551234567)")
       .optional()
       .nullable(),
+    socialLinksVisibility: z.enum(["EVERYONE", "FOLLOWERS", "NOBODY"]).optional(),
+    trainerUniversity: z.string().max(120).optional().nullable(),
+    trainerDepartment: z.string().max(120).optional().nullable(),
+    trainerGymName: z.string().max(120).optional().nullable(),
+    trainerExperienceYears: z.number().int().min(0).max(80).optional().nullable(),
+    trainerLessonTypes: z.array(z.enum(["birebir", "grup", "cocuk", "performans"])).max(4).optional(),
+    trainerProvidesEquipment: z.boolean().optional().nullable(),
+    trainerCertNote: z.string().max(500).optional().nullable(),
+    trainerSpecializations: z
+      .array(
+        z.object({
+          sportName: z.string().min(2).max(80),
+          years: z.number().int().min(0).max(80),
+        })
+      )
+      .max(10)
+      .optional(),
   })
   .refine(
     (data) => {

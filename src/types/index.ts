@@ -319,6 +319,15 @@ export interface ProfileEditForm {
   vk?: string;
   telegram?: string;
   whatsapp?: string;
+  socialLinksVisibility?: "EVERYONE" | "FOLLOWERS" | "NOBODY";
+  trainerUniversity?: string;
+  trainerDepartment?: string;
+  trainerGymName?: string;
+  trainerExperienceYears?: string;
+  trainerLessonTypes?: string[];
+  trainerProvidesEquipment?: "yes" | "no" | "";
+  trainerCertNote?: string;
+  trainerSpecializations?: { sportName: string; years: number }[];
 }
 
 // --- Notification Types ---

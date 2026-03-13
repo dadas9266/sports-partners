@@ -115,6 +115,15 @@ export default function ProfilePage() {
     name: "", phone: "", currentPassword: "", newPassword: "",
     bio: "", cityId: "", districtId: "", gender: "", birthDate: "", sportIds: [],
     instagram: "", tiktok: "", facebook: "", twitterX: "", vk: "", telegram: "", whatsapp: "",
+    socialLinksVisibility: "EVERYONE",
+    trainerUniversity: "",
+    trainerDepartment: "",
+    trainerGymName: "",
+    trainerExperienceYears: "",
+    trainerLessonTypes: [],
+    trainerProvidesEquipment: "",
+    trainerCertNote: "",
+    trainerSpecializations: [],
   });
   const [saving, setSaving] = useState(false);
 
@@ -220,6 +229,23 @@ export default function ProfilePage() {
       vk: (data.user as any).vk ?? "",
       telegram: (data.user as any).telegram ?? "",
       whatsapp: (data.user as any).whatsapp ?? "",
+      socialLinksVisibility: (data.user as any).socialLinksVisibility ?? "EVERYONE",
+      trainerUniversity: (data.user as any).trainerProfile?.university ?? "",
+      trainerDepartment: (data.user as any).trainerProfile?.department ?? "",
+      trainerGymName: (data.user as any).trainerProfile?.gymName ?? "",
+      trainerExperienceYears: (data.user as any).trainerProfile?.experienceYears?.toString() ?? "",
+      trainerLessonTypes: (data.user as any).trainerProfile?.lessonTypes ?? [],
+      trainerProvidesEquipment:
+        (data.user as any).trainerProfile?.providesEquipment === true
+          ? "yes"
+          : (data.user as any).trainerProfile?.providesEquipment === false
+          ? "no"
+          : "",
+      trainerCertNote: (data.user as any).trainerProfile?.certNote ?? "",
+      trainerSpecializations: ((data.user as any).trainerProfile?.specializations ?? []).map((s: any) => ({
+        sportName: s.sportName,
+        years: s.years,
+      })),
     });
     setEditMode(true);
   };
@@ -296,6 +322,57 @@ export default function ProfilePage() {
       if ((editForm.vk ?? "") !== (u.vk ?? "")) payload.vk = editForm.vk || null;
       if ((editForm.telegram ?? "") !== (u.telegram ?? "")) payload.telegram = editForm.telegram || null;
       if ((editForm.whatsapp ?? "") !== (u.whatsapp ?? "")) payload.whatsapp = editForm.whatsapp || null;
+      if ((editForm.socialLinksVisibility ?? "EVERYONE") !== (u.socialLinksVisibility ?? "EVERYONE")) {
+        payload.socialLinksVisibility = editForm.socialLinksVisibility;
+      }
+
+      const isTrainer = (u.userType === "TRAINER") || !!u.trainerProfile;
+      if (isTrainer) {
+        const trainerProfile = u.trainerProfile ?? {};
+        if ((editForm.trainerUniversity ?? "") !== (trainerProfile.university ?? "")) {
+          payload.trainerUniversity = editForm.trainerUniversity || null;
+        }
+        if ((editForm.trainerDepartment ?? "") !== (trainerProfile.department ?? "")) {
+          payload.trainerDepartment = editForm.trainerDepartment || null;
+        }
+        if ((editForm.trainerGymName ?? "") !== (trainerProfile.gymName ?? "")) {
+          payload.trainerGymName = editForm.trainerGymName || null;
+        }
+
+        const currentExp = trainerProfile.experienceYears?.toString() ?? "";
+        if ((editForm.trainerExperienceYears ?? "") !== currentExp) {
+          payload.trainerExperienceYears = editForm.trainerExperienceYears
+            ? parseInt(editForm.trainerExperienceYears, 10)
+            : null;
+        }
+
+        const currentLessonTypes = trainerProfile.lessonTypes ?? [];
+        const nextLessonTypes = editForm.trainerLessonTypes ?? [];
+        if (JSON.stringify([...currentLessonTypes].sort()) !== JSON.stringify([...nextLessonTypes].sort())) {
+          payload.trainerLessonTypes = nextLessonTypes;
+        }
+
+        const currentEquip = trainerProfile.providesEquipment;
+        const nextEquip = editForm.trainerProvidesEquipment === "yes"
+          ? true
+          : editForm.trainerProvidesEquipment === "no"
+          ? false
+          : null;
+        if ((currentEquip ?? null) !== nextEquip) {
+          payload.trainerProvidesEquipment = nextEquip;
+        }
+
+        if ((editForm.trainerCertNote ?? "") !== (trainerProfile.certNote ?? "")) {
+          payload.trainerCertNote = editForm.trainerCertNote || null;
+        }
+
+        const currentSpecs = (trainerProfile.specializations ?? []).map((s: any) => ({ sportName: s.sportName, years: s.years }));
+        const nextSpecs = (editForm.trainerSpecializations ?? []).filter((s) => s.sportName.trim());
+        if (JSON.stringify(currentSpecs) !== JSON.stringify(nextSpecs)) {
+          payload.trainerSpecializations = nextSpecs;
+        }
+      }
+
       if (Object.keys(payload).length === 0) {
         setEditMode(false);
         return;
@@ -356,6 +433,7 @@ export default function ProfilePage() {
               setEditForm={setEditForm}
               sports={sports}
               locations={locations}
+              isTrainer={((data.user as any)?.userType === "TRAINER") || !!(data.user as any)?.trainerProfile}
               saving={saving}
               onSave={handleSaveProfile}
               onCancel={() => setEditMode(false)}
@@ -393,6 +471,30 @@ export default function ProfilePage() {
             </div>
             <svg className="w-4 h-4 text-blue-400 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
           </a>
+        )}
+        {(((session?.user as any)?.userType === "VENUE") || !!(data.user as any)?.venueProfile) && (
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <a
+              href="/ayarlar/isletme"
+              className="flex items-center gap-3 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border border-amber-100 dark:border-amber-900/40 rounded-xl p-3 hover:from-amber-100 hover:to-orange-100 dark:hover:from-amber-900/40 dark:hover:to-orange-900/40 transition"
+            >
+              <span className="text-2xl">🏟️</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-amber-700 dark:text-amber-300">İşletme Panelim</p>
+                <p className="text-xs text-amber-500 dark:text-amber-400">Tesis bilgisi ve galeri yönetimi</p>
+              </div>
+            </a>
+            <a
+              href="/ilan/olustur"
+              className="flex items-center gap-3 bg-gradient-to-r from-purple-50 to-fuchsia-50 dark:from-purple-950/30 dark:to-fuchsia-950/30 border border-purple-100 dark:border-purple-900/40 rounded-xl p-3 hover:from-purple-100 hover:to-fuchsia-100 dark:hover:from-purple-900/40 dark:hover:to-fuchsia-900/40 transition"
+            >
+              <span className="text-2xl">🛒</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-purple-700 dark:text-purple-300">Ürün İlanı Aç</p>
+                <p className="text-xs text-purple-500 dark:text-purple-400">Dambıl, protein tozu ve ekipman satışı</p>
+              </div>
+            </a>
+          </div>
         )}
       </div>
 
