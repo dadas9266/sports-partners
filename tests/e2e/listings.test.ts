@@ -27,12 +27,6 @@ test.describe("İlan Listesi", () => {
     await expect(page.locator("main")).toBeVisible();
   });
 
-  test("turnuvalar sayfası yükleniyor", async ({ page }) => {
-    await page.goto("/turnuvalar");
-    // 'Turnuvalar' başlığı görünmeli
-    await expect(page.getByRole("heading", { name: /turnuva/i })).toBeVisible();
-  });
-
   test("topluluklar sayfası yükleniyor", async ({ page }) => {
     await page.goto("/topluluklar");
     await expect(page.locator("main")).toBeVisible();

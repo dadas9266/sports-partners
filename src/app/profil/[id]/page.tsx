@@ -547,9 +547,6 @@ export default function PublicProfilePage({
                 isOwn={profile.isOwnProfile}
               />
             )}
-            {(profile as any).userType === "VENUE" && (
-              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">🏟️ Tesis</span>
-            )}
           </div>
           <div className="flex items-center gap-2 mt-0.5 text-sm text-gray-500 dark:text-gray-400">
             {profile.city && (

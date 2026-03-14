@@ -54,6 +54,12 @@ function computeCompatibility(
   return Math.min(score, 100);
 }
 
+function listingPriority(item: { type: string; status: string }) {
+  if ((item.type === "RIVAL" || item.type === "PARTNER") && item.status === "OPEN") return 0;
+  if (item.status === "MATCHED") return 1;
+  return 2;
+}
+
 // İlan listele (filtreleme + pagination ile)
 export async function GET(request: Request) {
   try {
@@ -117,8 +123,8 @@ export async function GET(request: Request) {
       AND: [
         // Süresi dolmuş hızlı ilanları gizle
         { OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
-        // TRAINER, EQUIPMENT ve VENUE_* için tarih kısıtı yok; RIVAL/PARTNER yalnızca gelecektekiler
-        { OR: [{ type: { in: ["TRAINER", "EQUIPMENT", "VENUE_RENTAL", "VENUE_MEMBERSHIP", "VENUE_CLASS", "VENUE_PRODUCT", "VENUE_EVENT", "VENUE_SERVICE"] } }, { dateTime: { gte: now } }] },
+        // TRAINER, EQUIPMENT ve trainer-only tipler için tarih kısıtı yok; RIVAL/PARTNER yalnızca gelecektekiler
+        { OR: [{ type: { in: ["TRAINER", "EQUIPMENT", "VENUE_MEMBERSHIP", "VENUE_CLASS", "VENUE_PRODUCT", "VENUE_SERVICE"] } }, { dateTime: { gte: now } }] },
       ],
     };
 
@@ -288,11 +294,17 @@ export async function GET(request: Request) {
       ) : undefined,
     }));
 
+    const sortedListings = [...listingsWithScore].sort((a: any, b: any) => {
+      const priorityDiff = listingPriority(a) - listingPriority(b);
+      if (priorityDiff !== 0) return priorityDiff;
+      return new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime();
+    });
+
     const totalPages = Math.ceil(total / pageSize);
 
     return NextResponse.json({
       success: true,
-      data: listingsWithScore,
+      data: sortedListings,
       pagination: {
         total,
         page,
@@ -328,8 +340,7 @@ export async function POST(request: Request) {
       select: {
         isBanned: true, currentStreak: true, userType: true,
         name: true, birthDate: true, sports: { select: { id: true } },
-        trainerProfile: { select: { id: true } },
-        venueProfile: { select: { id: true } },
+        trainerProfile: { select: { id: true, isVerified: true } },
       },
     });
 
@@ -345,7 +356,6 @@ export async function POST(request: Request) {
     const missingFields = getRequiredProfileFields({
       name: user?.name,
       birthDate: user?.birthDate,
-      userType: user?.userType,
       sports: user?.sports,
     });
     if (missingFields.length > 0) {
@@ -391,20 +401,11 @@ export async function POST(request: Request) {
       );
     }
 
-    // Venue profili olan (veya VENUE tipindeki) kullanıcılar venueId içeren ilan oluşturabilir
-    const isVenue = user?.userType === "VENUE" || !!user?.venueProfile;
-    if (parsed.data.venueId && !isVenue) {
+    // Üyelik/ürün/hizmet/ders ilanları sadece onaylı antrenörlerde açılır
+    const trainerOnlyTypes = ["VENUE_MEMBERSHIP", "VENUE_CLASS", "VENUE_PRODUCT", "VENUE_SERVICE"];
+    if (trainerOnlyTypes.includes(parsed.data.type) && !user?.trainerProfile?.isVerified) {
       return NextResponse.json(
-        { success: false, error: "İşletme ilanı oluşturabilmek için İşletme hesabına sahip olmanız gereklidir." },
-        { status: 403 }
-      );
-    }
-
-    // VENUE_* tipindeki ilanlar sadece işletme hesapları tarafından oluşturulabilir
-    const isVenueListingType = parsed.data.type.startsWith("VENUE_");
-    if (isVenueListingType && !isVenue) {
-      return NextResponse.json(
-        { success: false, error: "İşletme ilanı oluşturabilmek için İşletme hesabına sahip olmanız gereklidir." },
+        { success: false, error: "Bu ilan tipi sadece onaylı antrenörler için kullanılabilir." },
         { status: 403 }
       );
     }
@@ -436,7 +437,7 @@ export async function POST(request: Request) {
         countryId: (parsed.data as any).countryId || null,
         cityId: parsed.data.cityId || null,
         districtId: parsed.data.districtId || null,
-        venueId: parsed.data.venueId || null,
+        venueId: null,
         userId,
         latitude: parsed.data.latitude ?? null,
         longitude: parsed.data.longitude ?? null,
@@ -474,19 +475,7 @@ export async function POST(request: Request) {
               },
             }
           : {}),
-        // İşletme ilan detayları
-        ...(parsed.data.type === "VENUE_RENTAL" && parsed.data.venueRentalDetail
-          ? { venueRentalDetail: { create: {
-              facilityType: parsed.data.venueRentalDetail.facilityType || "saha",
-              courtCount: parsed.data.venueRentalDetail.courtCount ?? 1,
-              pricePerHour: parsed.data.venueRentalDetail.pricePerHour ?? null,
-              pricePerSession: parsed.data.venueRentalDetail.pricePerSession ?? null,
-              minDuration: parsed.data.venueRentalDetail.minDuration ?? null,
-              availableSlots: parsed.data.venueRentalDetail.availableSlots || null,
-              surfaceType: parsed.data.venueRentalDetail.surfaceType || null,
-              hasLighting: parsed.data.venueRentalDetail.hasLighting ?? false,
-              images: parsed.data.venueRentalDetail.images ?? [],
-            } } } : {}),
+        // Trainer-only ilan detayları
         ...(parsed.data.type === "VENUE_MEMBERSHIP" && parsed.data.venueMembershipDetail
           ? { venueMembershipDetail: { create: {
               membershipType: parsed.data.venueMembershipDetail.membershipType || "aylık",
@@ -516,15 +505,6 @@ export async function POST(request: Request) {
               inStock: parsed.data.venueProductDetail.inStock ?? true,
               images: parsed.data.venueProductDetail.images ?? [],
             } } } : {}),
-        ...(parsed.data.type === "VENUE_EVENT" && parsed.data.venueEventDetail
-          ? { venueEventDetail: { create: {
-              eventType: parsed.data.venueEventDetail.eventType || "turnuva",
-              startDate: parsed.data.venueEventDetail.startDate ? new Date(parsed.data.venueEventDetail.startDate) : null,
-              endDate: parsed.data.venueEventDetail.endDate ? new Date(parsed.data.venueEventDetail.endDate) : null,
-              entryFee: parsed.data.venueEventDetail.entryFee ?? null,
-              maxParticipants: parsed.data.venueEventDetail.maxParticipants ?? null,
-              registrationDeadline: parsed.data.venueEventDetail.registrationDeadline ? new Date(parsed.data.venueEventDetail.registrationDeadline) : null,
-            } } } : {}),
         ...(parsed.data.type === "VENUE_SERVICE" && parsed.data.venueServiceDetail
           ? { venueServiceDetail: { create: {
               serviceType: parsed.data.venueServiceDetail.serviceType || "",
@@ -540,11 +520,9 @@ export async function POST(request: Request) {
         venue: true,
         trainerProfile: { include: { specializations: true } },
         equipmentDetail: true,
-        venueRentalDetail: true,
         venueMembershipDetail: true,
         venueClassDetail: true,
         venueProductDetail: true,
-        venueEventDetail: true,
         venueServiceDetail: true,
       },
     });

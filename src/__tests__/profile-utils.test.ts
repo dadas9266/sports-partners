@@ -22,10 +22,10 @@ describe('getMissingProfileFields', () => {
     expect(getMissingProfileFields(user)).toEqual([]);
   });
 
-  it('VENUE tipi için doğum tarihi gerekmez', () => {
-    const user = { name: 'Salon', avatarUrl: 'url', phone: '555', birthDate: null, userType: 'VENUE', sports: [{ id: '1' }] };
+  it('doğum tarihi yoksa eksik sayılır', () => {
+    const user = { name: 'Salon', avatarUrl: 'url', phone: '555', birthDate: null, sports: [{ id: '1' }] };
     const result = getMissingProfileFields(user);
-    expect(result).not.toContain('Doğum tarihi');
+    expect(result).toContain('Doğum tarihi');
   });
 
   it('boş isim eksik sayılır', () => {
@@ -52,9 +52,10 @@ describe('getRequiredProfileFields', () => {
     expect(result).toContain('En az 1 spor dalı');
   });
 
-  it('VENUE için doğum tarihi gerekmez', () => {
-    const user = { name: 'Salon', birthDate: null, userType: 'VENUE', sports: [{ id: '1' }] };
-    expect(getRequiredProfileFields(user)).toEqual([]);
+  it('doğum tarihi yoksa zorunlu alan olarak döner', () => {
+    const user = { name: 'Salon', birthDate: null, sports: [{ id: '1' }] };
+    const result = getRequiredProfileFields(user);
+    expect(result).toContain('Doğum tarihi');
   });
 
   it('telefon ve avatar kontrol etmez', () => {

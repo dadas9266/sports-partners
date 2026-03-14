@@ -101,8 +101,9 @@ export async function PATCH(
       const slotsNeeded = listing.maxParticipants - 1;
       const isCapacityFull = acceptedCount >= slotsNeeded;
       const remaining = slotsNeeded - acceptedCount; // 0 veya daha fazla
+      const isMatchEligible = listing.type === "RIVAL" || listing.type === "PARTNER";
 
-      if (isCapacityFull) {
+      if (isCapacityFull && isMatchEligible) {
         // ── Tüm kontenjan doldu → MATCHED ──────────────────────────────────
         await tx.listing.update({
           where: { id: response.listingId },
@@ -153,6 +154,7 @@ export async function PATCH(
           acceptedUserIds: acceptedResponses.map((r) => r.userId),
           isCapacityFull: true,
           remaining: 0,
+          isMatchEligible,
         };
       } else {
         // ── Kontenjan dolmadı → ilan OPEN kalmaya devam eder ──────────────
@@ -161,7 +163,8 @@ export async function PATCH(
           match: null,
           acceptedUserIds: [],
           isCapacityFull: false,
-          remaining,
+          remaining: isMatchEligible ? remaining : 0,
+          isMatchEligible,
         };
       }
     });
@@ -206,7 +209,9 @@ export async function PATCH(
           userId: response.userId,
           type: "RESPONSE_ACCEPTED",
           title: "✅ Katılımınız Onaylandı!",
-          body: `"${sportName}" etkinliğine katılımınız onaylandı. Eşleşme için ${result.remaining} kişi daha gerekiyor.`,
+          body: result.isMatchEligible
+            ? `"${sportName}" etkinliğine katılımınız onaylandı. Eşleşme için ${result.remaining} kişi daha gerekiyor.`
+            : `"${sportName}" ilanına başvurunuz onaylandı. İlan sahibi sizinle iletişime geçebilir.`,
           link: `/ilan/${response.listingId}`,
         })
       );

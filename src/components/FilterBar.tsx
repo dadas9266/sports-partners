@@ -35,14 +35,12 @@ export default function FilterBar({ onFilterChange, initialLocations, initialSpo
     partner: isTr ? "Partner Arıyor" : "Looking for Partner",
     trainer: isTr ? "Eğitmen" : "Trainer",
     equipment: isTr ? "Satılık Malzeme" : "Equipment",
-    venueRental: isTr ? "🏟️ Saha/Kort Kiralama" : "🏟️ Venue Rental",
     venueMembership: isTr ? "🎫 Üyelik Paketi" : "🎫 Membership",
     venueClass: isTr ? "🏫 Ders/Kurs" : "🏫 Class/Course",
     venueProduct: isTr ? "📦 Ürün Satışı" : "📦 Product",
-    venueEvent: isTr ? "🏆 Etkinlik" : "🏆 Event",
     venueService: isTr ? "💆 Hizmet" : "💆 Service",
     individualGroup: isTr ? "Bireysel" : "Individual",
-    venueGroup: isTr ? "İşletme" : "Venue",
+    venueGroup: isTr ? "Onaylı Antrenör" : "Verified Trainer",
     today: isTr ? "Bugün" : "Today",
     week: isTr ? "Bu Hafta" : "This Week",
     weekend: isTr ? "Hafta Sonu" : "Weekend",
@@ -222,11 +220,9 @@ export default function FilterBar({ onFilterChange, initialLocations, initialSpo
             <option value="EQUIPMENT">{text.equipment}</option>
           </optgroup>
           <optgroup label={text.venueGroup}>
-            <option value="VENUE_RENTAL">{text.venueRental}</option>
             <option value="VENUE_MEMBERSHIP">{text.venueMembership}</option>
             <option value="VENUE_CLASS">{text.venueClass}</option>
             <option value="VENUE_PRODUCT">{text.venueProduct}</option>
-            <option value="VENUE_EVENT">{text.venueEvent}</option>
             <option value="VENUE_SERVICE">{text.venueService}</option>
           </optgroup>
         </select>

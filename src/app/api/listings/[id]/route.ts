@@ -28,11 +28,9 @@ export async function GET(
           include: { specializations: true },
         },
         equipmentDetail: true,
-        venueRentalDetail: true,
         venueMembershipDetail: true,
         venueClassDetail: true,
         venueProductDetail: true,
-        venueEventDetail: true,
         venueServiceDetail: true,
         responses: {
           include: {
@@ -182,42 +180,13 @@ export async function PUT(
       });
 
       const deleteVenueDetailPromises = [
-        targetType !== "VENUE_RENTAL" ? tx.venueRentalDetail.deleteMany({ where: { listingId: id } }) : Promise.resolve(),
         targetType !== "VENUE_MEMBERSHIP" ? tx.venueMembershipDetail.deleteMany({ where: { listingId: id } }) : Promise.resolve(),
         targetType !== "VENUE_CLASS" ? tx.venueClassDetail.deleteMany({ where: { listingId: id } }) : Promise.resolve(),
         targetType !== "VENUE_PRODUCT" ? tx.venueProductDetail.deleteMany({ where: { listingId: id } }) : Promise.resolve(),
-        targetType !== "VENUE_EVENT" ? tx.venueEventDetail.deleteMany({ where: { listingId: id } }) : Promise.resolve(),
         targetType !== "VENUE_SERVICE" ? tx.venueServiceDetail.deleteMany({ where: { listingId: id } }) : Promise.resolve(),
       ];
 
       await Promise.all(deleteVenueDetailPromises);
-
-      if (targetType === "VENUE_RENTAL" && parsed.data.venueRentalDetail) {
-        await tx.venueRentalDetail.upsert({
-          where: { listingId: id },
-          create: {
-            listingId: id,
-            facilityType: parsed.data.venueRentalDetail.facilityType || "saha",
-            courtCount: parsed.data.venueRentalDetail.courtCount ?? 1,
-            pricePerHour: parsed.data.venueRentalDetail.pricePerHour ?? null,
-            pricePerSession: parsed.data.venueRentalDetail.pricePerSession ?? null,
-            minDuration: parsed.data.venueRentalDetail.minDuration ?? null,
-            availableSlots: parsed.data.venueRentalDetail.availableSlots || null,
-            surfaceType: parsed.data.venueRentalDetail.surfaceType || null,
-            hasLighting: parsed.data.venueRentalDetail.hasLighting ?? false,
-          },
-          update: {
-            facilityType: parsed.data.venueRentalDetail.facilityType || "saha",
-            courtCount: parsed.data.venueRentalDetail.courtCount ?? 1,
-            pricePerHour: parsed.data.venueRentalDetail.pricePerHour ?? null,
-            pricePerSession: parsed.data.venueRentalDetail.pricePerSession ?? null,
-            minDuration: parsed.data.venueRentalDetail.minDuration ?? null,
-            availableSlots: parsed.data.venueRentalDetail.availableSlots || null,
-            surfaceType: parsed.data.venueRentalDetail.surfaceType || null,
-            hasLighting: parsed.data.venueRentalDetail.hasLighting ?? false,
-          },
-        });
-      }
 
       if (targetType === "VENUE_MEMBERSHIP" && parsed.data.venueMembershipDetail) {
         await tx.venueMembershipDetail.upsert({
@@ -290,28 +259,6 @@ export async function PUT(
         });
       }
 
-      if (targetType === "VENUE_EVENT" && parsed.data.venueEventDetail) {
-        await tx.venueEventDetail.upsert({
-          where: { listingId: id },
-          create: {
-            listingId: id,
-            eventType: parsed.data.venueEventDetail.eventType || "turnuva",
-            startDate: parsed.data.venueEventDetail.startDate ? new Date(parsed.data.venueEventDetail.startDate) : null,
-            endDate: parsed.data.venueEventDetail.endDate ? new Date(parsed.data.venueEventDetail.endDate) : null,
-            entryFee: parsed.data.venueEventDetail.entryFee ?? null,
-            maxParticipants: parsed.data.venueEventDetail.maxParticipants ?? null,
-            registrationDeadline: parsed.data.venueEventDetail.registrationDeadline ? new Date(parsed.data.venueEventDetail.registrationDeadline) : null,
-          },
-          update: {
-            eventType: parsed.data.venueEventDetail.eventType || "turnuva",
-            startDate: parsed.data.venueEventDetail.startDate ? new Date(parsed.data.venueEventDetail.startDate) : null,
-            endDate: parsed.data.venueEventDetail.endDate ? new Date(parsed.data.venueEventDetail.endDate) : null,
-            entryFee: parsed.data.venueEventDetail.entryFee ?? null,
-            maxParticipants: parsed.data.venueEventDetail.maxParticipants ?? null,
-            registrationDeadline: parsed.data.venueEventDetail.registrationDeadline ? new Date(parsed.data.venueEventDetail.registrationDeadline) : null,
-          },
-        });
-      }
 
       if (targetType === "VENUE_SERVICE" && parsed.data.venueServiceDetail) {
         await tx.venueServiceDetail.upsert({
@@ -341,11 +288,9 @@ export async function PUT(
           venue: true,
           trainerProfile: { include: { specializations: true } },
           equipmentDetail: true,
-          venueRentalDetail: true,
           venueMembershipDetail: true,
           venueClassDetail: true,
           venueProductDetail: true,
-          venueEventDetail: true,
           venueServiceDetail: true,
           user: { select: { id: true, name: true, avatarUrl: true } },
           responses: true,
@@ -490,11 +435,9 @@ export async function DELETE(
         await tx.noShowReport.deleteMany({ where: { listingId: id } });
         await (tx as any).trainerProfile?.deleteMany({ where: { listingId: id } });
         await (tx as any).equipmentDetail?.deleteMany({ where: { listingId: id } });
-        await tx.venueRentalDetail.deleteMany({ where: { listingId: id } });
         await tx.venueMembershipDetail.deleteMany({ where: { listingId: id } });
         await tx.venueClassDetail.deleteMany({ where: { listingId: id } });
         await tx.venueProductDetail.deleteMany({ where: { listingId: id } });
-        await tx.venueEventDetail.deleteMany({ where: { listingId: id } });
         await tx.venueServiceDetail.deleteMany({ where: { listingId: id } });
         await tx.response.deleteMany({ where: { listingId: id } });
         await tx.listing.delete({ where: { id } });

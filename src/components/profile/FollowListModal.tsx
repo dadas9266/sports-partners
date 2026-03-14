@@ -150,11 +150,6 @@ export default function FollowListModal({
                           🏅 Antrenör
                         </span>
                       )}
-                      {user.userType === "VENUE" && (
-                        <span className="text-xs bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 font-semibold px-2 py-0.5 rounded-full">
-                          🏟️ Tesis
-                        </span>
-                      )}
                       {user.bio && (
                         <span className="text-xs text-gray-400 truncate max-w-[140px]">{user.bio}</span>
                       )}

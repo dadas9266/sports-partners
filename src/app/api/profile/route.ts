@@ -51,7 +51,6 @@ export async function GET() {
           ratingsReceived: { select: { score: true } },
           ratingsGiven: { select: { matchId: true } },
           trainerProfile: { select: { isVerified: true, gymName: true, university: true, department: true, experienceYears: true, lessonTypes: true, providesEquipment: true, certNote: true, trainerBadgeVisible: true, specializations: { select: { sportName: true, years: true } } } },
-          venueProfile: { select: { isVerified: true, businessName: true, address: true, phone: true, website: true, logoUrl: true } },
           instagram: true,
           tiktok: true,
           facebook: true,
@@ -504,7 +503,7 @@ export async function DELETE(request: Request) {
       await tx.userClubMembership.deleteMany({ where: { userId } });
       await tx.communityMembership.deleteMany({ where: { userId } });
 
-      // Turnuva katılımları
+      // Eski yarışma kayıtları
       await tx.tournamentParticipant.deleteMany({ where: { userId } });
 
       // Push abonelikleri
@@ -520,16 +519,12 @@ export async function DELETE(request: Request) {
       // NoShow raporları
       await tx.noShowReport.deleteMany({ where: { OR: [{ reporterId: userId }, { reportedId: userId }] } });
 
-      // Antrenör/Mekan profilleri
+      // Profesyonel profiller
       const trainerProfile = await tx.trainerProfile.findUnique({ where: { userId } });
       if (trainerProfile) {
         await tx.trainerSpecialization.deleteMany({ where: { profileId: trainerProfile.id } });
         await tx.trainerEnrollment.deleteMany({ where: { OR: [{ trainerId: userId }, { studentId: userId }] } });
         await tx.trainerProfile.delete({ where: { userId } });
-      }
-      const venueProfile = await tx.venueProfile.findUnique({ where: { userId } });
-      if (venueProfile) {
-        await tx.venueProfile.delete({ where: { userId } });
       }
 
       // İlanlar: yanıtları, eşleşmeleri, puanları, ardından ilanları sil

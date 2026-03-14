@@ -42,11 +42,9 @@ const LISTING_TYPE_LABELS: Record<string, string> = {
   PARTNER: "🤝 Partner Arıyor",
   TRAINER: "🎓 Eğitmen",
   EQUIPMENT: "🛒 Satılık",
-  VENUE_RENTAL: "🏟️ Kiralama",
   VENUE_MEMBERSHIP: "💳 Üyelik",
   VENUE_CLASS: "📚 Ders / Kurs",
   VENUE_PRODUCT: "🛍️ Ürün",
-  VENUE_EVENT: "🎉 Etkinlik",
   VENUE_SERVICE: "🔧 Hizmet",
 };
 
@@ -309,12 +307,6 @@ export default function ListingDetailPage({
                 {listing.district?.city?.country?.name} / {listing.district?.city?.name} / {listing.district?.name}
               </span>
             </div>
-            {listing.venue && (
-              <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                <span role="img" aria-label="mekan">🏟️</span>
-                <span>{listing.venue.name}</span>
-              </div>
-            )}
             <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
               <span role="img" aria-label="tarih">📅</span>
               <time dateTime={listing.dateTime}>
@@ -476,27 +468,6 @@ export default function ListingDetailPage({
           </div>
         )}
 
-        {listing.type === "VENUE_RENTAL" && listing.venueRentalDetail && (
-          <div className="mt-5 p-5 bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-xl">
-            <h2 className="font-bold text-teal-800 dark:text-teal-200 mb-3 text-base">🏟️ Kiralama Detayları</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-teal-900 dark:text-teal-100">
-              <div>Alan Tipi: <span className="font-semibold">{listing.venueRentalDetail.facilityType}</span></div>
-              <div>Alan Sayısı: <span className="font-semibold">{listing.venueRentalDetail.courtCount}</span></div>
-              {listing.venueRentalDetail.pricePerHour != null && <div>Saatlik Ücret: <span className="font-semibold">{listing.venueRentalDetail.pricePerHour.toLocaleString("tr-TR")} ₺</span></div>}
-              {listing.venueRentalDetail.pricePerSession != null && <div>Seans Ücreti: <span className="font-semibold">{listing.venueRentalDetail.pricePerSession.toLocaleString("tr-TR")} ₺</span></div>}
-              {listing.venueRentalDetail.minDuration != null && <div>Min. Süre: <span className="font-semibold">{listing.venueRentalDetail.minDuration} dk</span></div>}
-              {listing.venueRentalDetail.surfaceType && <div>Zemin: <span className="font-semibold">{listing.venueRentalDetail.surfaceType}</span></div>}
-              <div>Aydınlatma: <span className="font-semibold">{listing.venueRentalDetail.hasLighting ? "Var" : "Yok"}</span></div>
-            </div>
-            {listing.venueRentalDetail.availableSlots && (
-              <div className="mt-3 rounded-lg bg-white/70 dark:bg-gray-800 p-3 text-sm text-teal-900 dark:text-teal-100">
-                <p className="font-semibold mb-1">Müsait Saatler</p>
-                <p>{listing.venueRentalDetail.availableSlots}</p>
-              </div>
-            )}
-          </div>
-        )}
-
         {listing.type === "VENUE_MEMBERSHIP" && listing.venueMembershipDetail && (
           <div className="mt-5 p-5 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-xl">
             <h2 className="font-bold text-indigo-800 dark:text-indigo-200 mb-3 text-base">💳 Üyelik Detayları</h2>
@@ -542,20 +513,6 @@ export default function ListingDetailPage({
               <div>Birim: <span className="font-semibold">{listing.venueProductDetail.unit}</span></div>
               {listing.venueProductDetail.brand && <div>Marka: <span className="font-semibold">{listing.venueProductDetail.brand}</span></div>}
               <div>Stok: <span className="font-semibold">{listing.venueProductDetail.inStock ? "Mevcut" : "Tükendi"}</span></div>
-            </div>
-          </div>
-        )}
-
-        {listing.type === "VENUE_EVENT" && listing.venueEventDetail && (
-          <div className="mt-5 p-5 bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-xl">
-            <h2 className="font-bold text-rose-800 dark:text-rose-200 mb-3 text-base">🎉 Etkinlik Detayları</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-rose-900 dark:text-rose-100">
-              <div>Tür: <span className="font-semibold">{listing.venueEventDetail.eventType}</span></div>
-              {listing.venueEventDetail.startDate && <div>Başlangıç: <span className="font-semibold">{format(new Date(listing.venueEventDetail.startDate), "d MMMM yyyy, HH:mm", { locale: tr })}</span></div>}
-              {listing.venueEventDetail.endDate && <div>Bitiş: <span className="font-semibold">{format(new Date(listing.venueEventDetail.endDate), "d MMMM yyyy, HH:mm", { locale: tr })}</span></div>}
-              {listing.venueEventDetail.maxParticipants != null && <div>Kontenjan: <span className="font-semibold">{listing.venueEventDetail.maxParticipants}</span></div>}
-              {listing.venueEventDetail.entryFee != null && <div>Katılım Ücreti: <span className="font-semibold">{listing.venueEventDetail.entryFee.toLocaleString("tr-TR")} ₺</span></div>}
-              {listing.venueEventDetail.registrationDeadline && <div>Son Başvuru: <span className="font-semibold">{format(new Date(listing.venueEventDetail.registrationDeadline), "d MMMM yyyy, HH:mm", { locale: tr })}</span></div>}
             </div>
           </div>
         )}

@@ -6,14 +6,13 @@ export function getMissingProfileFields(user: {
   avatarUrl?: string | null;
   phone?: string | null;
   birthDate?: string | Date | null;
-  userType?: string;
   sports?: unknown[] | null;
 }): string[] {
   const missing: string[] = [];
   if (!user.name?.trim()) missing.push("Ad soyad");
   if (!user.avatarUrl) missing.push("Profil fotoğrafı");
   if (!user.phone) missing.push("Telefon numarası");
-  if (!user.birthDate && user.userType !== "VENUE") missing.push("Doğum tarihi");
+  if (!user.birthDate) missing.push("Doğum tarihi");
   if (!user.sports || user.sports.length === 0) missing.push("En az 1 spor dalı");
   return missing;
 }
@@ -26,12 +25,11 @@ export function getMissingProfileFields(user: {
 export function getRequiredProfileFields(user: {
   name?: string | null;
   birthDate?: string | Date | null;
-  userType?: string;
   sports?: unknown[] | null;
 }): string[] {
   const missing: string[] = [];
   if (!user.name?.trim()) missing.push("Ad soyad");
-  if (!user.birthDate && user.userType !== "VENUE") missing.push("Doğum tarihi");
+  if (!user.birthDate) missing.push("Doğum tarihi");
   if (!user.sports || user.sports.length === 0) missing.push("En az 1 spor dalı");
   return missing;
 }

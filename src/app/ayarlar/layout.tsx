@@ -38,13 +38,7 @@ export default function AyarlarLayout({ children }: { children: React.ReactNode 
       href: "/ayarlar/profesyonel",
       icon: "⭐",
       label: isTr ? "Profesyonel Hesap" : "Professional Account",
-      desc: isTr ? "Antrenör veya tesis başvurusu" : "Trainer or venue application",
-    },
-    {
-      href: "/ayarlar/isletme",
-      icon: "🏟️",
-      label: isTr ? "İşletme Yönetimi" : "Venue Management",
-      desc: isTr ? "Tesis profili, ilanlar, galeri" : "Venue profile, listings, gallery",
+      desc: isTr ? "Antrenör başvurusu ve onay durumu" : "Trainer application and approval status",
     },
     {
       href: "/ayarlar/gizlilik",

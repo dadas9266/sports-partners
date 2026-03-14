@@ -30,8 +30,6 @@ const PUBLIC_PAGES = [
   "/gruplar",
   "/kulupler",
   "/topluluklar",
-  "/mekanlar",
-  "/turnuvalar",
   "/sosyal",
   "/antrenor",
 ];
@@ -52,7 +50,6 @@ const AUTH_PAGES = [
   "/aktivitelerim",
   "/teklifler",
   "/antrenor/derslerim",
-  "/turnuvalar/yeni",
   "/onboarding",
 ];
 

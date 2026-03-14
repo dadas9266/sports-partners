@@ -3,8 +3,7 @@
 // =============================================
 
 // --- Enum Types ---
-export type ListingType = "RIVAL" | "PARTNER" | "TRAINER" | "EQUIPMENT" | "VENUE_RENTAL" | "VENUE_MEMBERSHIP" | "VENUE_CLASS" | "VENUE_PRODUCT" | "VENUE_EVENT" | "VENUE_SERVICE";
-export type VenueType = "SPORTS_FACILITY" | "FITNESS_CENTER" | "SUPPLEMENT_STORE" | "EQUIPMENT_STORE" | "SPORTS_CLUB" | "HEALTH_CENTER" | "EVENT_ORGANIZER" | "SPORTS_NUTRITION" | "OTHER";
+export type ListingType = "RIVAL" | "PARTNER" | "TRAINER" | "EQUIPMENT" | "VENUE_MEMBERSHIP" | "VENUE_CLASS" | "VENUE_PRODUCT" | "VENUE_SERVICE";
 export type Level = "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
 export type ListingStatus = "OPEN" | "CLOSED" | "MATCHED" | "EXPIRED";
 export type ResponseStatus = "PENDING" | "ACCEPTED" | "REJECTED";
@@ -175,18 +174,6 @@ export interface ListingDetail {
     images: string[];
     isSold: boolean;
   } | null;
-  venueRentalDetail?: {
-    id: string;
-    facilityType: string;
-    courtCount: number;
-    pricePerHour?: number | null;
-    pricePerSession?: number | null;
-    minDuration?: number | null;
-    availableSlots?: string | null;
-    surfaceType?: string | null;
-    hasLighting: boolean;
-    images: string[];
-  } | null;
   venueMembershipDetail?: {
     id: string;
     membershipType: string;
@@ -215,15 +202,6 @@ export interface ListingDetail {
     unit: string;
     inStock: boolean;
     images: string[];
-  } | null;
-  venueEventDetail?: {
-    id: string;
-    eventType: string;
-    startDate?: string | null;
-    endDate?: string | null;
-    entryFee?: number | null;
-    maxParticipants?: number | null;
-    registrationDeadline?: string | null;
   } | null;
   venueServiceDetail?: {
     id: string;
@@ -337,14 +315,6 @@ export interface TrainerSportExperience {
   sportName: string;
   years: number;
   certUrl?: string; // Her spor dalı için ayrı sertifika
-}
-
-export interface VenueFacilityInput {
-  sportId: string;
-  sportName: string;
-  facilityType: string | null; // "saha" | "kort" | "havuz" | "ring" | "salon" | "pist" | null
-  count: number;
-  notes?: string; // Açık alan sporları için serbest metin (Hiking, Koşu vb.)
 }
 
 export interface RegisterForm {
@@ -597,14 +567,3 @@ export const STATUS_LABELS: Record<string, { label: string; className: string }>
   REJECTED: { label: "Reddedildi", className: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300" },
 };
 
-export const VENUE_TYPE_LABELS: Record<VenueType, string> = {
-  SPORTS_FACILITY: "Spor Tesisi",
-  FITNESS_CENTER: "Fitness / Stüdyo",
-  SUPPLEMENT_STORE: "Supplement Mağazası",
-  EQUIPMENT_STORE: "Spor Malzeme Mağazası",
-  SPORTS_CLUB: "Spor Kulübü / Dernek",
-  HEALTH_CENTER: "Sağlık / Fizyoterapi",
-  EVENT_ORGANIZER: "Etkinlik Organizatörü",
-  SPORTS_NUTRITION: "Sporcu Beslenme / Restoran",
-  OTHER: "Diğer",
-};

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
-import { useLocations, useSports, useVenues } from "@/hooks/useLocations";
+import { useLocations, useSports } from "@/hooks/useLocations";
 import { createListing } from "@/services/api";
 import type { CreateListingForm, ListingType } from "@/types";
 import Button from "@/components/ui/Button";
@@ -14,7 +14,7 @@ export default function CreateListingPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const [loading, setLoading] = useState(false);
-  const [ownedVenueProfile, setOwnedVenueProfile] = useState<{ id: string; venueType: string } | null>(null);
+  const [isVerifiedTrainer, setIsVerifiedTrainer] = useState(false);
 
   const { locations } = useLocations();
   const { sports } = useSports();
@@ -64,11 +64,9 @@ export default function CreateListingPage() {
   // Equipment extra fields
   const [equipForm, setEquipForm] = useState({ price: "", condition: "", brand: "", model: "" });
   // Venue detail forms
-  const [venueRentalForm, setVenueRentalForm] = useState({ facilityType: "", courtCount: "", pricePerHour: "", pricePerSession: "", minDuration: "", availableSlots: "", surfaceType: "", hasLighting: false });
   const [venueMembershipForm, setVenueMembershipForm] = useState({ membershipType: "", price: "", includes: "", trialAvailable: false, trialPrice: "", maxMembers: "" });
   const [venueClassForm, setVenueClassForm] = useState({ className: "", schedule: "", instructorName: "", pricePerSession: "", priceMonthly: "", difficulty: "", maxParticipants: "" });
   const [venueProductForm, setVenueProductForm] = useState({ productName: "", brand: "", price: "", productCategory: "", unit: "adet", inStock: true });
-  const [venueEventForm, setVenueEventForm] = useState({ eventType: "", startDate: "", endDate: "", maxParticipants: "", entryFee: "", registrationDeadline: "" });
   const [venueServiceForm, setVenueServiceForm] = useState({ serviceType: "", pricePerSession: "", sessionDuration: "", qualifications: "" });
   const [equipImages, setEquipImages] = useState<File[]>([]);
   const [equipPreviews, setEquipPreviews] = useState<string[]>([]);
@@ -79,8 +77,6 @@ export default function CreateListingPage() {
   // Eski dropdown için (fallback)
   const [smartVenues, setSmartVenues] = useState<any[]>([]);
   const [smartVenuesLoading, setSmartVenuesLoading] = useState(false);
-
-  const { venues } = useVenues(form.districtId);
 
   const cities = locations.find((l) => l.id === form.countryId)?.cities || [];
   const districts = cities.find((c) => c.id === form.cityId)?.districts || [];
@@ -101,13 +97,9 @@ export default function CreateListingPage() {
 
   useEffect(() => {
     if (!session) return;
-    fetch("/api/venue-profile")
+    fetch("/api/profile")
       .then((r) => r.json())
-      .then((data) => {
-        if (data.profile?.id) {
-          setOwnedVenueProfile({ id: data.profile.id, venueType: data.profile.venueType ?? "OTHER" });
-        }
-      })
+      .then((data) => setIsVerifiedTrainer(Boolean(data?.data?.user?.trainerProfile?.isVerified)))
       .catch(() => {});
   }, [session]);
 
@@ -131,20 +123,19 @@ export default function CreateListingPage() {
         }
         setUploadingEquip(false);
       }
-      const isVenueType = (form.type as string).startsWith("VENUE_");
+      const isTrainerOnlyType = ["VENUE_MEMBERSHIP", "VENUE_CLASS", "VENUE_PRODUCT", "VENUE_SERVICE"].includes(form.type as string);
       const payload: any = {
         type: form.type as string,
         sportId: form.sportId,
         countryId: form.countryId || undefined,
         cityId: form.cityId || undefined,
         districtId: form.districtId || undefined,
-        venueId: form.venueId || null,
+        venueId: null,
         latitude: form.latitude ?? undefined,
         longitude: form.longitude ?? undefined,
-        // EQUIPMENT ve VENUE_* için tarih gönderilmez; TRAINER için opsiyonel
-        ...(!isVenueType && form.type !== "EQUIPMENT" && form.type !== "TRAINER" && { dateTime: form.dateTime }),
+        ...(!isTrainerOnlyType && form.type !== "EQUIPMENT" && form.type !== "TRAINER" && { dateTime: form.dateTime }),
         ...(form.type === "TRAINER" && form.dateTime ? { dateTime: form.dateTime } : {}),
-        level: (form.type === "EQUIPMENT" || isVenueType) ? "BEGINNER" : form.level as string,
+        level: (form.type === "EQUIPMENT" || isTrainerOnlyType) ? "BEGINNER" : form.level as string,
         description: form.description || undefined,
         maxParticipants: form.maxParticipants,
         allowedGender: form.allowedGender,
@@ -172,19 +163,7 @@ export default function CreateListingPage() {
           images: uploadedEquipUrls,
         };
       }
-      // Venue detail payloads
-      if (form.type === "VENUE_RENTAL") {
-        payload.venueRentalDetail = {
-          facilityType: venueRentalForm.facilityType || undefined,
-          courtCount: venueRentalForm.courtCount ? parseInt(venueRentalForm.courtCount) : undefined,
-          pricePerHour: venueRentalForm.pricePerHour ? parseFloat(venueRentalForm.pricePerHour) : undefined,
-          pricePerSession: venueRentalForm.pricePerSession ? parseFloat(venueRentalForm.pricePerSession) : undefined,
-          minDuration: venueRentalForm.minDuration ? parseInt(venueRentalForm.minDuration) : undefined,
-          availableSlots: venueRentalForm.availableSlots || undefined,
-          surfaceType: venueRentalForm.surfaceType || undefined,
-          hasLighting: venueRentalForm.hasLighting,
-        };
-      }
+      // Trainer-only detail payloads
       if (form.type === "VENUE_MEMBERSHIP") {
         payload.venueMembershipDetail = {
           membershipType: venueMembershipForm.membershipType || undefined,
@@ -218,16 +197,6 @@ export default function CreateListingPage() {
           inStock: venueProductForm.inStock,
         };
       }
-      if (form.type === "VENUE_EVENT") {
-        payload.venueEventDetail = {
-          eventType: venueEventForm.eventType || undefined,
-          startDate: venueEventForm.startDate || undefined,
-          endDate: venueEventForm.endDate || undefined,
-          maxParticipants: venueEventForm.maxParticipants ? parseInt(venueEventForm.maxParticipants) : undefined,
-          entryFee: venueEventForm.entryFee ? parseFloat(venueEventForm.entryFee) : undefined,
-          registrationDeadline: venueEventForm.registrationDeadline || undefined,
-        };
-      }
       if (form.type === "VENUE_SERVICE") {
         payload.venueServiceDetail = {
           serviceType: venueServiceForm.serviceType || undefined,
@@ -236,7 +205,7 @@ export default function CreateListingPage() {
           qualifications: venueServiceForm.qualifications || undefined,
         };
       }
-      if (form.type !== "EQUIPMENT" && !isVenueType) {
+      if (form.type !== "EQUIPMENT" && !isTrainerOnlyType) {
         payload.isQuick = form.isQuick;
         payload.isUrgent = form.isUrgent;
         payload.expiresAt = form.isQuick && form.expiresAt ? form.expiresAt : undefined;
@@ -264,8 +233,7 @@ export default function CreateListingPage() {
 
   if (!session) return null;
 
-  const isVenueUser = !!ownedVenueProfile || (session.user as any)?.userType === "VENUE" || !!(session.user as any)?.venueProfile;
-  const isVenueListingType = (form.type as string).startsWith("VENUE_");
+  const isTrainerOnlyType = ["VENUE_MEMBERSHIP", "VENUE_CLASS", "VENUE_PRODUCT", "VENUE_SERVICE"].includes(form.type as string);
 
   const selectClass = "w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-emerald-500 outline-none disabled:bg-gray-100 dark:disabled:bg-gray-700";
 
@@ -315,22 +283,21 @@ export default function CreateListingPage() {
             </div>
           )}
 
-          {/* Venue listing types - only for venue users */}
-          {isVenueUser && (
+          {!isVerifiedTrainer && (
+            <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-300">
+              Üyelik paketi, ürün satışı, hizmet ve ders/kurs ilanları sadece onaylı antrenör hesaplarında açılır.
+            </div>
+          )}
+
+          {/* Trainer-only listing types */}
+          {isVerifiedTrainer && (
             <div className="mt-4">
-              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">🏢 İşletme İlanları</p>
-              {ownedVenueProfile && (
-                <div className="mb-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-900/20 dark:text-emerald-300">
-                  İşletme hesabın aktif. Bu ilanlar uygulama içinde sadece başvuru toplar; iletişim ve ödeme süreçleri profil bilgileri üzerinden platform dışında ilerler.
-                </div>
-              )}
+              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">🎓 Onaylı Antrenör Alanları</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {[
-                  { value: "VENUE_RENTAL", label: "🏟️ Saha/Salon Kiralama", active: "border-teal-500 bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-300" },
                   { value: "VENUE_MEMBERSHIP", label: "💳 Üyelik Paketi", active: "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300" },
                   { value: "VENUE_CLASS", label: "📚 Ders/Kurs", active: "border-pink-500 bg-pink-50 dark:bg-pink-900/20 text-pink-700 dark:text-pink-300" },
                   { value: "VENUE_PRODUCT", label: "🛍️ Ürün Satışı", active: "border-amber-500 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300" },
-                  { value: "VENUE_EVENT", label: "🎉 Etkinlik/Turnuva", active: "border-rose-500 bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-300" },
                   { value: "VENUE_SERVICE", label: "🔧 Hizmet", active: "border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-300" },
                 ].map((t) => (
                   <button
@@ -376,7 +343,7 @@ export default function CreateListingPage() {
           countryId={form.countryId}
           cityId={form.cityId}
           districtId={form.districtId}
-          onChange={(updates) => setForm({ ...form, ...updates, venueId: "" })}
+          onChange={(updates) => setForm({ ...form, ...updates })}
         />
 
         {/* GPS Konum Paylaşımı */}
@@ -441,8 +408,8 @@ export default function CreateListingPage() {
           />
         </div>
 
-        {/* Tarih/Saat (EQUIPMENT ve VENUE_* için gösterilmez) */}
-        {form.type !== "EQUIPMENT" && !isVenueListingType && (
+        {/* Tarih/Saat (EQUIPMENT ve trainer-only tipler için gösterilmez) */}
+        {form.type !== "EQUIPMENT" && !isTrainerOnlyType && (
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Tarih ve Saat {form.type !== "TRAINER" ? "*" : "(antrenman başlangıcı)"}
@@ -536,58 +503,6 @@ export default function CreateListingPage() {
                 </div>
               )}
             </div>
-          </div>
-        )}
-
-        {/* ─── VENUE_RENTAL: Saha/Salon Kiralama ─── */}
-        {form.type === "VENUE_RENTAL" && (
-          <div className="bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-xl p-4 space-y-3">
-            <p className="font-medium text-teal-800 dark:text-teal-200">🏟️ Saha/Salon Kiralama Detayları</p>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Alan Tipi</label>
-                <select value={venueRentalForm.facilityType} onChange={(e) => setVenueRentalForm({ ...venueRentalForm, facilityType: e.target.value })} className={selectClass}>
-                  <option value="">Seçiniz</option>
-                  <option value="saha">Saha</option>
-                  <option value="kort">Kort</option>
-                  <option value="havuz">Havuz</option>
-                  <option value="salon">Salon</option>
-                  <option value="ring">Ring</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Saatlik Ücret (₺)</label>
-                <input type="number" min="0" value={venueRentalForm.pricePerHour} onChange={(e) => setVenueRentalForm({ ...venueRentalForm, pricePerHour: e.target.value })} className={selectClass} placeholder="500" />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Alan / Kort Sayısı</label>
-                <input type="number" min="1" value={venueRentalForm.courtCount} onChange={(e) => setVenueRentalForm({ ...venueRentalForm, courtCount: e.target.value })} className={selectClass} placeholder="2" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Zemin</label>
-                <input type="text" value={venueRentalForm.surfaceType} onChange={(e) => setVenueRentalForm({ ...venueRentalForm, surfaceType: e.target.value })} className={selectClass} placeholder="Çim, Parke, Tartan..." />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Seans Ücreti (₺)</label>
-                <input type="number" min="0" value={venueRentalForm.pricePerSession} onChange={(e) => setVenueRentalForm({ ...venueRentalForm, pricePerSession: e.target.value })} className={selectClass} placeholder="800" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Min. Süre (dk)</label>
-                <input type="number" min="0" value={venueRentalForm.minDuration} onChange={(e) => setVenueRentalForm({ ...venueRentalForm, minDuration: e.target.value })} className={selectClass} placeholder="60" />
-              </div>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Müsait Saatler</label>
-              <textarea value={venueRentalForm.availableSlots} onChange={(e) => setVenueRentalForm({ ...venueRentalForm, availableSlots: e.target.value })} rows={2} className={`${selectClass} resize-none`} placeholder="Hafta içi 18:00-23:00, Cumartesi 10:00-22:00" />
-            </div>
-            <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-              <input type="checkbox" checked={venueRentalForm.hasLighting} onChange={(e) => setVenueRentalForm({ ...venueRentalForm, hasLighting: e.target.checked })} className="accent-teal-500" />
-              Aydınlatma Var
-            </label>
           </div>
         )}
 
@@ -709,41 +624,6 @@ export default function CreateListingPage() {
           </div>
         )}
 
-        {/* ─── VENUE_EVENT: Etkinlik/Turnuva ─── */}
-        {form.type === "VENUE_EVENT" && (
-          <div className="bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-xl p-4 space-y-3">
-            <p className="font-medium text-rose-800 dark:text-rose-200">🎉 Etkinlik/Turnuva Detayları</p>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Etkinlik Türü *</label>
-              <input type="text" value={venueEventForm.eventType} onChange={(e) => setVenueEventForm({ ...venueEventForm, eventType: e.target.value })} className={selectClass} placeholder="Turnuva, kamp, seminer, açık gün..." />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Başlangıç</label>
-                <input type="datetime-local" value={venueEventForm.startDate} onChange={(e) => setVenueEventForm({ ...venueEventForm, startDate: e.target.value })} className={selectClass} />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Bitiş</label>
-                <input type="datetime-local" value={venueEventForm.endDate} onChange={(e) => setVenueEventForm({ ...venueEventForm, endDate: e.target.value })} className={selectClass} />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Katılımcı Kapasitesi</label>
-                <input type="number" min="1" value={venueEventForm.maxParticipants} onChange={(e) => setVenueEventForm({ ...venueEventForm, maxParticipants: e.target.value })} className={selectClass} placeholder="100" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Katılım Ücreti (₺)</label>
-                <input type="number" min="0" value={venueEventForm.entryFee} onChange={(e) => setVenueEventForm({ ...venueEventForm, entryFee: e.target.value })} className={selectClass} placeholder="0" />
-              </div>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Son Başvuru Tarihi</label>
-              <input type="datetime-local" value={venueEventForm.registrationDeadline} onChange={(e) => setVenueEventForm({ ...venueEventForm, registrationDeadline: e.target.value })} className={selectClass} />
-            </div>
-          </div>
-        )}
-
         {/* ─── VENUE_SERVICE: Hizmet ─── */}
         {form.type === "VENUE_SERVICE" && (
           <div className="bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 rounded-xl p-4 space-y-3">
@@ -769,8 +649,8 @@ export default function CreateListingPage() {
           </div>
         )}
 
-        {/* Seviye (EQUIPMENT ve VENUE_* için gizle) */}
-        {form.type !== "EQUIPMENT" && !isVenueListingType && (
+        {/* Seviye (EQUIPMENT ve trainer-only tipler için gizle) */}
+        {form.type !== "EQUIPMENT" && !isTrainerOnlyType && (
           <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Seviye *
@@ -844,8 +724,8 @@ export default function CreateListingPage() {
           </div>
         )}
 
-        {/* Cinsiyet Kısıtlı (EQUIPMENT ve VENUE_* için gizle) */}
-        {form.type !== "EQUIPMENT" && !isVenueListingType && (
+        {/* Cinsiyet Kısıtlı (EQUIPMENT ve trainer-only tipler için gizle) */}
+        {form.type !== "EQUIPMENT" && !isTrainerOnlyType && (
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Katılımcı Cinsiyeti
@@ -873,8 +753,8 @@ export default function CreateListingPage() {
         </div>
         )}
 
-        {/* Yaş Aralığı Kısıtlaması (EQUIPMENT ve VENUE_* dışındaki ilanlar için) */}
-        {form.type !== "EQUIPMENT" && !isVenueListingType && (
+        {/* Yaş Aralığı Kısıtlaması (EQUIPMENT ve trainer-only tipler dışındaki ilanlar için) */}
+        {form.type !== "EQUIPMENT" && !isTrainerOnlyType && (
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Başvuru Yaş Aralığı <span className="text-gray-400 font-normal">(opsiyonel)</span>
@@ -918,7 +798,7 @@ export default function CreateListingPage() {
         )}
 
         {/* Grup Seçimi */}
-        {myGroups.length > 0 && !isVenueListingType && (
+        {myGroups.length > 0 && !isTrainerOnlyType && (
         <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4">
           <p className="font-medium text-purple-800 dark:text-purple-200 mb-2">👥 Grup İlanı (Opsiyonel)</p>
           <p className="text-xs text-purple-600 dark:text-purple-400 mb-3">Bu ilanı bir grubunuzla ilişkilendirebilirsiniz.</p>
@@ -937,8 +817,8 @@ export default function CreateListingPage() {
         </div>
         )}
 
-        {/* Hızlı İlan Modu (EQUIPMENT, TRAINER ve VENUE_* için gizle) */}
-        {form.type !== "EQUIPMENT" && form.type !== "TRAINER" && !isVenueListingType && (
+        {/* Hızlı İlan Modu (EQUIPMENT, TRAINER ve trainer-only tipler için gizle) */}
+        {form.type !== "EQUIPMENT" && form.type !== "TRAINER" && !isTrainerOnlyType && (
         <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
           <div className="flex items-center justify-between">
             <div>
@@ -1003,7 +883,7 @@ export default function CreateListingPage() {
         )}
 
         {/* 🕵️ KÖR MAÇ — Anonim İlan */}
-        {form.type !== "EQUIPMENT" && form.type !== "TRAINER" && !isVenueListingType && (
+        {form.type !== "EQUIPMENT" && form.type !== "TRAINER" && !isTrainerOnlyType && (
         <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
           <div className="flex items-center justify-between">
             <div>
@@ -1039,7 +919,7 @@ export default function CreateListingPage() {
         )}
 
         {/* Tekrarlayan Etkinlik */}
-        {!form.isQuick && form.type !== "EQUIPMENT" && form.type !== "TRAINER" && !isVenueListingType && (
+        {!form.isQuick && form.type !== "EQUIPMENT" && form.type !== "TRAINER" && !isTrainerOnlyType && (
           <div className="bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800 rounded-xl p-4">
             <div className="flex items-center justify-between mb-3">
               <div>
@@ -1108,7 +988,7 @@ export default function CreateListingPage() {
           loading={loading || uploadingEquip}
           disabled={
             !form.type ||
-            (form.type === "EQUIPMENT" ? (!equipForm.price || !equipForm.condition) : isVenueListingType ? false : !form.level)
+            (form.type === "EQUIPMENT" ? (!equipForm.price || !equipForm.condition) : isTrainerOnlyType ? false : !form.level)
           }
           className="w-full text-lg"
         >

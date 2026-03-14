@@ -143,11 +143,6 @@ export default function ProfileHeaderView({
                 isOwn={true}
               />
             )}
-            {(user.userType === "VENUE" || user.venueProfile) && (
-              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">
-                🏟️ Tesis{user.venueProfile?.isVerified ? " ✓" : ""}
-              </span>
-            )}
             <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${levelCfg.cls}`}>
               {getCompetitiveLevelLabel(lvl, locale)}
             </span>

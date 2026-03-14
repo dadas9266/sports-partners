@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import type { Country, Sport, Venue } from "@/types";
-import { getLocations as fetchLocations, getSports as fetchSports, getVenues as fetchVenues } from "@/services/api";
+import type { Country, Sport } from "@/types";
+import { getLocations as fetchLocations, getSports as fetchSports } from "@/services/api";
 
 export function useLocations() {
   const [locations, setLocations] = useState<Country[]>([]);
@@ -30,25 +30,4 @@ export function useSports() {
   }, []);
 
   return { sports, loading, error };
-}
-
-export function useVenues(districtId: string) {
-  const [venues, setVenues] = useState<Venue[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!districtId) {
-      setVenues([]);
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    fetchVenues(districtId)
-      .then((d) => d.success && setVenues(d.data || []))
-      .catch((err) => setError(err instanceof Error ? err.message : "Tesisler yüklenemedi"))
-      .finally(() => setLoading(false));
-  }, [districtId]);
-
-  return { venues, loading, error };
 }

@@ -19,7 +19,6 @@ const AUTH_ENDPOINTS = [
   "/api/groups",
   "/api/clubs",
   "/api/communities",
-  "/api/tournaments",
   "/api/listings",
   "/api/profile",
   "/api/recommendations",
@@ -37,8 +36,6 @@ const PARAM_ENDPOINTS = [
   "/api/matches",
   "/api/ratings",
   "/api/users",
-  "/api/venues",
-  "/api/venue-profile",
 ];
 
 test.describe("API Smoke Test — Public", () => {

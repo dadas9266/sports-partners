@@ -144,12 +144,12 @@ export default function Navbar() {
               </Link>
             )}
 
-            {/* Keşfet Dropdown — Topluluklar, Mekanlar, Turnuvalar */}
+            {/* Keşfet Dropdown */}
             <div className="relative hidden md:block" ref={discoverRef}>
               <button
                 onClick={() => setDiscoverOpen(v => !v)}
                 className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                  discoverOpen || ["/topluluklar", "/mekanlar", "/turnuvalar"].some(p => pathname?.startsWith(p))
+                  discoverOpen || ["/topluluklar", "/liderlik"].some(p => pathname?.startsWith(p))
                     ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20"
                     : "text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
                 }`}
@@ -168,8 +168,6 @@ export default function Navbar() {
                   <div className="absolute left-0 top-full mt-1.5 w-52 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-xl z-[89] overflow-hidden py-1.5">
                     {[
                       { href: "/topluluklar", icon: "🏛️", label: t("communities"), desc: t("communitiesDesc") },
-                      { href: "/mekanlar", icon: "🏟️", label: t("venues"), desc: t("venuesDesc") },
-                      { href: "/turnuvalar", icon: "🏆", label: t("tournaments"), desc: t("tournamentsDesc") },
                       { href: "/liderlik", icon: "🥇", label: t("leaderboard"), desc: t("leaderboardDesc") },
                     ].map(item => (
                       <Link
@@ -237,9 +235,6 @@ export default function Navbar() {
                     </Link>
                   )}
                   <Link href="/profil" className="block px-4 py-2 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/30">{t("profile")}</Link>
-                  {((session.user as any)?.userType === "VENUE" || (session.user as any)?.venueProfile) && (
-                    <Link href="/ayarlar/isletme" className="block px-4 py-2 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/30">🏟️ Tesis Yönetimi</Link>
-                  )}
                   <Link href="/topluluklarim" className="block px-4 py-2 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/30">{t("myCommunities")}</Link>
                   <Link href="/ayarlar" className="block px-4 py-2 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/30">{t("settings")}</Link>
                   <button onClick={() => signOut()} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30">
@@ -333,11 +328,9 @@ export default function Navbar() {
                               { href: "/ayarlar/profil", icon: "👤", label: "Profili Düzenle" },
                               { href: "/ayarlar/guvenlik", icon: "🔒", label: "Hesap Güvenliği" },
                               { href: "/ayarlar/profesyonel", icon: "⭐", label: "Profesyonel Hesap" },
-                              ...((session.user as any)?.userType === "VENUE" || (session.user as any)?.venueProfile ? [{ href: "/ayarlar/isletme", icon: "🏟️", label: "Tesis Yönetimi" }] : []),
                               ...((session.user as any)?.userType === "TRAINER" ? [{ href: "/antrenor/derslerim", icon: "📚", label: "Ders Takibi" }] : []),
                               { href: "/ayarlar/gizlilik", icon: "🛡️", label: "Gizlilik" },
                               { href: "/topluluklar", icon: "🌐", label: "Topluluklar" },
-                              { href: "/turnuvalar", icon: "🏆", label: "Turnuvalar" },
                             ].map((item) => (
                               <Link
                                 key={item.href}

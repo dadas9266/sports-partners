@@ -49,7 +49,6 @@ export async function POST(request: Request) {
     const missingFields = getRequiredProfileFields({
       name: profileUser?.name,
       birthDate: profileUser?.birthDate,
-      userType: profileUser?.userType,
       sports: profileUser?.sports,
     });
     if (missingFields.length > 0) {

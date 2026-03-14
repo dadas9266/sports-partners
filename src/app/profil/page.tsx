@@ -32,11 +32,6 @@ function getMissingProfileFields(user: any) {
   if (!user.avatarUrl) missing.push("Profil fotoğrafı");
   if (!user.phone) missing.push("Telefon numarası");
   if (!user.birthDate) missing.push("Doğum tarihi");
-  if (user.userType === "VENUE") {
-    // venueProfile ilişkili model üzerinden kontrol (User'da doğrudan alan yok)
-    if (!user.venueProfile?.businessName) missing.push("Tesis adı");
-    if (!user.venueProfile?.address) missing.push("Tesis adresi");
-  }
   if (user.userType === "TRAINER" && (!user.trainerProfile?.specializations || user.trainerProfile.specializations.length === 0)) {
     missing.push("Branş ve/veya sertifika");
   }
@@ -471,30 +466,6 @@ export default function ProfilePage() {
             </div>
             <svg className="w-4 h-4 text-blue-400 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
           </a>
-        )}
-        {(((session?.user as any)?.userType === "VENUE") || !!(data.user as any)?.venueProfile) && (
-          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <a
-              href="/ayarlar/isletme"
-              className="flex items-center gap-3 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border border-amber-100 dark:border-amber-900/40 rounded-xl p-3 hover:from-amber-100 hover:to-orange-100 dark:hover:from-amber-900/40 dark:hover:to-orange-900/40 transition"
-            >
-              <span className="text-2xl">🏟️</span>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-amber-700 dark:text-amber-300">İşletme Panelim</p>
-                <p className="text-xs text-amber-500 dark:text-amber-400">Tesis bilgisi ve galeri yönetimi</p>
-              </div>
-            </a>
-            <a
-              href="/ilan/olustur"
-              className="flex items-center gap-3 bg-gradient-to-r from-purple-50 to-fuchsia-50 dark:from-purple-950/30 dark:to-fuchsia-950/30 border border-purple-100 dark:border-purple-900/40 rounded-xl p-3 hover:from-purple-100 hover:to-fuchsia-100 dark:hover:from-purple-900/40 dark:hover:to-fuchsia-900/40 transition"
-            >
-              <span className="text-2xl">🛒</span>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-purple-700 dark:text-purple-300">Ürün İlanı Aç</p>
-                <p className="text-xs text-purple-500 dark:text-purple-400">Dambıl, protein tozu ve ekipman satışı</p>
-              </div>
-            </a>
-          </div>
         )}
       </div>
 

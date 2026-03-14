@@ -17,7 +17,7 @@ export async function getInitialListings(countryId?: string): Promise<{
     status: "OPEN" as const,
     AND: [
       { OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
-      { OR: [{ type: { in: ["TRAINER", "EQUIPMENT"] as Prisma.EnumListingTypeFilter["in"] } }, { dateTime: { gte: now } }] },
+      { OR: [{ type: { in: ["TRAINER", "EQUIPMENT", "VENUE_MEMBERSHIP", "VENUE_CLASS", "VENUE_PRODUCT", "VENUE_SERVICE"] as Prisma.EnumListingTypeFilter["in"] } }, { dateTime: { gte: now } }] },
       // Tüm ilanları göster (cinsiyet filtresi client-side uygulanacak)
     ],
     ...(countryId
@@ -59,8 +59,15 @@ export async function getInitialListings(countryId?: string): Promise<{
     }),
   ]);
 
+  const sortedListings = [...listings].sort((a: any, b: any) => {
+    const aPriority = (a.type === "RIVAL" || a.type === "PARTNER") ? 0 : 1;
+    const bPriority = (b.type === "RIVAL" || b.type === "PARTNER") ? 0 : 1;
+    if (aPriority !== bPriority) return aPriority - bPriority;
+    return new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime();
+  });
+
   return {
-    listings: listings as unknown as ListingSummary[],
+    listings: sortedListings as unknown as ListingSummary[],
     total,
     pageSize,
   };
@@ -98,8 +105,8 @@ export async function getPopularListings(limit = 6): Promise<ListingSummary[]> {
       status: "OPEN",
       AND: [
         { OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
-        // TRAINER/EQUIPMENT ilanları tarihe göre filtrelenmez; etkinlik ilanları geçmişse çıkarılır
-        { OR: [{ type: { in: ["TRAINER", "EQUIPMENT"] as Prisma.EnumListingTypeFilter["in"] } }, { dateTime: { gte: now } }] },
+        // TRAINER/EQUIPMENT ve trainer-only tipler tarihe göre filtrelenmez
+        { OR: [{ type: { in: ["TRAINER", "EQUIPMENT", "VENUE_MEMBERSHIP", "VENUE_CLASS", "VENUE_PRODUCT", "VENUE_SERVICE"] as Prisma.EnumListingTypeFilter["in"] } }, { dateTime: { gte: now } }] },
       ],
     },
     include: {

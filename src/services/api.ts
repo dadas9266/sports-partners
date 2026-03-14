@@ -5,7 +5,6 @@ import type {
   ListingDetail,
   Sport,
   Country,
-  Venue,
   ProfileData,
   Notification,
   Rating,
@@ -15,7 +14,6 @@ import type {
   Message,
   LeaderboardEntry,
   TrainerSportExperience,
-  VenueFacilityInput,
 } from "@/types";
 
 const BASE_URL = "";
@@ -135,10 +133,6 @@ export async function getSports(): Promise<ApiResponse<Sport[]>> {
 
 export async function getLocations(): Promise<ApiResponse<Country[]>> {
   return fetchAPI("/api/locations");
-}
-
-export async function getVenues(districtId: string): Promise<ApiResponse<Venue[]>> {
-  return fetchAPI(`/api/venues?districtId=${districtId}`);
 }
 
 // ========== PROFILE ==========

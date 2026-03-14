@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
 import { getListingDetail, updateListing } from "@/services/api";
-import { useLocations, useSports, useVenues } from "@/hooks/useLocations";
+import { useLocations, useSports } from "@/hooks/useLocations";
 import type { ListingDetail } from "@/types";
 import Button from "@/components/ui/Button";
 
@@ -30,20 +30,16 @@ export default function EditListingPage({
     countryId: "",
     cityId: "",
     districtId: "",
-    venueId: "",
     dateTime: "",
     level: "",
     allowedGender: "ANY" as string,
     description: "",
   });
-  const [venueRentalForm, setVenueRentalForm] = useState({ facilityType: "", courtCount: "", pricePerHour: "", pricePerSession: "", minDuration: "", availableSlots: "", surfaceType: "", hasLighting: false });
   const [venueMembershipForm, setVenueMembershipForm] = useState({ membershipType: "", price: "", includes: "", trialAvailable: false, trialPrice: "", maxMembers: "" });
   const [venueClassForm, setVenueClassForm] = useState({ className: "", schedule: "", instructorName: "", pricePerSession: "", priceMonthly: "", difficulty: "", maxParticipants: "" });
   const [venueProductForm, setVenueProductForm] = useState({ productName: "", brand: "", price: "", productCategory: "", unit: "adet", inStock: true });
-  const [venueEventForm, setVenueEventForm] = useState({ eventType: "", startDate: "", endDate: "", maxParticipants: "", entryFee: "", registrationDeadline: "" });
   const [venueServiceForm, setVenueServiceForm] = useState({ serviceType: "", pricePerSession: "", sessionDuration: "", qualifications: "" });
 
-  const { venues } = useVenues(form.districtId);
   const cities = locations.find((l) => l.id === form.countryId)?.cities || [];
   const districts = cities.find((c) => c.id === form.cityId)?.districts || [];
 
@@ -64,24 +60,11 @@ export default function EditListingPage({
           countryId: l.district?.city?.country?.id ?? "",
           cityId: l.district?.city?.id ?? "",
           districtId: l.district?.id ?? "",
-          venueId: l.venue?.id ?? "",
           dateTime: localDT,
           level: l.level,
           allowedGender: l.allowedGender ?? "ANY",
           description: l.description ?? "",
         });
-        if (l.venueRentalDetail) {
-          setVenueRentalForm({
-            facilityType: l.venueRentalDetail.facilityType ?? "",
-            courtCount: String(l.venueRentalDetail.courtCount ?? ""),
-            pricePerHour: l.venueRentalDetail.pricePerHour != null ? String(l.venueRentalDetail.pricePerHour) : "",
-            pricePerSession: l.venueRentalDetail.pricePerSession != null ? String(l.venueRentalDetail.pricePerSession) : "",
-            minDuration: l.venueRentalDetail.minDuration != null ? String(l.venueRentalDetail.minDuration) : "",
-            availableSlots: l.venueRentalDetail.availableSlots ?? "",
-            surfaceType: l.venueRentalDetail.surfaceType ?? "",
-            hasLighting: l.venueRentalDetail.hasLighting ?? false,
-          });
-        }
         if (l.venueMembershipDetail) {
           setVenueMembershipForm({
             membershipType: l.venueMembershipDetail.membershipType ?? "",
@@ -111,17 +94,6 @@ export default function EditListingPage({
             productCategory: l.venueProductDetail.productCategory ?? "",
             unit: l.venueProductDetail.unit ?? "adet",
             inStock: l.venueProductDetail.inStock ?? true,
-          });
-        }
-        if (l.venueEventDetail) {
-          const toLocal = (value?: string | null) => value ? new Date(new Date(value).getTime() - new Date(value).getTimezoneOffset() * 60000).toISOString().slice(0, 16) : "";
-          setVenueEventForm({
-            eventType: l.venueEventDetail.eventType ?? "",
-            startDate: toLocal(l.venueEventDetail.startDate),
-            endDate: toLocal(l.venueEventDetail.endDate),
-            maxParticipants: l.venueEventDetail.maxParticipants != null ? String(l.venueEventDetail.maxParticipants) : "",
-            entryFee: l.venueEventDetail.entryFee != null ? String(l.venueEventDetail.entryFee) : "",
-            registrationDeadline: toLocal(l.venueEventDetail.registrationDeadline),
           });
         }
         if (l.venueServiceDetail) {
@@ -164,26 +136,12 @@ export default function EditListingPage({
         countryId: form.countryId || null,
         cityId: form.cityId || null,
         districtId: form.districtId,
-        venueId: form.venueId || null,
         ...(form.type !== "EQUIPMENT" && !isVenueListingType && form.dateTime ? { dateTime: form.dateTime } : {}),
         ...(form.type === "TRAINER" && form.dateTime ? { dateTime: form.dateTime } : {}),
         ...(form.type !== "EQUIPMENT" && !isVenueListingType ? { level: form.level } : {}),
         allowedGender: form.allowedGender,
         description: form.description || undefined,
       };
-
-      if (form.type === "VENUE_RENTAL") {
-        payload.venueRentalDetail = {
-          facilityType: venueRentalForm.facilityType || undefined,
-          courtCount: venueRentalForm.courtCount ? parseInt(venueRentalForm.courtCount) : undefined,
-          pricePerHour: venueRentalForm.pricePerHour ? parseFloat(venueRentalForm.pricePerHour) : null,
-          pricePerSession: venueRentalForm.pricePerSession ? parseFloat(venueRentalForm.pricePerSession) : null,
-          minDuration: venueRentalForm.minDuration ? parseInt(venueRentalForm.minDuration) : null,
-          availableSlots: venueRentalForm.availableSlots || null,
-          surfaceType: venueRentalForm.surfaceType || null,
-          hasLighting: venueRentalForm.hasLighting,
-        };
-      }
       if (form.type === "VENUE_MEMBERSHIP") {
         payload.venueMembershipDetail = {
           membershipType: venueMembershipForm.membershipType || undefined,
@@ -213,16 +171,6 @@ export default function EditListingPage({
           price: venueProductForm.price ? parseFloat(venueProductForm.price) : undefined,
           unit: venueProductForm.unit || undefined,
           inStock: venueProductForm.inStock,
-        };
-      }
-      if (form.type === "VENUE_EVENT") {
-        payload.venueEventDetail = {
-          eventType: venueEventForm.eventType || undefined,
-          startDate: venueEventForm.startDate || null,
-          endDate: venueEventForm.endDate || null,
-          entryFee: venueEventForm.entryFee ? parseFloat(venueEventForm.entryFee) : null,
-          maxParticipants: venueEventForm.maxParticipants ? parseInt(venueEventForm.maxParticipants) : null,
-          registrationDeadline: venueEventForm.registrationDeadline || null,
         };
       }
       if (form.type === "VENUE_SERVICE") {
@@ -263,7 +211,7 @@ export default function EditListingPage({
 
   const selectClass =
     "w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-emerald-500 outline-none disabled:bg-gray-100 dark:disabled:bg-gray-700";
-  const isVenueUser = (session.user as any)?.userType === "VENUE" || form.type.startsWith("VENUE_");
+  const canUseAdvancedTypes = (session.user as any)?.userType === "TRAINER" || form.type.startsWith("VENUE_");
   const isVenueListingType = form.type.startsWith("VENUE_");
 
   return (
@@ -305,14 +253,12 @@ export default function EditListingPage({
               </button>
             ))}
           </div>
-          {isVenueUser && (
+          {canUseAdvancedTypes && (
             <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2">
               {[
-                { value: "VENUE_RENTAL", label: "🏟️ Kiralama" },
                 { value: "VENUE_MEMBERSHIP", label: "💳 Üyelik" },
                 { value: "VENUE_CLASS", label: "📚 Ders / Kurs" },
                 { value: "VENUE_PRODUCT", label: "🛍️ Ürün" },
-                { value: "VENUE_EVENT", label: "🎉 Etkinlik" },
                 { value: "VENUE_SERVICE", label: "🔧 Hizmet" },
               ].map((item) => (
                 <button
@@ -341,37 +287,26 @@ export default function EditListingPage({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ülke *</label>
-            <select value={form.countryId} onChange={(e) => setForm({ ...form, countryId: e.target.value, cityId: "", districtId: "", venueId: "" })} className={selectClass} required>
+            <select value={form.countryId} onChange={(e) => setForm({ ...form, countryId: e.target.value, cityId: "", districtId: "" })} className={selectClass} required>
               <option value="">Ülke</option>
               {locations.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Şehir *</label>
-            <select value={form.cityId} onChange={(e) => setForm({ ...form, cityId: e.target.value, districtId: "", venueId: "" })} className={selectClass} required disabled={!form.countryId}>
+            <select value={form.cityId} onChange={(e) => setForm({ ...form, cityId: e.target.value, districtId: "" })} className={selectClass} required disabled={!form.countryId}>
               <option value="">Şehir</option>
               {cities.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">İlçe *</label>
-            <select value={form.districtId} onChange={(e) => setForm({ ...form, districtId: e.target.value, venueId: "" })} className={selectClass} required disabled={!form.cityId}>
+            <select value={form.districtId} onChange={(e) => setForm({ ...form, districtId: e.target.value })} className={selectClass} required disabled={!form.cityId}>
               <option value="">İlçe</option>
               {districts.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
             </select>
           </div>
         </div>
-
-        {/* Mekan */}
-        {form.districtId && venues.length > 0 && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tesis (opsiyonel)</label>
-            <select value={form.venueId} onChange={(e) => setForm({ ...form, venueId: e.target.value })} className={selectClass}>
-              <option value="">Tesis seçin</option>
-              {venues.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
-            </select>
-          </div>
-        )}
 
         {form.type !== "EQUIPMENT" && !isVenueListingType && (
           <div>
@@ -396,32 +331,6 @@ export default function EditListingPage({
               <option value="INTERMEDIATE">🔥 Orta</option>
               <option value="ADVANCED">⚡ İleri</option>
             </select>
-          </div>
-        )}
-
-        {form.type === "VENUE_RENTAL" && (
-          <div className="rounded-xl border border-teal-200 bg-teal-50 p-4 space-y-3 dark:border-teal-800 dark:bg-teal-900/20">
-            <p className="font-medium text-teal-800 dark:text-teal-200">🏟️ Kiralama Detayları</p>
-            <div className="grid grid-cols-2 gap-3">
-              <select value={venueRentalForm.facilityType} onChange={(e) => setVenueRentalForm({ ...venueRentalForm, facilityType: e.target.value })} className={selectClass}>
-                <option value="">Alan tipi</option>
-                <option value="saha">Saha</option>
-                <option value="kort">Kort</option>
-                <option value="havuz">Havuz</option>
-                <option value="salon">Salon</option>
-                <option value="ring">Ring</option>
-              </select>
-              <input value={venueRentalForm.courtCount} onChange={(e) => setVenueRentalForm({ ...venueRentalForm, courtCount: e.target.value })} className={selectClass} placeholder="Alan sayısı" type="number" min="1" />
-              <input value={venueRentalForm.pricePerHour} onChange={(e) => setVenueRentalForm({ ...venueRentalForm, pricePerHour: e.target.value })} className={selectClass} placeholder="Saatlik fiyat" type="number" min="0" />
-              <input value={venueRentalForm.pricePerSession} onChange={(e) => setVenueRentalForm({ ...venueRentalForm, pricePerSession: e.target.value })} className={selectClass} placeholder="Seans fiyatı" type="number" min="0" />
-              <input value={venueRentalForm.minDuration} onChange={(e) => setVenueRentalForm({ ...venueRentalForm, minDuration: e.target.value })} className={selectClass} placeholder="Min. süre" type="number" min="0" />
-              <input value={venueRentalForm.surfaceType} onChange={(e) => setVenueRentalForm({ ...venueRentalForm, surfaceType: e.target.value })} className={selectClass} placeholder="Zemin" />
-            </div>
-            <textarea value={venueRentalForm.availableSlots} onChange={(e) => setVenueRentalForm({ ...venueRentalForm, availableSlots: e.target.value })} rows={2} className={`${selectClass} resize-none`} placeholder="Müsait saatler" />
-            <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-              <input type="checkbox" checked={venueRentalForm.hasLighting} onChange={(e) => setVenueRentalForm({ ...venueRentalForm, hasLighting: e.target.checked })} className="accent-teal-500" />
-              Aydınlatma var
-            </label>
           </div>
         )}
 
@@ -471,20 +380,6 @@ export default function EditListingPage({
               <input type="checkbox" checked={venueProductForm.inStock} onChange={(e) => setVenueProductForm({ ...venueProductForm, inStock: e.target.checked })} className="accent-amber-500" />
               Stokta mevcut
             </label>
-          </div>
-        )}
-
-        {form.type === "VENUE_EVENT" && (
-          <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 space-y-3 dark:border-rose-800 dark:bg-rose-900/20">
-            <p className="font-medium text-rose-800 dark:text-rose-200">🎉 Etkinlik Detayları</p>
-            <div className="grid grid-cols-2 gap-3">
-              <input value={venueEventForm.eventType} onChange={(e) => setVenueEventForm({ ...venueEventForm, eventType: e.target.value })} className={selectClass} placeholder="Etkinlik türü" />
-              <input value={venueEventForm.maxParticipants} onChange={(e) => setVenueEventForm({ ...venueEventForm, maxParticipants: e.target.value })} className={selectClass} placeholder="Kontenjan" type="number" min="1" />
-              <input value={venueEventForm.startDate} onChange={(e) => setVenueEventForm({ ...venueEventForm, startDate: e.target.value })} className={selectClass} type="datetime-local" />
-              <input value={venueEventForm.endDate} onChange={(e) => setVenueEventForm({ ...venueEventForm, endDate: e.target.value })} className={selectClass} type="datetime-local" />
-              <input value={venueEventForm.entryFee} onChange={(e) => setVenueEventForm({ ...venueEventForm, entryFee: e.target.value })} className={selectClass} placeholder="Katılım ücreti" type="number" min="0" />
-              <input value={venueEventForm.registrationDeadline} onChange={(e) => setVenueEventForm({ ...venueEventForm, registrationDeadline: e.target.value })} className={selectClass} type="datetime-local" />
-            </div>
           </div>
         )}
 

@@ -35,10 +35,10 @@ export async function GET() {
     // ===== 2) TABLO KAYIT SAYILARI =====
     const [
       userCount, listingCount, matchCount, responseCount, ratingCount,
-      clubCount, groupCount, communityCount, tournamentCount,
+      clubCount, groupCount, communityCount,
       postCount, commentCount, messageCount, notificationCount,
       favoriteCount, noShowCount, storyCount, botCount,
-      venueCount, trainerCount, sportCount, cityCount, countryCount,
+      trainerCount, sportCount, cityCount, countryCount,
     ] = await Promise.all([
       prisma.user.count(),
       prisma.listing.count(),
@@ -48,7 +48,6 @@ export async function GET() {
       prisma.club.count(),
       prisma.group.count(),
       prisma.community.count(),
-      prisma.tournament.count(),
       prisma.post.count(),
       prisma.postComment.count(),
       prisma.message.count(),
@@ -57,7 +56,6 @@ export async function GET() {
       prisma.noShowReport.count(),
       prisma.story.count(),
       prisma.user.count({ where: { isBot: true } }),
-      prisma.venueProfile.count(),
       prisma.trainerProfile.count(),
       prisma.sport.count(),
       prisma.city.count(),
@@ -67,7 +65,7 @@ export async function GET() {
     checks.push({
       name: "Tablo Kayıt Sayıları",
       status: "ok",
-      detail: `Kullanıcı: ${userCount} (${botCount} bot) | İlan: ${listingCount} | Maç: ${matchCount} | Yanıt: ${responseCount} | Değerlendirme: ${ratingCount} | Kulüp: ${clubCount} | Grup: ${groupCount} | Topluluk: ${communityCount} | Turnuva: ${tournamentCount} | Gönderi: ${postCount} | Yorum: ${commentCount} | Mesaj: ${messageCount} | Bildirim: ${notificationCount} | Favori: ${favoriteCount} | NoShow: ${noShowCount} | Hikaye: ${storyCount} | Mekan: ${venueCount} | Antrenör: ${trainerCount} | Spor: ${sportCount} | Şehir: ${cityCount} | Ülke: ${countryCount}`,
+      detail: `Kullanıcı: ${userCount} (${botCount} bot) | İlan: ${listingCount} | Maç: ${matchCount} | Yanıt: ${responseCount} | Değerlendirme: ${ratingCount} | Kulüp: ${clubCount} | Grup: ${groupCount} | Topluluk: ${communityCount} | Gönderi: ${postCount} | Yorum: ${commentCount} | Mesaj: ${messageCount} | Bildirim: ${notificationCount} | Favori: ${favoriteCount} | NoShow: ${noShowCount} | Hikaye: ${storyCount} | Antrenör: ${trainerCount} | Spor: ${sportCount} | Şehir: ${cityCount} | Ülke: ${countryCount}`,
     });
 
     // ===== 3) YETİM (ORPHAN) KAYITLAR =====
