@@ -30,6 +30,10 @@ export default function DmChatPage({ params }: { params: Promise<{ conversationI
   const bottomRef = useRef<HTMLDivElement>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isVisibleRef = useRef(true);
+  const [reportModal, setReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState("SPAM");
+  const [reportDesc, setReportDesc] = useState("");
+  const [reportLoading, setReportLoading] = useState(false);
 
   const { unreadMessages } = useNotifications();
 
@@ -110,6 +114,27 @@ export default function DmChatPage({ params }: { params: Promise<{ conversationI
     }
   };
 
+  const handleReportUser = async () => {
+    if (!partner?.id) return;
+    setReportLoading(true);
+    try {
+      const res = await fetch(`/api/users/${partner.id}/report`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: reportReason, description: reportDesc || undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Şikayet gönderilemedi");
+      toast.success(data.message || "Şikayetiniz alındı");
+      setReportModal(false);
+      setReportDesc("");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Hata oluştu");
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
   if (status === "loading" || loading) {
     return (
       <div className="flex justify-center py-16">
@@ -142,6 +167,13 @@ export default function DmChatPage({ params }: { params: Promise<{ conversationI
               </Link>
               <p className="text-xs text-gray-500 dark:text-gray-400">Direkt mesaj</p>
             </div>
+            <button
+              onClick={() => setReportModal(true)}
+              className="ml-auto p-2 text-gray-400 hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors"
+              title="Şikayet Et"
+            >
+              🚩
+            </button>
           </>
         ) : (
           <span className="font-semibold text-gray-800 dark:text-gray-100">Sohbet</span>
@@ -195,6 +227,49 @@ export default function DmChatPage({ params }: { params: Promise<{ conversationI
           {sending ? "..." : "Gönder"}
         </button>
       </div>
+
+      {/* Şikayet Modal */}
+      {reportModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setReportModal(false)}>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">🚩 Kullanıcıyı Şikayet Et</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sebep</label>
+                <select
+                  value={reportReason}
+                  onChange={(e) => setReportReason(e.target.value)}
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-orange-500 outline-none"
+                >
+                  <option value="SPAM">📧 Spam</option>
+                  <option value="HARASSMENT">😡 Taciz / Zorbalık</option>
+                  <option value="FAKE_PROFILE">🎭 Sahte Profil</option>
+                  <option value="INAPPROPRIATE_CONTENT">⚠️ Uygunsuz İçerik</option>
+                  <option value="SCAM">💸 Dolandırıcılık</option>
+                  <option value="OTHER">🔖 Diğer</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Açıklama (opsiyonel)</label>
+                <textarea
+                  value={reportDesc}
+                  onChange={(e) => setReportDesc(e.target.value)}
+                  rows={3}
+                  maxLength={500}
+                  placeholder="Detaylı bilgi verebilirsiniz..."
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 resize-none focus:ring-2 focus:ring-orange-500 outline-none"
+                />
+              </div>
+              <div className="flex gap-3 justify-end">
+                <button onClick={() => setReportModal(false)} className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition">İptal</button>
+                <button onClick={handleReportUser} disabled={reportLoading} className="px-4 py-2 text-sm text-white bg-orange-600 hover:bg-orange-700 rounded-lg transition disabled:opacity-50">
+                  {reportLoading ? "Gönderiliyor..." : "Gönder"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

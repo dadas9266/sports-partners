@@ -3,6 +3,8 @@
   "short_name": "SporPartner",
   "description": "Spor yapmak için partner veya rakip bul!",
   "start_url": "/",
+  "id": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#f9fafb",
   "theme_color": "#059669",

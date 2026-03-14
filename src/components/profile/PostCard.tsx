@@ -32,6 +32,10 @@ export default function PostCard({ post, sessionUserId, onLikeToggle, onDeletePo
   const [userReaction, setUserReaction] = useState<string | null>(post.userReaction ?? (post.liked ? "like" : null));
   const [reactions, setReactions] = useState<Record<string, number>>(post.reactions ?? {});
   const [replyingTo, setReplyingTo] = useState<any>(null); // { id: string, name: string }
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState("SPAM");
+  const [reportDesc, setReportDesc] = useState("");
+  const [reportLoading, setReportLoading] = useState(false);
 
   const handleReact = async (reaction: string) => {
     if (toggling) return;
@@ -162,6 +166,26 @@ export default function PostCard({ post, sessionUserId, onLikeToggle, onDeletePo
     }
   };
 
+  const handleReportUser = async () => {
+    if (!post.user?.id) return;
+    setReportLoading(true);
+    try {
+      const res = await fetch(`/api/users/${post.user.id}/report`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: reportReason, description: reportDesc || undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Şikayet gönderilemedi");
+      setShowReportModal(false);
+      setReportDesc("");
+    } catch {
+      // silent
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4">
       {/* Header */}
@@ -196,6 +220,18 @@ export default function PostCard({ post, sessionUserId, onLikeToggle, onDeletePo
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
+            </button>
+          </div>
+        )}
+        {/* Report Button */}
+        {sessionUserId && sessionUserId !== post.user?.id && (
+          <div className="ml-auto">
+            <button
+              onClick={() => setShowReportModal(true)}
+              className="p-1.5 text-gray-400 hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors"
+              title="Şikayet Et"
+            >
+              🚩
             </button>
           </div>
         )}
@@ -283,6 +319,47 @@ export default function PostCard({ post, sessionUserId, onLikeToggle, onDeletePo
               >
                 Gönder
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Report Modal */}
+      {showReportModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowReportModal(false)}>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">🚩 Gönderiyi Şikayet Et</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sebep</label>
+                <select
+                  value={reportReason}
+                  onChange={(e) => setReportReason(e.target.value)}
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-orange-500 outline-none"
+                >
+                  <option value="SPAM">📧 Spam</option>
+                  <option value="HARASSMENT">😡 Taciz / Zorbalık</option>
+                  <option value="FAKE_PROFILE">🎭 Sahte Profil</option>
+                  <option value="INAPPROPRIATE_CONTENT">⚠️ Uygunsuz İçerik</option>
+                  <option value="SCAM">💸 Dolandırıcılık</option>
+                  <option value="OTHER">🔖 Diğer</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Açıklama (opsiyonel)</label>
+                <textarea
+                  value={reportDesc}
+                  onChange={(e) => setReportDesc(e.target.value)}
+                  rows={3}
+                  maxLength={500}
+                  placeholder="Detaylı bilgi verebilirsiniz..."
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 resize-none focus:ring-2 focus:ring-orange-500 outline-none"
+                />
+              </div>
+              <div className="flex gap-3 justify-end">
+                <Button variant="secondary" onClick={() => setShowReportModal(false)}>İptal</Button>
+                <Button onClick={handleReportUser} loading={reportLoading} className="bg-orange-600 hover:bg-orange-700 text-white">Gönder</Button>
+              </div>
             </div>
           </div>
         </div>

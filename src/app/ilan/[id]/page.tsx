@@ -74,6 +74,10 @@ export default function ListingDetailPage({
   const [ratingSubmitting, setRatingSubmitting] = useState(false);
   const [ratedThisSession, setRatedThisSession] = useState(false);
   const [similar, setSimilar] = useState<ListingSummary[]>([]);
+  const [reportModal, setReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState("SPAM");
+  const [reportDesc, setReportDesc] = useState("");
+  const [reportLoading, setReportLoading] = useState(false);
 
   const currentUserId = session?.user?.id;
 
@@ -222,6 +226,27 @@ export default function ListingDetailPage({
     }
   };
 
+  const handleReportUser = async () => {
+    if (!listing?.userId) return;
+    setReportLoading(true);
+    try {
+      const res = await fetch(`/api/users/${listing.userId}/report`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: reportReason, description: reportDesc || undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Şikayet gönderilemedi");
+      toast.success(data.message || "Şikayetiniz alındı");
+      setReportModal(false);
+      setReportDesc("");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Hata oluştu");
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center py-16" aria-label="Yükleniyor">
@@ -336,6 +361,16 @@ export default function ListingDetailPage({
               <span role="img" aria-label="mesaj">💬</span>
               <span>{listing.responses?.length || 0} karşılık</span>
             </div>
+            {!isOwner && session && listing.userId !== "anonymous" && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setReportModal(true)}
+                  className="flex items-center gap-1.5 text-sm text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 px-3 py-1.5 rounded-lg transition font-medium"
+                >
+                  🚩 Şikayet Et
+                </button>
+              </div>
+            )}
             {listing.allowedGender && listing.allowedGender !== "ANY" && (
               <div className="flex items-center gap-2">
                 <span role="img" aria-label="cinsiyet kısıtı">🚦</span>
@@ -745,6 +780,47 @@ export default function ListingDetailPage({
         variant="primary"
         loading={closing}
       />
+
+      {/* Şikayet Modal */}
+      {reportModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setReportModal(false)}>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">🚩 İlan Sahibini Şikayet Et</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sebep</label>
+                <select
+                  value={reportReason}
+                  onChange={(e) => setReportReason(e.target.value)}
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-orange-500 outline-none"
+                >
+                  <option value="SPAM">📧 Spam</option>
+                  <option value="HARASSMENT">😡 Taciz / Zorbalık</option>
+                  <option value="FAKE_PROFILE">🎭 Sahte Profil</option>
+                  <option value="INAPPROPRIATE_CONTENT">⚠️ Uygunsuz İçerik</option>
+                  <option value="SCAM">💸 Dolandırıcılık</option>
+                  <option value="OTHER">🔖 Diğer</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Açıklama (opsiyonel)</label>
+                <textarea
+                  value={reportDesc}
+                  onChange={(e) => setReportDesc(e.target.value)}
+                  rows={3}
+                  maxLength={500}
+                  placeholder="Detaylı bilgi verebilirsiniz..."
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 resize-none focus:ring-2 focus:ring-orange-500 outline-none"
+                />
+              </div>
+              <div className="flex gap-3 justify-end">
+                <Button variant="secondary" onClick={() => setReportModal(false)}>İptal</Button>
+                <Button onClick={handleReportUser} loading={reportLoading} className="bg-orange-600 hover:bg-orange-700 text-white">Gönder</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

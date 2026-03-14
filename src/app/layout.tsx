@@ -70,6 +70,15 @@ export default async function RootLayout({
             </a>
             <Navbar />
             <main id="main-content" className="max-w-6xl mx-auto px-4 py-6 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-6">{children}</main>
+            <footer className="hidden md:block border-t border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm mt-8">
+              <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                <span>© {new Date().getFullYear()} SporPartner</span>
+                <nav className="flex items-center gap-4">
+                  <a href="/gizlilik-politikasi" className="hover:text-emerald-600 dark:hover:text-emerald-400 transition">Gizlilik Politikası</a>
+                  <a href="/kullanim-sartlari" className="hover:text-emerald-600 dark:hover:text-emerald-400 transition">Kullanım Şartları</a>
+                </nav>
+              </div>
+            </footer>
             <BottomNav />
             <PWAInstallBanner />
           </Providers>
