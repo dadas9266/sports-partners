@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 const navItems = [
   { href: "/", icon: HomeIcon, label: "Ana Sayfa" },
   { href: "/arama", icon: SearchIcon, label: "Keşfet" },
+  { href: "/harita", icon: MapIcon, label: "Harita" },
   { href: "/sosyal", icon: SocialIcon, label: "Sosyal" },
 ];
 
@@ -35,6 +36,17 @@ function SocialIcon({ active }: { active: boolean }) {
       <circle cx="9" cy="7" r="4" />
       <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
       <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  );
+}
+
+function MapIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? "2.2" : "1.8"} strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" fill={active ? "currentColor" : "none"} opacity={active ? "0.15" : "0"} />
+      <polyline points="9 3 9 18" />
+      <polyline points="15 6 15 21" />
+      <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" />
     </svg>
   );
 }

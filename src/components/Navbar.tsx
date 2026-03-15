@@ -110,6 +110,13 @@ export default function Navbar() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               ), label: t("social") },
+              { href: "/harita", icon: (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                  <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" strokeLinecap="round" strokeLinejoin="round" />
+                  <polyline points="9 3 9 18" strokeLinecap="round" />
+                  <polyline points="15 6 15 21" strokeLinecap="round" />
+                </svg>
+              ), label: "Harita" },
               { href: "/arama", icon: (
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" />

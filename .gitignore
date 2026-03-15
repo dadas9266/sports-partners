@@ -48,3 +48,4 @@ tests/e2e/.output/
 tests/e2e/.auth/
 /test-results/
 .vercel
+.env*.local
